@@ -26,9 +26,22 @@ export function stopBoardroomMission(): StopBoardroomMissionResult {
         return { ...message, approved: false, rejected: true };
     });
 
+    const currentControl = state.boardroomControl ?? {
+        surface: 'browser' as const,
+        holder: 'artist',
+        grantId: null,
+        revision: 0,
+    };
+
     useStore.setState({
         a2aMessages,
         boardroomControlRevocation: (state.boardroomControlRevocation ?? 0) + 1,
+        boardroomControl: {
+            ...currentControl,
+            holder: 'artist',
+            grantId: null,
+            revision: currentControl.revision + 1,
+        },
     });
     return { stoppedRun, cancelledApprovals };
 }

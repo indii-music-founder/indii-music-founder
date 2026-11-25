@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
     } }],
     boardroomWorkspaceTab: 'browser',
     boardroomWorkspaceLayout: 'closed',
+    boardroomBrowserUrl: '',
     boardroomPreviewModuleId: 'creative',
     boardroomWorkbenchTarget: { kind: 'asset', itemId: 'private-asset' },
     setBoardroomWorkspaceTab: vi.fn(),
@@ -37,6 +38,16 @@ describe('NavigationTools navigation outcome', () => {
         state.setBoardroomWorkspaceTab.mockImplementation((tab: string) => {
             state.boardroomWorkspaceTab = tab;
             state.boardroomWorkspaceLayout = 'split';
+        });
+        state.openBoardroomModulePreview.mockImplementation((module: string) => {
+            state.boardroomPreviewModuleId = module;
+            state.boardroomWorkspaceTab = 'module';
+            state.boardroomWorkspaceLayout = 'split';
+        });
+        state.openBoardroomBrowser.mockImplementation((url?: string, layout?: string) => {
+            state.boardroomWorkspaceTab = 'browser';
+            state.boardroomWorkspaceLayout = layout ?? 'split';
+            if (url) state.boardroomBrowserUrl = url;
         });
         state.setModule.mockImplementation(async (module: string) => { state.currentModule = module; });
     });

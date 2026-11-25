@@ -31,7 +31,7 @@ export class BoardroomMetaHarnessService {
 
     const mode: BoardroomHarnessDecision['mode'] = blockers.length
       ? 'blocked'
-      : approvalNeeded
+      : approvalNeeded || legalRisk === 'high' || legalRisk === 'critical'
         ? 'approval'
         : input.runs.length
           ? 'execution_ready'
@@ -70,8 +70,9 @@ function buildRationale(runs: HarnessRun[], blockers: string[], legalRisk: Harne
   if (!runs.length) {
     return ['No domain harness runs are attached yet, so Boardroom can only provide advisory routing.'];
   }
+  const domainCount = new Set(runs.map(run => run.domain)).size;
   return [
-    `${runs.length} harness run${runs.length === 1 ? '' : 's'} reviewed across ${new Set(runs.map(run => run.domain)).size} domain${runs.length === 1 ? '' : 's'}.`,
+    `${runs.length} harness run${runs.length === 1 ? '' : 's'} reviewed across ${domainCount} domain${domainCount === 1 ? '' : 's'}.`,
     blockers.length ? `${blockers.length} blocker${blockers.length === 1 ? '' : 's'} prevent execution.` : 'No hard blockers detected.',
     `Legal risk is ${legalRisk}.`,
     approvalNeeded ? 'At least one recommendation or approval gate requires user approval.' : 'No explicit approval gate was found.',

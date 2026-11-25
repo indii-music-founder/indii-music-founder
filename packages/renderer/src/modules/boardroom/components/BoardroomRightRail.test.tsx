@@ -1,11 +1,12 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toggleAgent = vi.fn();
 const soloAgent = vi.fn();
 const clearReferencedAssets = vi.fn();
 const removeReferencedAsset = vi.fn();
+const requestBoardroomBrowserGrant = vi.fn();
 
 const storeState = {
     activeAgents: ['generalist', 'marketing', 'finance'],
@@ -14,6 +15,11 @@ const storeState = {
     referencedAssets: [] as { id: string; name: string; type: string }[],
     clearReferencedAssets,
     removeReferencedAsset,
+    boardroomHostedBrowserActive: false,
+    requestBoardroomBrowserGrant,
+    a2aMessages: [] as Array<{ id: string; fromAgent: string; toAgent: string; requiresApproval?: boolean; approved?: boolean }>,
+    isAgentProcessing: false,
+    agentHistory: [] as Array<{ agentId?: string; isStreaming?: boolean; metadata?: Record<string, unknown> }>,
 };
 
 vi.mock('@/core/store', () => ({
@@ -54,6 +60,10 @@ describe('BoardroomRightRail', () => {
         storeState.activeAgents = ['generalist', 'marketing', 'finance'];
         storeState.referencedAssets = [];
         storeState.soloAgent = soloAgent;
+        storeState.boardroomHostedBrowserActive = false;
+        storeState.a2aMessages = [];
+        storeState.isAgentProcessing = false;
+        storeState.agentHistory = [];
     });
 
     it('renders the collapsed rail navigation tabs', () => {
@@ -154,5 +164,39 @@ describe('BoardroomRightRail', () => {
         fireEvent.click(closeBtn);
 
         expect(screen.queryByText('Boardroom Standards')).not.toBeInTheDocument();
+    });
+
+    it('exposes Solo and conditional Grant browser control actions in the agent team panel (Spec L4)', () => {
+        const view = render(<BoardroomRightRail />);
+        fireEvent.click(screen.getByRole('button', { name: /Marketing · Idle/i }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Solo' }));
+        expect(soloAgent).toHaveBeenCalledWith('marketing');
+        expect(screen.queryByRole('button', { name: /Grant browser control/i })).not.toBeInTheDocument();
+
+        storeState.boardroomHostedBrowserActive = true;
+        view.rerender(<BoardroomRightRail />);
+        fireEvent.click(screen.getByRole('button', { name: /Grant browser control/i }));
+        expect(requestBoardroomBrowserGrant).toHaveBeenCalledWith('marketing');
+    });
+
+    it('highlights receiving agent avatar for 2s on new a2aMessage arrival and clears it cleanly (Spec L5)', () => {
+        vi.useFakeTimers();
+        try {
+            const view = render(<BoardroomRightRail />);
+            const marketingBtn = screen.getByRole('button', { name: /Marketing · Idle/i });
+            expect(marketingBtn).not.toHaveAttribute('data-handoff-highlight');
+
+            storeState.a2aMessages = [{ id: 'handoff-1', fromAgent: 'generalist', toAgent: 'marketing' }];
+            view.rerender(<BoardroomRightRail />);
+            expect(screen.getByRole('button', { name: /Marketing · Idle/i })).toHaveAttribute('data-handoff-highlight', 'true');
+
+            act(() => {
+                vi.advanceTimersByTime(2100);
+            });
+            expect(screen.getByRole('button', { name: /Marketing · Idle/i })).not.toHaveAttribute('data-handoff-highlight');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

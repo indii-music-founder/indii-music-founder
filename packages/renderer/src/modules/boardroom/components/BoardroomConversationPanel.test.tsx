@@ -106,11 +106,11 @@ describe('BoardroomConversationPanel', () => {
         ];
         const { container } = render(<BoardroomConversationPanel messages={messages} />);
 
-        // The user's avatar circle carries the pulse class while any agent streams.
-        const userAvatar = container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-pulse');
+        // The user's avatar circle carries the motion-safe pulse class while any agent streams.
+        const userAvatar = container.querySelector('[data-message-id="user-1"]')?.querySelector('.motion-safe\\:animate-pulse');
         expect(userAvatar).not.toBeNull();
-        // The ping ring is present too.
-        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-ping')).not.toBeNull();
+        // The motion-safe ping ring is present too.
+        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.motion-safe\\:animate-ping')).not.toBeNull();
     });
 
     it('does not throb the user avatar when no agent is streaming', () => {
@@ -120,7 +120,7 @@ describe('BoardroomConversationPanel', () => {
         ];
         const { container } = render(<BoardroomConversationPanel messages={messages} />);
 
-        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-pulse')).toBeNull();
+        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.motion-safe\\:animate-pulse')).toBeNull();
     });
 
     it('renders message count in header', () => {

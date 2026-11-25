@@ -167,20 +167,24 @@ describe('ParticipantSelector primary department head pills', () => {
         expect(social).toHaveAttribute('data-agent-icon', 'share-2');
         expect(social).toHaveAttribute('data-seat-ring', '0');
         expect(social).toHaveAttribute('aria-pressed', 'true');
-        expect(social).toHaveAttribute('role', 'button');
+        expect(social.tagName).toBe('BUTTON');
         expect(social).toHaveTextContent('Social');
         expect(social.querySelector('svg')).toBeInTheDocument();
+        expect(social.querySelector('button')).toBeNull();
 
         fireEvent.click(social);
         expect(toggleAgent).toHaveBeenCalledWith('social');
     });
 
-    it('solos an agent when clicking their console Solo button', () => {
+    it('solos an agent when activating Solo via keyboard without triggering toggleAgent (ISSUE-1634)', () => {
         render(<ParticipantSelector />);
 
         const soloFinanceBtn = screen.getByLabelText('Solo Finance');
+        expect(soloFinanceBtn.className).toContain('group-focus-within:opacity-100');
+        fireEvent.keyDown(soloFinanceBtn, { key: 'Enter' });
         fireEvent.click(soloFinanceBtn);
         expect(soloAgent).toHaveBeenCalledWith('finance');
+        expect(toggleAgent).not.toHaveBeenCalled();
     });
 
     it('expands satellite hierarchy branch for departments with sub-agents', () => {

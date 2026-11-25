@@ -3130,7 +3130,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1626: The whole Boardroom re-renders on every token [U3]
 
-- **Status:** 🟡 PARTIAL (2026-11-20 — message-list work now scans streaming state once, keeps Markdown configuration stable, memoizes ThoughtChain/Markdown/response-action subtrees, and isolates the department preview from parent token updates; focused regressions cover both. A memoized full message row, live acceptance, and team CI remain pending.)
+- **Status:** 🟡 PARTIAL (2026-11-24 — extracted plain `React.memo` `BoardroomMessageRow.tsx`, moved `agentHistory` subscriptions out of `BoardroomModule.tsx` and `BoardroomRightRail.tsx` into narrow primitive selectors, and extended `BoardroomConversationPanel.performance.test.tsx` to cover 30-row tail streaming non-rerender, metadata-only action refresh, and streaming waiting-pulse teardown. Structural unit checks only; live signed-in acceptance and remote CI remain pending.)
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U3 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3232,7 +3232,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1634: Nested interactive controls [U11]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — converted seat pills in `ParticipantSelector.tsx` and asset tiles in `BoardroomAssetStrip.tsx` into non-interactive container `div`s with sibling `<button>`s and `group-focus-within:opacity-100` visibility; verified with keyboard Enter Solo regression in `ParticipantSelector.test.tsx`. Live signed-in browser check and axe run remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U11 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3257,7 +3257,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1636: Mobile [U14]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — phone layout in `BoardroomModule.tsx` renders workspace tabs as a full-screen dialog sheet with Close and exposes a mobile Living Plans / approvals header trigger, while `MobileParticipantDrawer.tsx` displays live Working / Approval requested / Idle status and latest task/handoff action per seated manager. Verified structurally in `BoardroomModule.test.tsx` and `MobileParticipantDrawer.test.tsx`; 390×844 signed-in browser check remains pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U14 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3342,7 +3342,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1643: AppShell.tsx:692-694 mounts BoardroomModule all the time, so its chunk (react-markdown and all the views) load [U21]
 
-- **Status:** 🟡 PARTIAL (2026-11-20 — AppShell now mounts the lazy Boardroom module only in Boardroom mode; local renderer typecheck and Boardroom suites pass. A focused AppShell mount regression, signed-in acceptance, and team CI remain pending.)
+- **Status:** 🟡 PARTIAL (2026-11-24 — added `AppShell.boardroomLazy.test.tsx` proving `'direct'` mode skips loading the Boardroom lazy chunk while switching to `'boardroom'` loads it once; typecheck and renderer suites pass. Signed-in acceptance and remote CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U21 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3366,7 +3366,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1645: In the browser view, page loading and Pin share one isLoading flag [U31]
 
-- **Status:** 🟡 PARTIAL (2026-11-20 — navigation, Pin, and Reader have separate loading states. Native navigation failures now surface in the browser view. Tab retention and live Electron acceptance remain pending.)
+- **Status:** 🟡 PARTIAL (2026-11-24 — retained `agent-feed` inside `visitedTabs` in `BoardroomWorkspacePane.tsx` so switching tabs preserves state without re-attaching, and added renderer `api.detach?.()` cleanup on unmount in `BoardroomBrowserView.tsx`; verified in `BoardroomWorkspacePane.test.tsx` and `BoardroomBrowserView.test.tsx`. Live Electron acceptance remains pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U31 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3391,7 +3391,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1647: Two separate agent colour and icon systems [U23]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — unified `ParticipantSelector.tsx` and `BoardroomRightRail.tsx` colors/icons onto `resolveAgentVisualIdentity` + shared `agentIcons.ts`, replaced hard-coded blue-black/zinc/slate backgrounds in `modules/boardroom/**` with warm `bg-bg-dark`/`bg-surface`/`bg-surface-elevated` tokens, and added token hygiene checks in `boardroomClassHygiene.test.ts`. Signed-in 1440×900 / 390×844 browser visual acceptance remains pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U23 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3403,7 +3403,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1648: 16 animate-* uses have no motion-safe [U24]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — added `motion-safe:` guards to all `animate-(ping|pulse|bounce|spin)` classes in `modules/boardroom`, replaced `transition-all` on Motion/interactive controls with `transition-colors`, and verified structurally via `boardroomClassHygiene.test.ts`. Signed-in browser reduced-motion check remains pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U24 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3415,7 +3415,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1649: Duplicated code [U25]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — consolidated `isSafeExternalAssetUrl` and `BOARDROOM_PORTAL_URLS` in `utils/boardroomUrls.ts`, unified mission catalog in `constants/boardroomMissions.ts` (DDEX seats reconciled), shared `BOARDROOM_WORKSPACE_TABS` across dock and workspace pane, and routed seating presets through slice actions with mock fallback. Structural suites pass locally; remote CI remains pending.)
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U25 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3427,7 +3427,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1650: Oversized components [U26]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — extracted `BoardroomMessageRow.tsx` from `BoardroomConversationPanel.tsx` and split `BoardroomBrowserView.tsx` into `BoardroomBrowserToolbar.tsx`, `BoardroomBrowserBookmarks.tsx`, `BoardroomBrowserFrameBlockedCard.tsx`, and `BoardroomBrowserReader.tsx`; all browser and conversation tests pass.)
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U26 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3439,8 +3439,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1651: Classes that do nothing [U27]
 
-- **Status:** 🔴 OPEN
-- **Progress (2026-11-19):** literal `"false"` class on the phone header seat button removed (BoardroomModule.tsx; test in BoardroomModule.test.tsx). `animate-fadeIn` → `motion-safe:animate-in motion-safe:fade-in-0` and `py-0.2` → `py-0.5`, guarded by modules/boardroom/boardroomClassHygiene.test.ts. Still open: unreachable `AnimatePresence` exit in BoardroomModule.tsx.
+- **Status:** 🟡 PARTIAL (2026-11-24 — moved `<AnimatePresence>` outside early return in `BoardroomModule.tsx` so exit animations can run; preserved `document` SSR guard; extended `boardroomClassHygiene.test.ts` checks. Live exit animation visual check remains pending.)
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U27 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3452,7 +3451,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1652: Unreadable text-[7px] and text-[8px] [U28]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — raised all `text-[7px]`, `text-[8px]`, and `text-[9px]` utilities across `modules/boardroom/**/*.tsx` to at least `text-[10px]` and enforced via `boardroomClassHygiene.test.ts`.)
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U28 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3464,7 +3463,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1653: Accessibility gaps [U29]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — converted rail roster chips to accessible `<button>`s, added `id`/`aria-controls`/`role="tabpanel"` and roving `ArrowRight`/`ArrowLeft`/`Home`/`End` keyboard navigation to `BoardroomWorkspacePane.tsx` and `BoardroomWorkbenchView.tsx`, added `ArrowDown`/`ArrowUp`/`Home`/`End`/`Escape` handling to `BoardroomModulePreview.tsx`, and added status `aria-label`s in `BoardroomRightRail.tsx`. Verified via unit tests; screen-reader and axe check in signed-in session remain pending.)
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U29 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3832,7 +3831,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1682: Giant functions and copy-pasted progress handlers [O29]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — extracted `createProgressHandler` and `buildBoardroomAssetManifest` helpers in `AgentService.ts`; verified with Boardroom capability intent and routing test suites.)
 - **Severity:** LOW
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O29 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3844,7 +3843,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1683: Identical ternary branches (AS:507-511 etc.), any, magic numbers, console.error in store/index.ts:229 [O30]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — removed identical ternary in `AgentService.triggerAutorater`, replaced `(m: any)` message lookups with inferred types, named `BOARDROOM_SWARM_CHUNK_SIZE`/`MAX_ASSET_PROMPT_CHARS`/`MAX_PRIOR_CONTEXT_CHARS`, and replaced `console.error` in `core/store/index.ts` with `logger.error`.)
 - **Severity:** LOW
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O30 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3856,7 +3855,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1684: Dead exports/placeholder data [O31]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-24 — removed unused `HARNESS_IMPLEMENTATION_STATUS` export from `HarnessCatalog.ts`, corrected domain pluralization in `BoardroomMetaHarnessService.ts`, and aligned high/critical legalRisk mode to `'approval'` rather than `'execution_ready'`; verified in `BusinessHarnessCore.test.ts`.)
 - **Severity:** LOW
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O31 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3926,7 +3925,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1690: Conductor cannot open or inspect the shared Boardroom workspace tabs
 
-- **Status:** 🟡 PARTIAL — shared tab selection, desktop HTTPS and Google Fonts navigation, approved bundled font downloads, gallery asset selection, and bounded Feed status are wired. Signed-in browser and desktop acceptance remain open.
+- **Status:** 🟡 PARTIAL (2026-11-24 — typed dispatcher `executeWorkspaceAction` in `boardroomWorkspaceActions.ts`, Studio Creative ops, Workbench `split-sheet` target, and single-controller takeover guard in `boardroomSlice.ts` / `BoardroomModulePreview.tsx` / `BoardroomWorkbenchView.tsx` are wired and verified structurally. Live signed-in browser and Electron acceptance remain open.)
 - **Severity:** HIGH
 - **Module:** Boardroom workspace and Conductor
 - **Evidence:** [GitHub #956](https://github.com/indii-music-founder/indii-music-founder/issues/956). The center workspace exposes Live Browser, Studio Preview, Asset Workbench, and Agent Live Feed to the artist. Existing assigned Creative missions can already open Studio Preview and stage an image prompt.
@@ -4327,3 +4326,27 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - Removed unused `CommandBar.tsx`, its 4 `CommandBar.*.test.tsx` suites, and the 2 stale `vi.mock` stubs in `SidebarNavigation.test.tsx` and `RouterContext.test.tsx` (16/16 pass).
   - Stabilized `e2e/cross-device-persistence.spec.ts` (`ISSUE-757: Memory recall`) by ignoring `OPTIONS` preflights, waiting for `isAgentProcessing` to settle before and after Turn 1, increasing Turn 1 timeout to 30s, and slicing payloads captured after Turn 1 (`3/3` consecutive local runs pass, `5 passed, 1 skipped` — structural-only).
 - **Real-user verification:** Opened `https://indii.music/` and navigated to `https://app.indii.music/`, which presents the sign-in screen (no active signed-in session). Real-account Boardroom timing remains `BLOCKED / AUTH_REQUIRED` per `.agent/REAL_USER_AUTHENTICITY.md` until the founder signs in.
+
+
+### ISSUE-1722: Boardroom rail and drawer layout spec remainder (WP7 L2–L5)
+
+- **Status:** 🟡 PARTIAL (2026-11-24 — desktop split layout defaults discussion to a right slide-over drawer (`role="dialog"`) with Dock/Float toggle while keeping `PromptArea` mounted; `BoardroomRightRail.tsx` exposes `Solo` and conditional `Grant browser control` when `BoardroomHostedBrowser` is mounted, 2s `motion-safe:` handoff receiver highlights, and per-state status icons; structural unit tests pass in `BoardroomModule.test.tsx` and `BoardroomRightRail.test.tsx`; 1440×900 / 390×844 signed-in browser evidence unavailable without live credentials.)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom UI (`BoardroomModule.tsx`, `BoardroomRightRail.tsx`, `BoardroomHostedBrowser.tsx`, `boardroomSlice.ts`)
+- **Acceptance:** Live signed-in verification of split drawer/dock toggle, rail Grant browser control, and 2s handoff highlight under normal and reduced motion.
+
+
+### ISSUE-1723: Typed workspace action dispatcher and single-controller guard (WP8 8a–8c, Spec D1/W2/W3/D2)
+
+- **Status:** 🟡 PARTIAL (2026-11-24 — implemented `executeWorkspaceAction` in `boardroomWorkspaceActions.ts` with post-dispatch store verification and `expectedRevision` takeover guard, migrated `CoreTools.update_prompt`, `NavigationTools`, and `boardroomBrowserResearch.ts`, added Workbench `split-sheet` target and media loading/error/retry states, added `"You have control"` / `"<Agent> has control"` + **Take control** bars on Studio and Workbench, and wired `stopBoardroomMission` to reset `boardroomControl` to `'artist'`. Verified structurally in `boardroomWorkspaceActions.test.ts`, `BoardroomModulePreview.test.tsx`, `BoardroomWorkbenchView.test.tsx`, `boardroomMission.test.ts`, `CoreTools.test.ts`, and `NavigationTools.test.ts`; live signed-in end-to-end run pending.)
+- **Severity:** 🟡 MEDIUM
+- **Module:** `boardroomWorkspaceActions.ts`, `boardroomSlice.ts`, `boardroomMission.ts`, `BoardroomModulePreview.tsx`, `BoardroomWorkbenchView.tsx`
+- **Acceptance:** End-to-end signed-in test verifying artist takeover blocks queued specialist Studio/Workbench actions and Stop resets control cleanly.
+
+
+### ISSUE-1724: Unused Boardroom UI files and dead browser history export (WP12)
+
+- **Status:** 🟡 PARTIAL (2026-11-24 — removed dead components `MessageFeed.tsx`, `BoardroomEmptyState.tsx`, and `HarnessDecisionDigest.tsx` plus their legacy test blocks in `BoardroomModule.test.tsx`, and removed write-only `boardroomBrowserHistory` from `boardroomSlice.ts`; remote CI and production verification remain pending.)
+- **Severity:** 🟢 LOW
+- **Module:** `packages/renderer/src/modules/boardroom`, `packages/renderer/src/core/store/slices/boardroomSlice.ts`
+- **Acceptance:** Confirm green CI and full renderer build after merge.

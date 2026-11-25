@@ -2,16 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { AgentMessage } from '@/core/store/slices/agent';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import {
-    Globe,
-    LayoutGrid,
-    Maximize2,
-    Minimize2,
-    Layers,
-    Radio,
-    X,
-    Sparkles,
-} from 'lucide-react';
+import { Maximize2, Minimize2, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BoardroomBrowserView } from './BoardroomBrowserView';
 import { BoardroomModulePreview } from './BoardroomModulePreview';
@@ -22,6 +13,7 @@ import {
     judgeBoardroomWorkspaceRecommendation,
     type BoardroomWorkspaceRecommendation,
 } from '@/config/typesafeJudgments';
+import { BOARDROOM_WORKSPACE_TABS } from '../constants/boardroomWorkspaceTabs';
 
 const WORKSPACE_JUDGE_SETTLE_MS = 750;
 
@@ -92,29 +84,40 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false, isOpen = true }
 
     const isExpandedBrowser = boardroomWorkspaceLayout === 'stage';
     const browserSizeLabel = isExpandedBrowser ? 'Restore split layout' : 'Expand browser';
-    const tabs: { id: BoardroomWorkspaceTab; label: string; icon: React.ElementType }[] = [
-        { id: 'browser', label: 'Live Browser', icon: Globe },
-        { id: 'module', label: 'Studio Preview', icon: LayoutGrid },
-        { id: 'workbench', label: 'Asset Workbench', icon: Layers },
-        { id: 'agent-feed', label: 'Agent Live Feed', icon: Radio },
-    ];
+    const tabs = BOARDROOM_WORKSPACE_TABS;
 
     const recommendedTabMeta = jevRecommendation
         ? tabs.find(t => t.id === jevRecommendation.recommendedTab)
         : undefined;
     const recommendedTabLabel = recommendedTabMeta?.label ?? jevRecommendation?.recommendedTab;
 
+    const handleTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        const currentIndex = tabs.findIndex(tab => tab.id === boardroomWorkspaceTab);
+        if (currentIndex < 0) return;
+        let nextIndex = -1;
+        if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+        else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = tabs.length - 1;
+        if (nextIndex < 0) return;
+        event.preventDefault();
+        const nextTab = tabs[nextIndex]!.id;
+        setBoardroomWorkspaceTab(nextTab);
+        document.getElementById(`boardroom-workspace-tab-${nextTab}`)?.focus();
+    };
+
     return (
         <section
             data-testid="boardroom-workspace-pane"
-            className="@container h-full flex flex-col bg-zinc-950 border-r border-white/5 min-h-0 min-w-0 flex-1 overflow-hidden relative"
+            className="@container h-full flex flex-col bg-bg-dark border-r border-white/5 min-h-0 min-w-0 flex-1 overflow-hidden relative"
         >
             {/* Top Workspace Bar */}
-            <div className="flex items-start justify-between px-3 py-2 bg-[#09090d] border-b border-white/10 shrink-0 gap-2 select-none min-w-0">
+            <div className="flex items-start justify-between px-3 py-2 bg-surface border-b border-white/10 shrink-0 gap-2 select-none min-w-0">
                 {/* Left: 4 Tab Switchers */}
                 <div
                     role="tablist"
                     aria-label="Boardroom workspace sections"
+                    onKeyDown={handleTabKeyDown}
                     className="flex flex-wrap items-center gap-1 bg-white/5 p-0.5 rounded-xl border border-white/5 min-w-0"
                 >
                     {tabs.map(t => {
@@ -124,13 +127,16 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false, isOpen = true }
                         return (
                             <button
                                 key={t.id}
+                                id={`boardroom-workspace-tab-${t.id}`}
                                 type="button"
                                 role="tab"
                                 aria-selected={isActive}
+                                aria-controls={`boardroom-tabpanel-${t.id}`}
+                                tabIndex={isActive ? 0 : -1}
                                 onClick={() => setBoardroomWorkspaceTab(t.id)}
                                 data-testid={`boardroom-tab-${t.id}`}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
+                                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                                     isActive
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -192,21 +198,49 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false, isOpen = true }
 
             <div className="flex-1 relative min-h-0 min-w-0 overflow-hidden">
                 {visitedTabs.has('browser') && (
-                    <div hidden={boardroomWorkspaceTab !== 'browser'} className="h-full">
+                    <div
+                        id="boardroom-tabpanel-browser"
+                        role="tabpanel"
+                        aria-labelledby="boardroom-workspace-tab-browser"
+                        hidden={boardroomWorkspaceTab !== 'browser'}
+                        className="h-full"
+                    >
                         <BoardroomBrowserView isVisible={boardroomWorkspaceTab === 'browser' && !hasOverlayOpen && !isCommandMenuOpen} />
                     </div>
                 )}
                 {visitedTabs.has('module') && (
-                    <div hidden={boardroomWorkspaceTab !== 'module'} className="h-full">
+                    <div
+                        id="boardroom-tabpanel-module"
+                        role="tabpanel"
+                        aria-labelledby="boardroom-workspace-tab-module"
+                        hidden={boardroomWorkspaceTab !== 'module'}
+                        className="h-full"
+                    >
                         <BoardroomModulePreview />
                     </div>
                 )}
                 {visitedTabs.has('workbench') && (
-                    <div hidden={boardroomWorkspaceTab !== 'workbench'} className="h-full">
+                    <div
+                        id="boardroom-tabpanel-workbench"
+                        role="tabpanel"
+                        aria-labelledby="boardroom-workspace-tab-workbench"
+                        hidden={boardroomWorkspaceTab !== 'workbench'}
+                        className="h-full"
+                    >
                         <BoardroomWorkbenchView />
                     </div>
                 )}
-                {boardroomWorkspaceTab === 'agent-feed' && <BoardroomAgentFeedView />}
+                {visitedTabs.has('agent-feed') && (
+                    <div
+                        id="boardroom-tabpanel-agent-feed"
+                        role="tabpanel"
+                        aria-labelledby="boardroom-workspace-tab-agent-feed"
+                        hidden={boardroomWorkspaceTab !== 'agent-feed'}
+                        className="h-full"
+                    >
+                        <BoardroomAgentFeedView />
+                    </div>
+                )}
             </div>
         </section>
     );

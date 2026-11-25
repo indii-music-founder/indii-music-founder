@@ -3,7 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
 import { BoardroomWorkbenchView } from './BoardroomWorkbenchView';
 
-const store = { boardroomWorkbenchTarget: null as BoardroomWorkbenchTarget };
+const store: Record<string, any> = {
+    boardroomWorkbenchTarget: null as BoardroomWorkbenchTarget,
+    generatedHistory: [],
+    isHistoryInitialized: true,
+    historySyncError: null as string | null,
+    initializeHistory: vi.fn(),
+    boardroomControl: { surface: 'workbench', holder: 'artist', grantId: null, revision: 0 },
+    takeBoardroomControl: vi.fn(),
+};
 const toast = { success: vi.fn(), error: vi.fn() };
 vi.mock('@/core/store', () => ({
     useStore: (select: (state: typeof store) => unknown) => select(store),
@@ -16,6 +24,12 @@ const listArtifacts = vi.fn();
 describe('Boardroom Workbench artifacts', () => {
     beforeEach(() => {
         store.boardroomWorkbenchTarget = null;
+        store.generatedHistory = [];
+        store.isHistoryInitialized = true;
+        store.historySyncError = null;
+        store.initializeHistory = vi.fn();
+        store.boardroomControl = { surface: 'workbench', holder: 'artist', grantId: null, revision: 0 };
+        store.takeBoardroomControl = vi.fn();
         readArtifact.mockReset();
         listArtifacts.mockResolvedValue({ success: true, data: [{ filename: 'first.md' }, { filename: 'second.md' }] });
         vi.stubGlobal('electronAPI', { agent: { readArtifact, listArtifacts } });
@@ -47,5 +61,31 @@ describe('Boardroom Workbench artifacts', () => {
         expect(await screen.findByText('New document body')).toBeVisible();
         await act(async () => { completeFirst({ success: true, data: 'Old document body' }); });
         expect(screen.queryByText('Old document body')).not.toBeInTheDocument();
+    });
+
+    it('opens split-sheet target on Artifacts & Splits and renders media loading/error/control states', async () => {
+        store.boardroomWorkbenchTarget = { kind: 'split-sheet', itemId: 'second', title: 'Album Split 50/50' };
+        readArtifact.mockResolvedValue({ success: true, data: '# Split Sheet\n50 / 50' });
+        const view = render(<BoardroomWorkbenchView />);
+
+        expect(screen.getByTestId('boardroom-split-sheet-target')).toHaveTextContent('Album Split 50/50');
+        expect(screen.getByRole('tab', { name: /artifacts & splits/i })).toHaveAttribute('aria-selected', 'true');
+        expect(await screen.findByText('Split Sheet')).toBeVisible();
+
+        store.isHistoryInitialized = false;
+        store.boardroomControl = { surface: 'workbench', holder: 'legal', grantId: 'g-2', revision: 3 };
+        view.rerender(<BoardroomWorkbenchView />);
+        expect(screen.getByText(/Legal Director has control/i)).toBeVisible();
+        fireEvent.click(screen.getByRole('button', { name: 'Take control' }));
+        expect(store.takeBoardroomControl).toHaveBeenCalledWith('workbench');
+
+        fireEvent.click(screen.getByRole('tab', { name: /Generated Media/i }));
+        expect(screen.getByText('Loading media…')).toBeVisible();
+
+        store.historySyncError = 'Network timeout';
+        view.rerender(<BoardroomWorkbenchView />);
+        expect(screen.getByRole('alert')).toHaveTextContent('Could not load media: Network timeout');
+        fireEvent.click(screen.getByRole('button', { name: 'Retry media' }));
+        expect(store.initializeHistory).toHaveBeenCalledTimes(1);
     });
 });

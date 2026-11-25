@@ -18,6 +18,8 @@ import type { HistoryItem } from '@/core/types/history';
 import { cn } from '@/lib/utils';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
 import { webArtifactStorage } from '@/services/agent/WebArtifactStorage';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { isSafeExternalAssetUrl } from '../utils/boardroomUrls';
 
 type WorkbenchTab = 'assets' | 'artifacts' | 'canvas';
 type ArtifactRequest = { filename: string; owner?: string; target: BoardroomWorkbenchTarget; attempt: number };
@@ -25,32 +27,33 @@ type ArtifactRead = { request: ArtifactRequest } & (
     { status: 'loaded'; content: string } | { status: 'failed' }
 );
 
-function isSafeExternalAssetUrl(rawUrl: string): boolean {
-    try {
-        const parsed = new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'https://localhost');
-        return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'blob:';
-    } catch {
-        return false;
-    }
-}
-
 export function BoardroomWorkbenchView() {
     const toast = useToast();
     const openStudio = useStore(state => state.openBoardroomModulePreview);
     const artifactOwner = useStore(state => state.user?.uid);
     const {
         generatedHistory,
+        isHistoryInitialized,
+        historySyncError,
+        initializeHistory,
         boardroomWorkbenchTarget,
         addReferencedAsset,
         openImageInStudio,
         canvasPanels,
+        boardroomControl,
+        takeBoardroomControl,
     } = useStore(
         useShallow(state => ({
             generatedHistory: state.generatedHistory || [],
+            isHistoryInitialized: state.isHistoryInitialized ?? true,
+            historySyncError: state.historySyncError ?? null,
+            initializeHistory: state.initializeHistory,
             boardroomWorkbenchTarget: state.boardroomWorkbenchTarget,
             addReferencedAsset: state.addReferencedAsset,
             openImageInStudio: state.openImageInStudio,
             canvasPanels: state.canvasPanels || [],
+            boardroomControl: state.boardroomControl,
+            takeBoardroomControl: state.takeBoardroomControl,
         }))
     );
 
@@ -58,7 +61,7 @@ export function BoardroomWorkbenchView() {
         target: BoardroomWorkbenchTarget;
         tab: WorkbenchTab;
     } | null>(null);
-    const defaultTab = boardroomWorkbenchTarget?.kind === 'artifact'
+    const defaultTab = boardroomWorkbenchTarget?.kind === 'artifact' || boardroomWorkbenchTarget?.kind === 'split-sheet'
         ? 'artifacts'
         : boardroomWorkbenchTarget?.kind === 'canvas' ? 'canvas' : 'assets';
     const subTab = tabOverride && tabOverride.target === boardroomWorkbenchTarget ? tabOverride.tab : defaultTab;
@@ -81,7 +84,11 @@ export function BoardroomWorkbenchView() {
         target: BoardroomWorkbenchTarget;
         filename: string;
     } | null>(null);
-    const targetArtifact = boardroomWorkbenchTarget?.kind === 'artifact' ? boardroomWorkbenchTarget.filename : null;
+    const targetArtifact = boardroomWorkbenchTarget?.kind === 'artifact'
+        ? boardroomWorkbenchTarget.filename
+        : boardroomWorkbenchTarget?.kind === 'split-sheet' && boardroomWorkbenchTarget.itemId
+            ? artifacts.find(a => a.filename === boardroomWorkbenchTarget.itemId || a.filename.includes(boardroomWorkbenchTarget.itemId ?? ''))?.filename ?? null
+            : null;
     const selectedArtifactFile = artifactOverride && artifactOverride.target === boardroomWorkbenchTarget
         ? artifactOverride.filename
         : targetArtifact ?? artifacts[0]?.filename ?? null;
@@ -198,22 +205,65 @@ export function BoardroomWorkbenchView() {
         }
     };
 
+    const workbenchHolder = boardroomControl?.surface === 'workbench' ? boardroomControl.holder : 'artist';
+    const workbenchHolderName = workbenchHolder === 'artist'
+        ? 'You'
+        : resolveAgentVisualIdentity(workbenchHolder).displayName;
+
+    const availableTabs: WorkbenchTab[] = requestedPanel || canvasPanels.length > 0
+        ? ['assets', 'artifacts', 'canvas']
+        : ['assets', 'artifacts'];
+
+    const handleWorkbenchTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        const currentIndex = availableTabs.indexOf(subTab);
+        if (currentIndex < 0) return;
+        let nextIndex = -1;
+        if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % availableTabs.length;
+        else if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + availableTabs.length) % availableTabs.length;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = availableTabs.length - 1;
+        if (nextIndex < 0) return;
+        event.preventDefault();
+        const nextTab = availableTabs[nextIndex]!;
+        setSubTab(nextTab);
+        document.getElementById(`workbench-tab-${nextTab}`)?.focus();
+    };
+
     return (
-        <div data-testid="boardroom-workbench-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
+        <div data-testid="boardroom-workbench-view" className="h-full w-full flex flex-col bg-bg-dark text-white min-h-0 min-w-0 overflow-hidden">
+            {/* Control Status Bar (Spec D2) */}
+            <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-surface border-b border-white/10 shrink-0 gap-2 text-xs">
+                <span role="status" className="text-white/75">
+                    {workbenchHolder === 'artist' ? 'You have control' : `${workbenchHolderName} has control`}
+                </span>
+                {workbenchHolder !== 'artist' && (
+                    <button
+                        type="button"
+                        onClick={() => takeBoardroomControl?.('workbench')}
+                        className="rounded-lg border border-amber-400/40 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-200 hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                    >
+                        Take control
+                    </button>
+                )}
+            </div>
             {/* Workbench Sub-Tab Switcher */}
             <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0">
                 <div
                     role="tablist"
                     aria-label="Asset Workbench sections"
+                    onKeyDown={handleWorkbenchTabKeyDown}
                     className="flex flex-wrap items-center gap-1 min-w-0"
                 >
                     <button
+                        id="workbench-tab-assets"
                         type="button"
                         role="tab"
                         aria-selected={subTab === 'assets'}
+                        aria-controls="workbench-tabpanel-assets"
+                        tabIndex={subTab === 'assets' ? 0 : -1}
                         onClick={() => setSubTab('assets')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                             subTab === 'assets'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -223,12 +273,15 @@ export function BoardroomWorkbenchView() {
                         <span>Generated Media ({generatedHistory.length})</span>
                     </button>
                     <button
+                        id="workbench-tab-artifacts"
                         type="button"
                         role="tab"
                         aria-selected={subTab === 'artifacts'}
+                        aria-controls="workbench-tabpanel-artifacts"
+                        tabIndex={subTab === 'artifacts' ? 0 : -1}
                         onClick={() => setSubTab('artifacts')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                             subTab === 'artifacts'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -239,12 +292,15 @@ export function BoardroomWorkbenchView() {
                     </button>
                     {(requestedPanel || canvasPanels.length > 0) && (
                         <button
+                            id="workbench-tab-canvas"
                             type="button"
                             role="tab"
                             aria-selected={subTab === 'canvas'}
+                            aria-controls="workbench-tabpanel-canvas"
+                            tabIndex={subTab === 'canvas' ? 0 : -1}
                             onClick={() => setSubTab('canvas')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
+                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                                 subTab === 'canvas'
                                     ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                     : "text-white/60 hover:text-white hover:bg-white/5"
@@ -259,10 +315,30 @@ export function BoardroomWorkbenchView() {
 
             {/* Sub-tab 1: Generated Assets */}
             {subTab === 'assets' && (
-                <div className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden">
+                <div
+                    id="workbench-tabpanel-assets"
+                    role="tabpanel"
+                    aria-labelledby="workbench-tab-assets"
+                    className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden"
+                >
                     {/* Left Thumbnails List */}
                     <div className="w-full @[640px]:w-56 border-b @[640px]:border-b-0 @[640px]:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex @[640px]:flex-col gap-2 shrink-0 bg-black/40">
-                        {generatedHistory.length === 0 ? (
+                        {historySyncError ? (
+                            <div className="space-y-2 p-3 text-xs">
+                                <p role="alert" className="text-rose-300">Could not load media: {historySyncError}</p>
+                                {initializeHistory && (
+                                    <button
+                                        type="button"
+                                        onClick={() => void initializeHistory()}
+                                        className="rounded bg-white/10 px-2.5 py-1 text-white hover:bg-white/15"
+                                    >
+                                        Retry media
+                                    </button>
+                                )}
+                            </div>
+                        ) : !isHistoryInitialized && generatedHistory.length === 0 ? (
+                            <p role="status" className="p-4 text-xs text-white/60">Loading media…</p>
+                        ) : generatedHistory.length === 0 ? (
                             <p className="text-xs text-white/30 text-center p-6 italic">No assets generated yet.</p>
                         ) : (
                             generatedHistory.map((item) => (
@@ -292,7 +368,7 @@ export function BoardroomWorkbenchView() {
                                         <p className="text-xs font-bold truncate text-white/90">
                                             {item.prompt || 'Generated Asset'}
                                         </p>
-                                        <span className="text-[9px] uppercase font-mono text-white/40">
+                                        <span className="text-[10px] uppercase font-mono text-white/40">
                                             {item.type}
                                         </span>
                                     </div>
@@ -387,7 +463,12 @@ export function BoardroomWorkbenchView() {
 
             {/* Sub-tab 2: Artifacts & Split Sheets */}
             {subTab === 'artifacts' && (
-                <div className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden">
+                <div
+                    id="workbench-tabpanel-artifacts"
+                    role="tabpanel"
+                    aria-labelledby="workbench-tab-artifacts"
+                    className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden"
+                >
                     {/* Artifacts List */}
                     <div className="w-full @[640px]:w-56 border-b @[640px]:border-b-0 @[640px]:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex @[640px]:flex-col gap-1.5 shrink-0 bg-black/40">
                         {!currentList ? (
@@ -425,6 +506,19 @@ export function BoardroomWorkbenchView() {
 
                     {/* Markdown Document Reader */}
                     <div className="flex-1 p-6 overflow-y-auto custom-scrollbar min-h-0 min-w-0">
+                        {boardroomWorkbenchTarget?.kind === 'split-sheet' && (
+                            <div
+                                data-testid="boardroom-split-sheet-target"
+                                className="max-w-3xl mx-auto mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100"
+                            >
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 block mb-0.5">
+                                    Active Split Sheet
+                                </span>
+                                <span className="font-semibold">
+                                    {boardroomWorkbenchTarget.title || boardroomWorkbenchTarget.itemId || 'Collaborator Split Sheet'}
+                                </span>
+                            </div>
+                        )}
                         {selectedArtifactFile ? (
                             <div className="max-w-3xl mx-auto space-y-4">
                                 <div className="border-b border-white/10 pb-3 flex flex-wrap items-center justify-between gap-2">
@@ -483,7 +577,12 @@ export function BoardroomWorkbenchView() {
 
             {/* Sub-tab 3: A2UI Canvas Data Panels */}
             {subTab === 'canvas' && (
-                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                <div
+                    id="workbench-tabpanel-canvas"
+                    role="tabpanel"
+                    aria-labelledby="workbench-tab-canvas"
+                    className="flex-1 p-6 overflow-y-auto custom-scrollbar"
+                >
                     <div className="max-w-3xl mx-auto space-y-4">
                         {requestedPanel && !canvasPanels.some(panel => panel.id === requestedPanel) && (
                             <p role="status">The requested canvas panel is unavailable.</p>

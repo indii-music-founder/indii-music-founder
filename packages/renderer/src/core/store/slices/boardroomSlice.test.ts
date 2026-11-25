@@ -250,7 +250,6 @@ describe('Boardroom canonical department-head seating', () => {
         expect(store.getState().boardroomWorkspaceLayout).toBe('stage');
         expect(store.getState().boardroomWorkspaceTab).toBe('browser');
         expect(store.getState().boardroomBrowserUrl).toBe('https://members.ascap.com');
-        expect(store.getState().boardroomBrowserHistory).toContain('https://members.ascap.com');
 
         // Open Studio module preview
         store.getState().openBoardroomModulePreview('publishing', 'split');

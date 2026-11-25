@@ -2,12 +2,13 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Music2, Scale, DollarSign, PackageCheck, Sparkles, type LucideIcon } from 'lucide-react';
+import { Sparkles, type LucideIcon } from 'lucide-react';
 import {
     deterministicBoardroomExecutiveFallback,
     judgeBoardroomExecutiveIntent,
     type BoardroomExecutiveMission,
 } from '@/config/typesafeJudgments';
+import { BOARDROOM_MISSIONS } from '../constants/boardroomMissions';
 
 export interface StarterCardItem {
     id: string;
@@ -21,52 +22,21 @@ export interface StarterCardItem {
     badgeText: string;
 }
 
-export const EXECUTIVE_STARTER_CARDS: StarterCardItem[] = [
-    {
-        id: 'master-audit',
-        missionId: 'master_audit',
-        title: 'Master Audio & Golden Metadata',
-        description: 'Extract Audio DNA, verify ISRC, and check DDEX streaming readiness.',
-        prompt: 'Audit my latest master recording: extract Audio DNA, verify ISRC, and check DDEX readiness.',
-        agentIds: ['music', 'distribution'],
-        icon: Music2,
-        accentColor: 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10 hover:border-cyan-400/50',
-        badgeText: 'Music + Distribution',
-    },
-    {
-        id: 'split-sheet',
-        missionId: 'split_rights',
-        title: 'Draft Split Sheet & Clear Rights',
-        description: 'Verify 50/50 splits, sample clearances, and draft collaborator contracts.',
-        prompt: 'Draft a standard 50/50 co-writer split sheet for my current track and check for sample clearance hurdles.',
-        agentIds: ['legal', 'finance'],
-        icon: Scale,
-        accentColor: 'text-amber-400 border-amber-500/30 bg-amber-500/10 hover:border-amber-400/50',
-        badgeText: 'Legal + Finance',
-    },
-    {
-        id: 'royalty-waterfall',
-        missionId: 'royalty_waterfall',
-        title: 'Recoupment & Waterfall Modeling',
-        description: 'Model streaming recoupment, publishing dividends, and manager fee savings.',
-        prompt: 'Model our distribution and publishing royalty waterfall to calculate recoupment and net earnings.',
-        agentIds: ['finance'],
-        icon: DollarSign,
-        accentColor: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-400/50',
-        badgeText: 'Finance Chief',
-    },
-    {
-        id: 'ddex-catalog',
-        missionId: 'ddex_catalog',
-        title: 'Catalog Audit & Delivery',
-        description: 'Audit catalog gaps, generate BWARM reports, and stage DSP releases.',
-        prompt: 'Inspect my catalog for missing metadata gaps and prepare staged DDEX release payloads.',
-        agentIds: ['distribution', 'music'],
-        icon: PackageCheck,
-        accentColor: 'text-indigo-400 border-indigo-500/30 bg-indigo-500/10 hover:border-indigo-400/50',
-        badgeText: 'Distribution Chief',
-    },
-];
+export const EXECUTIVE_STARTER_CARDS: StarterCardItem[] = BOARDROOM_MISSIONS
+    .filter((mission): mission is typeof mission & { starterCardId: string; starterAccentColor: string } =>
+        Boolean(mission.starterCardId && mission.starterAccentColor),
+    )
+    .map(mission => ({
+        id: mission.starterCardId,
+        missionId: mission.id,
+        title: mission.label,
+        description: mission.description,
+        prompt: mission.prompt,
+        agentIds: [...mission.agentIds],
+        icon: mission.icon,
+        accentColor: mission.starterAccentColor,
+        badgeText: mission.badge,
+    }));
 
 interface BoardroomStarterCardsProps {
     compact?: boolean;
@@ -170,7 +140,7 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 * idx, duration: 0.3 }}
-                            className={`flex flex-col text-left p-3.5 rounded-xl border backdrop-blur-md transition-all group cursor-pointer ${card.accentColor} ${isTopPick ? 'ring-1 ring-indigo-400/50 shadow-[0_0_20px_rgba(99,102,241,0.18)]' : ''}`}
+                            className={`flex flex-col text-left p-3.5 rounded-xl border backdrop-blur-md transition-colors group cursor-pointer ${card.accentColor} ${isTopPick ? 'ring-1 ring-indigo-400/50 shadow-[0_0_20px_rgba(99,102,241,0.18)]' : ''}`}
                             data-testid={`starter-card-${card.id}`}
                         >
                             <div className="flex items-center justify-between w-full mb-1.5 gap-1">
@@ -181,7 +151,7 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
                                     {isTopPick && (
                                         <span
                                             data-testid={`starter-card-jev-pick-${card.id}`}
-                                            className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-400/30"
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-400/30"
                                         >
                                             <Sparkles size={9} />
                                             Top Pick

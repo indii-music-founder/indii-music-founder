@@ -2,17 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ChevronDown,
     Compass,
-    DollarSign,
-    Music2,
-    PackageCheck,
-    Palette,
     RotateCcw,
-    Scale,
     Shield,
     Sparkles,
-    Target,
     UserPlus,
-    type LucideIcon,
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
@@ -24,73 +17,10 @@ import {
     type BoardroomExecutiveVerdict,
 } from '@/config/typesafeJudgments';
 import { BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
+import { BOARDROOM_MISSIONS, type BoardroomMissionDefinition } from '../constants/boardroomMissions';
 
-export interface BoardroomMissionOption {
-    id: BoardroomExecutiveMission;
-    label: string;
-    description: string;
-    badge: string;
-    agentIds: string[];
-    prompt: string;
-    icon: LucideIcon;
-}
-
-export const BOARDROOM_MISSIONS: readonly BoardroomMissionOption[] = [
-    {
-        id: 'master_audit',
-        label: 'Master Audio & Golden Metadata',
-        description: 'Extract Audio DNA, verify ISRC, and check DDEX streaming readiness.',
-        badge: 'Music + Distribution',
-        agentIds: ['music', 'distribution'],
-        prompt: 'Audit my latest master recording: extract Audio DNA, verify ISRC, and check DDEX readiness.',
-        icon: Music2,
-    },
-    {
-        id: 'split_rights',
-        label: 'Draft Split Sheet & Clear Rights',
-        description: 'Verify 50/50 splits, sample clearances, and draft collaborator contracts.',
-        badge: 'Legal + Finance',
-        agentIds: ['legal', 'finance'],
-        prompt: 'Draft a standard 50/50 co-writer split sheet for my current track and check for sample clearance hurdles.',
-        icon: Scale,
-    },
-    {
-        id: 'royalty_waterfall',
-        label: 'Recoupment & Waterfall Modeling',
-        description: 'Model streaming recoupment, publishing dividends, and manager fee savings.',
-        badge: 'Finance Chief',
-        agentIds: ['finance'],
-        prompt: 'Model our distribution and publishing royalty waterfall to calculate recoupment and net earnings.',
-        icon: DollarSign,
-    },
-    {
-        id: 'ddex_catalog',
-        label: 'Catalog Audit & DDEX Delivery',
-        description: 'Audit catalog gaps, generate BWARM reports, and stage DSP releases.',
-        badge: 'Distribution + Publishing',
-        agentIds: ['distribution', 'publishing'],
-        prompt: 'Inspect my catalog for missing metadata gaps and prepare staged DDEX release payloads.',
-        icon: PackageCheck,
-    },
-    {
-        id: 'campaign_swarm',
-        label: 'Release Campaign & Social Rollout',
-        description: 'Synchronize 4-week marketing, social reels, and brand positioning.',
-        badge: 'Marketing + Social + Brand',
-        agentIds: ['marketing', 'social', 'brand'],
-        prompt: 'Build a synchronized 4-week release rollout across Marketing, Social, and Brand strategy.',
-        icon: Target,
-    },
-    {
-        id: 'creative_sync',
-        label: 'Creative & Visual Direction Sync',
-        description: 'Align cover art, canvas visuals, and video teasers with seated directors.',
-        badge: 'Creative + Video + Brand',
-        agentIds: ['creative', 'video', 'brand'],
-        prompt: 'Review our pinned visual assets and align cover art, canvas visuals, and video teasers.',
-        icon: Palette,
-    },
-];
+export type BoardroomMissionOption = BoardroomMissionDefinition;
+export { BOARDROOM_MISSIONS };
 
 /**
  * Inline executive flow controls for the unified 48px Boardroom header row.
@@ -112,6 +42,7 @@ export function BoardroomJourney() {
         messageCount,
         addActiveAgent,
         soloAgent,
+        seatAllDepartmentHeads,
         setCommandBarInput,
     } = useStore(
         useShallow(state => ({
@@ -121,6 +52,7 @@ export function BoardroomJourney() {
             messageCount: state.agentHistory?.length ?? 0,
             addActiveAgent: state.addActiveAgent,
             soloAgent: state.soloAgent,
+            seatAllDepartmentHeads: state.seatAllDepartmentHeads,
             setCommandBarInput: state.setCommandBarInput,
         })),
     );
@@ -199,9 +131,13 @@ export function BoardroomJourney() {
 
     const handleConveneAll = () => {
         setIsMissionsOpen(false);
-        useStore.setState({
-            activeAgents: ['generalist', ...BOARDROOM_PRIMARY_HEAD_IDS],
-        });
+        if (seatAllDepartmentHeads) {
+            seatAllDepartmentHeads();
+        } else {
+            useStore.setState({
+                activeAgents: ['generalist', ...BOARDROOM_PRIMARY_HEAD_IDS],
+            });
+        }
     };
 
     const handleSoloConductor = () => {
@@ -215,7 +151,11 @@ export function BoardroomJourney() {
 
     const handleResetSeating = () => {
         setIsMissionsOpen(false);
-        useStore.setState({ activeAgents: ['generalist'] });
+        if (soloAgent) {
+            soloAgent('generalist');
+        } else {
+            useStore.setState({ activeAgents: ['generalist'] });
+        }
     };
 
     const showRecommendation = hasSignal && recommendation.confidence >= 0.5;
@@ -273,9 +213,9 @@ export function BoardroomJourney() {
                         id="boardroom-missions-options"
                         role="region"
                         aria-label="Executive missions and seating"
-                        className="absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/10 bg-[#0d0d12]/98 p-1.5 shadow-2xl backdrop-blur-2xl"
+                        className="absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/10 bg-bg-dark/95 p-1.5 shadow-2xl backdrop-blur-2xl"
                     >
-                        <div className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-gray-500 border-b border-white/5 mb-1">
+                        <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-widest text-gray-500 border-b border-white/5 mb-1">
                             Executive Missions
                         </div>
                         {BOARDROOM_MISSIONS.map(mission => {
@@ -296,7 +236,7 @@ export function BoardroomJourney() {
                                                 {mission.label}
                                             </span>
                                             {isRecommended && (
-                                                <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300 border border-indigo-400/30">
+                                                <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300 border border-indigo-400/30">
                                                     Recommended
                                                 </span>
                                             )}
@@ -310,7 +250,7 @@ export function BoardroomJourney() {
                         })}
 
                         <div className="mt-1.5 border-t border-white/5 pt-1.5">
-                            <div className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-gray-500">
+                            <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-widest text-gray-500">
                                 Room Seating Presets
                             </div>
                             <div className="grid grid-cols-3 gap-1 px-1 pt-0.5">
@@ -395,7 +335,7 @@ export function BoardroomJourney() {
                         role="region"
                         aria-label="Meta Harness Governance Digest"
                         data-testid="boardroom-governance-popover"
-                        className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-white/10 bg-[#0d0d12]/98 p-3 shadow-2xl backdrop-blur-2xl"
+                        className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-white/10 bg-bg-dark/95 p-3 shadow-2xl backdrop-blur-2xl"
                     >
                         <p className="mb-2 text-xs font-semibold text-white">Meta-Harness Governance</p>
                         <p className="text-xs text-gray-400">Risk and cost estimates are unavailable in this view.</p>

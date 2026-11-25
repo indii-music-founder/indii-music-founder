@@ -31,6 +31,7 @@ describe('stopBoardroomMission (spec W4/D2)', () => {
         expect(messages.find(m => m.id === 'done')).toMatchObject({ approved: true });
         expect(messages.find(m => m.id === 'done')?.rejected).toBeUndefined();
         expect(state.boardroomControlRevocation).toBe(1);
+        expect(state.boardroomControl).toMatchObject({ holder: 'artist', grantId: null, revision: 1 });
         expect(result).toEqual({ stoppedRun: true, cancelledApprovals: 1 });
     });
 
@@ -39,5 +40,6 @@ describe('stopBoardroomMission (spec W4/D2)', () => {
         state.a2aMessages = [];
         expect(stopBoardroomMission()).toEqual({ stoppedRun: false, cancelledApprovals: 0 });
         expect(state.boardroomControlRevocation).toBe(1);
+        expect(state.boardroomControl).toMatchObject({ holder: 'artist', grantId: null, revision: 1 });
     });
 });

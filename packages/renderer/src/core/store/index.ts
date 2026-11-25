@@ -61,6 +61,7 @@ export type { AgentMessage, AgentThought } from './slices/agent';
 
 
 export type { StoreState } from './types';
+import { logger } from '@/utils/logger';
 import type { StoreState } from './types';
 
 type SafePersistedAppState = Pick<
@@ -228,7 +229,7 @@ useStore.subscribe((state, prevState) => {
     import('@/hooks/useBoardroomContextHandshake').then(({ publishBoardroomContextUpdate }) => {
         publishBoardroomContextUpdate(useStore.getState());
     }).catch(err => {
-        console.error('Failed to import publishBoardroomContextUpdate dynamically', err);
+        logger.error('Failed to import publishBoardroomContextUpdate dynamically', err);
     });
 });
 

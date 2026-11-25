@@ -1,7 +1,36 @@
+import {
+    executeWorkspaceAction,
+    type BoardroomWorkspaceAction,
+    type BoardroomWorkspaceResult,
+} from './boardroomWorkspaceActions';
+
 export interface BoardroomBrowserAssignment {
     requestId: string;
     stepId: string;
     agentId: string;
+}
+
+export function createBrowserWorkspaceAction(
+    assignment: BoardroomBrowserAssignment,
+    operation: string,
+    payload?: Record<string, unknown>,
+): BoardroomWorkspaceAction {
+    return {
+        missionId: assignment.requestId,
+        stepId: assignment.stepId,
+        agentId: assignment.agentId,
+        target: 'browser',
+        operation,
+        payload,
+    };
+}
+
+export async function executeBrowserAssignmentAction(
+    assignment: BoardroomBrowserAssignment,
+    operation: string,
+    payload?: Record<string, unknown>,
+): Promise<BoardroomWorkspaceResult> {
+    return executeWorkspaceAction(createBrowserWorkspaceAction(assignment, operation, payload));
 }
 
 export interface BoardroomBrowserPage {

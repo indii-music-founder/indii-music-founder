@@ -1,47 +1,26 @@
 import React, { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import {
-    ArrowLeft,
-    ArrowRight,
-    RotateCcw,
-    Lock,
     ExternalLink,
-    Pin,
-    Bookmark,
-    Search,
-    BookOpen,
     Globe,
-    Check,
     Sparkles,
     Plus,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { secureUUIDv4 } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
-import { cn } from '@/lib/utils';
 import {
     judgeBoardroomWebpageSemantics,
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
 import { resolveBoardroomBrowserEndpoint } from './boardroomBrowserEndpoint';
-
-interface QuickBookmark {
-    id: string;
-    title: string;
-    url: string;
-    badge: string;
-}
-
-const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
-    { id: 'spotify', title: 'Spotify for Artists', url: 'https://artists.spotify.com', badge: 'DSP' },
-    { id: 'apple', title: 'Apple Music', url: 'https://artists.apple.com', badge: 'DSP' },
-    { id: 'ascap', title: 'ASCAP Portal', url: 'https://members.ascap.com', badge: 'PRO' },
-    { id: 'bmi', title: 'BMI Online', url: 'https://online.bmi.com', badge: 'PRO' },
-    { id: 'mlc', title: 'The MLC', url: 'https://portal.themlc.com', badge: 'Mechanical' },
-    { id: 'soundexchange', title: 'SoundExchange', url: 'https://sportal.soundexchange.com', badge: 'Neighboring' },
-    { id: 'copyright', title: 'US Copyright', url: 'https://eco.copyright.gov/eService_enu/', badge: 'Legal' },
-    { id: 'google-fonts', title: 'Google Fonts', url: 'https://fonts.google.com/', badge: 'Fonts' },
-    { id: 'instagram', title: 'Instagram', url: 'https://www.instagram.com', badge: 'Social' },
-];
+import { BoardroomBrowserToolbar } from './BoardroomBrowserToolbar';
+import {
+    BOARDROOM_BOOKMARKS,
+    BoardroomBrowserBookmarks,
+    matchesBookmark,
+} from './BoardroomBrowserBookmarks';
+import { BoardroomBrowserFrameBlockedCard } from './BoardroomBrowserFrameBlockedCard';
+import { BoardroomBrowserReader } from './BoardroomBrowserReader';
 
 interface BoardroomBrowserViewProps {
     isVisible?: boolean;
@@ -87,23 +66,6 @@ function isSameOriginUrl(rawInput: string): boolean {
     if (typeof window === 'undefined' || !window.location?.origin) return false;
     try {
         return new URL(rawInput).origin === window.location.origin;
-    } catch {
-        return false;
-    }
-}
-
-function matchesBookmark(activeUrl: string, bookmarkUrl: string): boolean {
-    try {
-        const active = new URL(activeUrl);
-        const bookmark = new URL(bookmarkUrl);
-        const normalizeHost = (host: string) => host.toLowerCase().replace(/^www\./, '');
-        if (normalizeHost(active.hostname) !== normalizeHost(bookmark.hostname)) {
-            return false;
-        }
-        const bookmarkPath = bookmark.pathname.replace(/\/+$/, '') || '/';
-        if (bookmarkPath === '/') return true;
-        const activePath = active.pathname.replace(/\/+$/, '') || '/';
-        return activePath === bookmarkPath || activePath.startsWith(`${bookmarkPath}/`);
     } catch {
         return false;
     }
@@ -271,8 +233,10 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             window.removeEventListener('resize', syncBounds);
             window.removeEventListener('scroll', syncBounds, true);
             if (unsubscribeState) unsubscribeState();
-            // The native view may already be disposed.
+            // ISSUE-1680: Hide and detach the native WebContentsView on unmount
+            // so it never lingers above non-Boardroom screens.
             void api.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false }).catch(() => {});
+            void api.detach?.().catch(() => {});
         };
     }, [isNativeElectron, setBoardroomBrowserUrl, invalidatePage]);
 
@@ -525,173 +489,36 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
 
     return (
-        <div data-testid="boardroom-browser-view" className="@container h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
-            {/* Top Navigation & URL Bar */}
-            <div className="flex items-center gap-1.5 px-2.5 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0 overflow-hidden">
-                <button
-                    type="button"
-                    onClick={handleBack}
-                    disabled={!canNavigateBack}
-                    className={cn(
-                        "p-1.5 rounded-lg transition-colors",
-                        canNavigateBack ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
-                    )}
-                    title="Back"
-                    aria-label="Back"
-                >
-                    <ArrowLeft size={14} />
-                </button>
-                <button
-                    type="button"
-                    onClick={handleForward}
-                    disabled={!canNavigateForward}
-                    className={cn(
-                        "p-1.5 rounded-lg transition-colors",
-                        canNavigateForward ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
-                    )}
-                    title="Forward"
-                    aria-label="Forward"
-                >
-                    <ArrowRight size={14} />
-                </button>
-                <button
-                    type="button"
-                    onClick={handleReload}
-                    className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                    title="Reload"
-                    aria-label="Reload"
-                >
-                    <RotateCcw size={13} className={cn(isLoading && "animate-spin text-indigo-400")} />
-                </button>
+        <div data-testid="boardroom-browser-view" className="@container h-full w-full flex flex-col bg-bg-dark text-white min-h-0 min-w-0 overflow-hidden">
+            <BoardroomBrowserToolbar
+                canNavigateBack={canNavigateBack}
+                canNavigateForward={canNavigateForward}
+                isLoading={isLoading}
+                isSecureUrl={isSecureUrl}
+                inputUrl={inputUrl}
+                onInputUrlChange={setInputUrl}
+                onInputKeyDown={handleKeyDown}
+                onBack={handleBack}
+                onForward={handleForward}
+                onReload={handleReload}
+                onNavigate={handleNavigate}
+                onPinToContext={handlePinToContext}
+                isPinning={isPinning}
+                isPinned={isPinned}
+                pageLoadFailed={pageLoadFailed}
+                isNativeElectron={isNativeElectron}
+                canReadPage={canReadPage}
+                onExtractReader={handleExtractReader}
+                isExtractingReader={isExtractingReader}
+                isReaderMode={isReaderMode}
+                canOpenHosted={Boolean(canOpenHosted)}
+                isFrameBlockedPortal={isFrameBlockedPortal}
+                onOpenHosted={() => setHostedUrl(committedUrl)}
+                onOpenSearch={() => setSearchQuery(inputUrl.trim() === boardroomBrowserUrl ? '' : inputUrl.trim())}
+                onOpenExternal={handleOpenExternal}
+            />
 
-                {/* URL Input Bar */}
-                <div className="flex-1 min-w-0 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs focus-within:border-indigo-500/50 transition-all">
-                    {isSecureUrl ? (
-                        <Lock
-                            size={12}
-                            className="text-emerald-400 shrink-0"
-                            aria-label="HTTPS connection"
-                        />
-                    ) : (
-                        <Globe
-                            size={12}
-                            className="text-amber-400 shrink-0"
-                            aria-label="Unencrypted HTTP connection"
-                        />
-                    )}
-                    <input
-                        type="text"
-                        value={inputUrl}
-                        onChange={(e) => setInputUrl(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Enter URL or search portal..."
-                        aria-label="Browser URL or search query"
-                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 text-xs placeholder:text-white/30"
-                        data-testid="boardroom-browser-url-input"
-                    />
-                    <button
-                        type="button"
-                        onClick={() => handleNavigate(inputUrl)}
-                        className="text-white/40 hover:text-white p-0.5 rounded transition-colors shrink-0"
-                        title="Navigate"
-                        aria-label="Navigate to URL"
-                    >
-                        <Search size={12} />
-                    </button>
-                </div>
-
-                {/* Pin to Swarm Context Action */}
-                <button
-                    type="button"
-                    onClick={handlePinToContext}
-                    disabled={isPinning || (isNativeElectron && (pageLoadFailed || isLoading))}
-                    aria-busy={isPinning}
-                    className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0",
-                        isPinned
-                            ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300"
-                            : "bg-indigo-600/20 hover:bg-indigo-600/35 border-indigo-500/30 text-indigo-200"
-                    )}
-                    title="Share this page with your team"
-                    aria-label="Pin page for your team"
-                    data-testid="boardroom-browser-pin-btn"
-                >
-                    {isPinned ? <Check size={12} /> : <Pin size={12} />}
-                    <span className="hidden @[500px]:inline">{isPinning ? 'Pinning…' : isPinned ? 'Pinned' : 'Pin to Boardroom'}</span>
-                </button>
-
-                {/* Web Fallback Reader Mode Toggle */}
-                {!isNativeElectron && canReadPage && (
-                    <button
-                        type="button"
-                        onClick={handleExtractReader}
-                        disabled={isExtractingReader}
-                        aria-busy={isExtractingReader}
-                        className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0",
-                            isReaderMode
-                                ? "bg-amber-500/20 border-amber-400/40 text-amber-300"
-                                : "bg-white/5 hover:bg-white/10 border-white/10 text-white/70"
-                        )}
-                        title="Toggle Reader Mode for frame-restricted sites"
-                        aria-label="Reader mode"
-                    >
-                        <BookOpen size={12} />
-                        <span className="hidden @[580px]:inline">Reader</span>
-                    </button>
-                )}
-
-                {canOpenHosted && !isFrameBlockedPortal && (
-                    <button type="button" onClick={() => setHostedUrl(committedUrl)}
-                        className="shrink-0 rounded-lg bg-indigo-600 px-2 py-1.5 text-xs font-semibold">
-                        Open live browser
-                    </button>
-                )}
-
-                {!isNativeElectron && (
-                    <button type="button"
-                        onClick={() => setSearchQuery(inputUrl.trim() === boardroomBrowserUrl ? '' : inputUrl.trim())}
-                        title="Search the web" aria-label="Search the web"
-                        className="shrink-0 rounded-lg p-2 text-white/70 hover:bg-white/10">
-                        <Search size={14} />
-                    </button>
-                )}
-
-                {/* External Browser Button */}
-                <button
-                    type="button"
-                    onClick={handleOpenExternal}
-                    className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-                    title={isNativeElectron ? 'Open in your browser' : 'Open in a new tab'}
-                    aria-label="Open externally"
-                    data-testid="boardroom-browser-external-btn"
-                >
-                    <ExternalLink size={14} />
-                </button>
-            </div>
-
-            {/* Quick Industry Bookmarks Bar */}
-            <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-white/5 shrink-0">
-                <Bookmark size={11} className="text-indigo-400/70 shrink-0 ml-0.5 mr-1" />
-                {BOARDROOM_BOOKMARKS.map((bookmark) => (
-                    <button
-                        key={bookmark.id}
-                        type="button"
-                        onClick={() => handleNavigate(bookmark.url)}
-                        className={cn(
-                            "flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
-                            matchesBookmark(committedUrl, bookmark.url)
-                                ? "bg-indigo-500/25 text-indigo-200 border border-indigo-400/40 font-bold"
-                                : "bg-white/5 hover:bg-white/10 text-white/70 border border-white/5"
-                        )}
-                    >
-                        <span>{bookmark.title}</span>
-                        <span className="text-[8px] font-mono uppercase opacity-50 px-1 py-0.5 rounded bg-black/40">
-                            {bookmark.badge}
-                        </span>
-                    </button>
-                ))}
-            </div>
+            <BoardroomBrowserBookmarks committedUrl={committedUrl} onNavigate={handleNavigate} />
 
             {/* TypeSafe Jev Semantic Classification Banner */}
             {lastSemanticJudgment && (
@@ -744,41 +571,21 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         data-testid="boardroom-native-browser-container"
                     >
                         {isLoading && (
-                            <div className="absolute top-0 inset-x-0 h-0.5 bg-indigo-500 animate-pulse z-10" />
+                            <div className="absolute top-0 inset-x-0 h-0.5 bg-indigo-500 motion-safe:animate-pulse z-10" />
                         )}
                     </div>
                 ) : isReaderMode ? (
-                    // Web Reader Mode View
-                    <div className="flex-1 w-full min-h-0 overflow-y-auto custom-scrollbar">
-                        <div className="p-6 text-white/80 space-y-4 max-w-3xl mx-auto">
-                            <div className="border-b border-white/10 pb-3 flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                    <h2 className="text-base font-bold text-white truncate">{pageTitle || committedUrl}</h2>
-                                    <p className="text-xs text-white/40 truncate mt-0.5">{committedUrl}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsReaderMode(false)}
-                                    className="px-3 py-1 text-xs bg-white/10 hover:bg-white/15 rounded-lg transition-colors shrink-0 whitespace-nowrap"
-                                >
-                                    Back to Frame
-                                </button>
-                            </div>
-                            <div className="prose prose-invert prose-sm leading-relaxed whitespace-pre-wrap font-sans text-xs">
-                                {extractedText || (
-                                    <div className="text-center py-8 text-white/40">
-                                        <Globe size={24} className="mx-auto mb-2 opacity-30" />
-                                        <p>Extracting readable text from webpage...</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    <BoardroomBrowserReader
+                        pageTitle={pageTitle}
+                        committedUrl={committedUrl}
+                        extractedText={extractedText}
+                        onBackToFrame={() => setIsReaderMode(false)}
+                    />
                 ) : isBlockedSelfEmbed ? (
                     // Prevent recursive self-embedding under allow-scripts + allow-same-origin
                     <div
                         data-testid="boardroom-same-origin-guard"
-                        className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-zinc-950"
+                        className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-bg-dark"
                     >
                         <Globe size={28} className="text-indigo-400/70" />
                         <div className="space-y-1 max-w-md">
@@ -796,78 +603,24 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         </button>
                     </div>
                 ) : isFrameBlockedPortal ? (
-                    // Clean Portal Launch Card for X-Frame-Options / CSP frame-ancestors portals in web mode
-                    <div
-                        data-testid="boardroom-frame-blocked-card"
-                        className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-zinc-950 via-[#08080e] to-zinc-950 overflow-y-auto custom-scrollbar"
-                    >
-                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl space-y-4">
-                            <div className="flex items-center justify-center gap-2">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
-                                    <Globe size={20} />
-                                </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-center gap-2 flex-wrap">
-                                    <h3 className="text-sm font-bold text-white">{portalTitle}</h3>
-                                    {matchedBookmark?.badge && (
-                                        <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/30 text-indigo-200">
-                                            {matchedBookmark.badge}
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-[11px] font-mono text-white/40 truncate">{committedUrl}</p>
-                                <p className="text-xs text-white/65 leading-relaxed pt-1">
-                                    {portalTitle} can’t be shown inside indii. Open it in a new tab.
-                                </p>
-                            </div>
-                            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                                {canOpenHosted && (
-                                    <button type="button" onClick={() => setHostedUrl(committedUrl)}
-                                        className="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400">
-                                        Open live browser
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={handleOpenExternal}
-                                    data-testid="boardroom-portal-open-tab-btn"
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                                >
-                                    <span>Open {portalTitle} in New Tab</span>
-                                    <ExternalLink size={12} />
-                                </button>
-                                {canReadPage && (
-                                    <button
-                                        type="button"
-                                        onClick={handleExtractReader}
-                                        disabled={isExtractingReader}
-                                        aria-busy={isExtractingReader}
-                                        data-testid="boardroom-portal-reader-btn"
-                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                                    >
-                                        <BookOpen size={12} />
-                                        <span>Reader Mode</span>
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={handlePinToContext}
-                                    disabled={isPinning}
-                                    aria-busy={isPinning}
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                                >
-                                    <Pin size={12} />
-                                    <span>{isPinning ? 'Pinning…' : 'Pin to Boardroom'}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <BoardroomBrowserFrameBlockedCard
+                        portalTitle={portalTitle}
+                        committedUrl={committedUrl}
+                        matchedBookmark={matchedBookmark}
+                        canOpenHosted={Boolean(canOpenHosted)}
+                        canReadPage={canReadPage}
+                        isExtractingReader={isExtractingReader}
+                        isPinning={isPinning}
+                        onOpenHosted={() => setHostedUrl(committedUrl)}
+                        onOpenExternal={handleOpenExternal}
+                        onExtractReader={handleExtractReader}
+                        onPinToContext={handlePinToContext}
+                    />
                 ) : (
                     // Standard Web Iframe Fallback
                     <div className="w-full h-full relative flex flex-col min-h-0 min-w-0">
                         {isLoading && (
-                            <div className="absolute top-0 inset-x-0 h-0.5 bg-indigo-500 animate-pulse z-10 pointer-events-none" />
+                            <div className="absolute top-0 inset-x-0 h-0.5 bg-indigo-500 motion-safe:animate-pulse z-10 pointer-events-none" />
                         )}
                         <iframe
                             key={`${committedUrl}:${iframeKey}`}

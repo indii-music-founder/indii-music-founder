@@ -9,6 +9,7 @@ import type { AgentMode } from '@/core/store/slices/agent';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { getReleaseDate, getReleaseTitle, releaseCatalogService } from '@/services/distribution/ReleaseCatalogService';
+import { executeWorkspaceAction } from '../boardroomWorkspaceActions';
 
 // ============================================================================
 // Types for CoreTools
@@ -133,11 +134,21 @@ export const CoreTools = {
             return toolError('Image Studio already has a draft. Share the suggested prompt in discussion so the artist can decide whether to replace it.', 'STUDIO_DRAFT_EXISTS');
         }
 
-        store.setCreativePrompt(text);
-        if (ratio.data) store.setStudioControls({ aspectRatio: ratio.data });
-        store.setGenerationMode('image');
-        store.setViewMode('canvas');
-        store.openBoardroomModulePreview('creative');
+        const actionResult = await executeWorkspaceAction({
+            missionId: context.boardroomExecution.requestId,
+            stepId: context.boardroomExecution.stepId,
+            agentId: 'creative',
+            target: 'studio',
+            operation: 'open_image_studio',
+            payload: {
+                moduleId: 'creative',
+                prompt: text,
+                ...(ratio.data ? { aspectRatio: ratio.data } : {}),
+            },
+        });
+        if (!actionResult.ok) {
+            return toolError(actionResult.error || 'Could not open Studio Preview.', 'NAVIGATION_NOT_COMPLETED');
+        }
         return {
             text,
             aspectRatio: useStore.getState().studioControls.aspectRatio,

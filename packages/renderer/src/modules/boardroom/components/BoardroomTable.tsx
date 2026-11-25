@@ -6,7 +6,7 @@ import { useStore } from '@/core/store';
 import { cn } from '@/lib/utils';
 
 interface BoardroomTableProps {
-    messages: AgentMessage[];
+    messages?: AgentMessage[];
     activeCount: number;
     onOpenLivingPlans?: () => void;
 }
@@ -23,8 +23,13 @@ interface BoardroomTableProps {
 export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
     const activeAgents = useStore(state => state.activeAgents) || [];
     const toggleAgent = useStore(state => state.toggleAgent);
-    const isStreaming = messages.some(m => m.isStreaming);
-    const hasActivity = messages.length > 0;
+    const storeMessageCount = useStore(state => (messages !== undefined ? undefined : (state.agentHistory?.length ?? 0)));
+    const storeIsStreaming = useStore(state => (
+        messages !== undefined ? undefined : Boolean(state.agentHistory?.some(m => m.isStreaming))
+    ));
+    const messageCount = messages !== undefined ? messages.length : (storeMessageCount ?? 0);
+    const isStreaming = messages !== undefined ? messages.some(m => m.isStreaming) : Boolean(storeIsStreaming);
+    const hasActivity = messageCount > 0;
     const isConductorActive = activeAgents.includes('generalist');
     const seatedSpecialists = activeAgents.filter(id => id !== 'generalist');
 
@@ -55,7 +60,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                     data-testid="boardroom-orchestrator-badge"
                     onClick={() => toggleAgent('generalist')}
                     className={cn(
-                        "flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-all cursor-pointer shadow-md select-none",
+                        "flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-colors cursor-pointer shadow-md select-none",
                         isConductorActive
                             ? "bg-emerald-500/15 border-emerald-400/50 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:bg-emerald-500/25"
                             : "bg-white/5 border-white/10 text-white/40 hover:text-white/80 hover:bg-white/10"
@@ -64,7 +69,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                 >
                     <span className="relative flex h-2 w-2">
                         {isConductorActive && (
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         )}
                         <span className={cn("relative inline-flex rounded-full h-2 w-2", isConductorActive ? "bg-emerald-400" : "bg-white/30")} />
                     </span>
@@ -73,7 +78,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                         indii Conductor • Orchestrator
                     </span>
                     {isConductorActive && (
-                        <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30">
                             LEAD
                         </span>
                     )}
@@ -86,11 +91,11 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                     <div className="flex items-center justify-center gap-2 text-[10px] text-white/40 mt-0.5">
                         <span className="flex items-center gap-1">
                             <Users size={10} />
-                            <span>{messages.length} exchange{messages.length !== 1 ? 's' : ''}</span>
+                            <span>{messageCount} exchange{messageCount !== 1 ? 's' : ''}</span>
                         </span>
                         {isStreaming && (
                             <span className="flex items-center gap-1 text-cyan-400 font-mono">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 motion-safe:animate-ping" />
                                 <span>active team</span>
                             </span>
                         )}

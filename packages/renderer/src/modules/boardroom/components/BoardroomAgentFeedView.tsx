@@ -15,6 +15,7 @@ import {
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { stopBoardroomMission } from '@/services/agent/boardroomMission';
+import { BOARDROOM_PORTAL_URLS } from '../utils/boardroomUrls';
 
 export function BoardroomAgentFeedView() {
     const toast = useToast();
@@ -119,15 +120,7 @@ export function BoardroomAgentFeedView() {
             }
         }
 
-        const portalUrls: Record<string, string> = {
-            ascap: 'https://members.ascap.com',
-            bmi: 'https://online.bmi.com',
-            the_mlc: 'https://portal.themlc.com',
-            soundexchange: 'https://sportal.soundexchange.com',
-            loc_copyright: 'https://eco.copyright.gov/eService_enu/',
-        };
-
-        openBoardroomBrowser(portalUrls[portal] || 'https://members.ascap.com');
+        openBoardroomBrowser(BOARDROOM_PORTAL_URLS[portal] || BOARDROOM_PORTAL_URLS.ascap);
         toast.info(`Opening ${portal.toUpperCase()} in Boardroom Live Browser.`);
     };
 
@@ -136,7 +129,7 @@ export function BoardroomAgentFeedView() {
     const missionSteps = agentHistory?.filter(message => message.metadata?.boardroomStepId).slice(-12).reverse() ?? [];
 
     return (
-        <div data-testid="boardroom-agent-feed-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
+        <div data-testid="boardroom-agent-feed-view" className="h-full w-full flex flex-col bg-bg-dark text-white min-h-0 min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
             {/* Agent feed header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-3">
@@ -270,7 +263,7 @@ export function BoardroomAgentFeedView() {
                                 >
                                     <div className="flex items-center gap-2.5">
                                         {isExecuting ? (
-                                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                            <div className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-ping" />
                                         ) : isDone ? (
                                             <CheckCircle2 size={14} className="text-emerald-400" />
                                         ) : (

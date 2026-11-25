@@ -6,6 +6,7 @@ import { PREVIEW_MODULES } from './boardroomPreviewModules';
 import { cn } from '@/lib/utils';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 // Lazy-loaded departmental modules for in-place Boardroom preview
 const CreativeStudio = lazy(() => import('@/modules/creative/CreativeStudio'));
@@ -28,6 +29,8 @@ function BoardroomModulePreviewContent() {
         activeAgents,
         setModule,
         setConversationMode,
+        boardroomControl,
+        takeBoardroomControl,
     } = useStore(
         useShallow(state => ({
             boardroomPreviewModuleId: state.boardroomPreviewModuleId || 'creative',
@@ -35,11 +38,14 @@ function BoardroomModulePreviewContent() {
             activeAgents: state.activeAgents || [],
             setModule: state.setModule,
             setConversationMode: state.setConversationMode,
+            boardroomControl: state.boardroomControl,
+            takeBoardroomControl: state.takeBoardroomControl,
         }))
     );
 
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const menuContainerRef = React.useRef<HTMLDivElement>(null);
+    const pickerButtonRef = React.useRef<HTMLButtonElement>(null);
 
     React.useEffect(() => {
         if (!isMenuOpen) return;
@@ -53,6 +59,7 @@ function BoardroomModulePreviewContent() {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 setIsMenuOpen(false);
+                pickerButtonRef.current?.focus();
             }
         };
 
@@ -63,6 +70,22 @@ function BoardroomModulePreviewContent() {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isMenuOpen]);
+
+    const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        const items = Array.from(
+            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+        );
+        if (items.length === 0) return;
+        const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+        let nextIndex = -1;
+        if (event.key === 'ArrowDown') nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+        else if (event.key === 'ArrowUp') nextIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = items.length - 1;
+        else return;
+        event.preventDefault();
+        items[nextIndex]?.focus();
+    };
 
     const activeOption = PREVIEW_MODULES.find(m => m.id === boardroomPreviewModuleId) || PREVIEW_MODULES[0];
     const ActiveIcon = activeOption.icon;
@@ -95,19 +118,40 @@ function BoardroomModulePreviewContent() {
         }
     };
 
+    const studioHolder = boardroomControl?.surface === 'studio' ? boardroomControl.holder : 'artist';
+    const studioHolderName = studioHolder === 'artist'
+        ? 'You'
+        : resolveAgentVisualIdentity(studioHolder).displayName;
+
     return (
-        <div data-testid="boardroom-module-preview" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
+        <div data-testid="boardroom-module-preview" className="h-full w-full flex flex-col bg-bg-dark text-white min-h-0 min-w-0 overflow-hidden">
+            {/* Control & Module Header */}
+            <div className="flex flex-wrap items-center justify-between px-3 py-1.5 bg-surface border-b border-white/10 shrink-0 gap-2 text-xs">
+                <span role="status" className="text-white/75">
+                    {studioHolder === 'artist' ? 'You have control' : `${studioHolderName} has control`}
+                </span>
+                {studioHolder !== 'artist' && (
+                    <button
+                        type="button"
+                        onClick={() => takeBoardroomControl?.('studio')}
+                        className="rounded-lg border border-amber-400/40 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-200 hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                    >
+                        Take control
+                    </button>
+                )}
+            </div>
             {/* Header bar with Module Selector & Seated Pills */}
             <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     {/* Module Dropdown Trigger */}
                     <div className="relative" ref={menuContainerRef}>
                         <button
+                            ref={pickerButtonRef}
                             type="button"
                             onClick={() => setIsMenuOpen(prev => !prev)}
                             aria-expanded={isMenuOpen}
                             aria-haspopup="menu"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                             data-testid="boardroom-module-picker-btn"
                         >
                             <ActiveIcon size={14} className="text-indigo-400 shrink-0" />
@@ -116,8 +160,12 @@ function BoardroomModulePreviewContent() {
                         </button>
 
                         {isMenuOpen && (
-                            <div role="menu" className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0e0e14] border border-white/15 p-1 shadow-2xl z-50 backdrop-blur-xl">
-                                <div className="px-2 py-1 text-[9px] font-mono font-bold uppercase text-white/40 tracking-wider">
+                            <div
+                                role="menu"
+                                onKeyDown={handleMenuKeyDown}
+                                className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-surface-elevated border border-white/15 p-1 shadow-2xl z-50 backdrop-blur-xl"
+                            >
+                                <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase text-white/40 tracking-wider">
                                     Studio Department Modules
                                 </div>
                                 <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-0.5">
@@ -197,7 +245,7 @@ function BoardroomModulePreviewContent() {
             </div>
 
             {/* In-Place Module Viewport */}
-            <div className="flex-1 relative min-h-0 min-w-0 bg-[#06060a] overflow-auto custom-scrollbar">
+            <div className="flex-1 relative min-h-0 min-w-0 bg-bg-dark overflow-auto custom-scrollbar">
                 <ModuleErrorBoundary key={boardroomPreviewModuleId} moduleName={boardroomPreviewModuleId}>
                     <Suspense fallback={<LoadingFallback />}>
                         {renderActiveModuleComponent()}
