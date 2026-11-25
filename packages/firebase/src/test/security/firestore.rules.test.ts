@@ -2667,7 +2667,6 @@ describe('Firestore Security Rules', () => {
             ['manufacture_requests', 'userId'],
             ['agent_traces', 'userId'],
             ['sessions', 'userId'],
-            ['boardroom_messages', 'userId'],
             ['agent_notes', 'userId'],
             ['tour_vehicles', 'userId'],
             ['tour_itineraries', 'userId'],
@@ -2730,6 +2729,8 @@ describe('Firestore Security Rules', () => {
             });
 
             const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(db, 'boardroom_messages', 'retired-msg')));
+            await assertFails(setDoc(doc(db, 'boardroom_messages', 'retired-msg'), { userId: ALICE_UID, text: 'hi' }));
             for (const [collectionName, ownerField] of ownerScopedCollections) {
                 const reference = doc(db, collectionName, `owner-integrity-${collectionName}`);
                 await assertSucceeds(updateDoc(reference, { value: 'after' }));

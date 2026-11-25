@@ -134,8 +134,49 @@ describe('TokenUsageService', () => {
         it('should throw EMERGENCY_STOP when quota is disabled', async () => {
             // Mock GLOBAL_EMERGENCY_STOP to true for this test
             (TokenUsageService as any).GLOBAL_EMERGENCY_STOP = true;
-            await expect(TokenUsageService.checkQuota(mockUserId))
-                .rejects.toThrow('EMERGENCY STOP');
+            try {
+                await expect(TokenUsageService.checkQuota(mockUserId))
+                    .rejects.toThrow('EMERGENCY STOP');
+            } finally {
+                (TokenUsageService as any).GLOBAL_EMERGENCY_STOP = false;
+            }
+        });
+    });
+
+    describe('checkRateLimit (ISSUE-1678)', () => {
+        it('uses atomic merge increment so parallel minute-bucket calls end at count 2', async () => {
+            let bucketCount = 0;
+            vi.mocked(firestore.increment).mockImplementation(((delta: number) => ({ __inc: delta })) as never);
+            vi.mocked(firestore.setDoc).mockImplementation((async (_ref: unknown, data: Record<string, unknown>) => {
+                const inc = (data.count as { __inc?: number })?.__inc ?? 0;
+                bucketCount += inc;
+            }) as never);
+            vi.mocked(firestore.getDoc).mockImplementation((async () => ({
+                exists: () => true,
+                data: () => ({ count: bucketCount }),
+            })) as never);
+
+            await Promise.all([
+                TokenUsageService.checkRateLimit(mockUserId),
+                TokenUsageService.checkRateLimit(mockUserId),
+            ]);
+
+            expect(bucketCount).toBe(2);
+            expect(firestore.setDoc).toHaveBeenCalledTimes(2);
+            expect(vi.mocked(firestore.setDoc).mock.calls[0]?.[2]).toEqual({ merge: true });
+            expect(vi.mocked(firestore.setDoc).mock.calls[1]?.[2]).toEqual({ merge: true });
+        });
+
+        it('throws RATE_LIMITED once atomic count exceeds tier limit', async () => {
+            vi.mocked(firestore.increment).mockImplementation(((delta: number) => ({ __inc: delta })) as never);
+            vi.mocked(firestore.setDoc).mockResolvedValue(undefined);
+            vi.mocked(firestore.getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({ count: 9999 }),
+            } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
+
+            await expect(TokenUsageService.checkRateLimit(mockUserId))
+                .rejects.toThrow('Rate limit exceeded');
         });
     });
 });

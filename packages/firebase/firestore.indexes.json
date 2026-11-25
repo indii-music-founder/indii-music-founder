@@ -400,20 +400,6 @@
       "queryScope": "COLLECTION"
     },
     {
-      "collectionGroup": "boardroom_messages",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
-      ],
-      "queryScope": "COLLECTION"
-    },
-    {
       "collectionGroup": "proactive_tasks",
       "fields": [
         {

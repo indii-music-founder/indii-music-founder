@@ -278,31 +278,27 @@ export class TokenUsageService {
         const ref = doc(db, this.RATE_LIMIT_COLLECTION, docId);
 
         try {
-            // Optimistic check: Read before Write to save write costs if blocked
-            // Note: This introduces a tiny race condition but is acceptable for rate limiting
-            const snap = await getDoc(ref);
+            // Atomic merge-increment avoids read-then-setDoc lost-update races on
+            // concurrent minute-bucket calls (ISSUE-1678).
+            await setDoc(
+                ref,
+                {
+                    count: increment(1),
+                    lastUpdated: serverTimestamp(),
+                    expiresAt: serverTimestamp(),
+                },
+                { merge: true }
+            );
 
-            if (snap.exists()) {
+            const snap = await getDoc(ref);
+            if (snap && typeof snap.exists === 'function' && snap.exists()) {
                 const data = snap.data() as RateLimitStats;
-                if (data.count >= limit) {
+                if (typeof data.count === 'number' && data.count > limit) {
                     throw new AppException(
                         AppErrorCode.RATE_LIMITED,
                         `Rate limit exceeded (${limit} requests/minute). Please slow down.`
                     );
                 }
-
-                // Increment
-                await updateDoc(ref, {
-                    count: increment(1),
-                    lastUpdated: serverTimestamp()
-                });
-            } else {
-                // First request of the minute
-                await setDoc(ref, {
-                    count: 1,
-                    lastUpdated: serverTimestamp(),
-                    expiresAt: serverTimestamp() // In a real setup, we'd want TTL, but Firestore TTL is background
-                });
             }
         } catch (error: unknown) {
             if (error instanceof AppException) throw error;

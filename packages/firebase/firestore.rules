@@ -2763,11 +2763,6 @@ service cloud.firestore {
       allow update: if canAccessSession() && sessionIsActive() && currentGeneration(resource.data) && currentGeneration(request.resource.data);
       allow create: if ((isVerifiedUser() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid')) && sessionIsActive() && currentGeneration(request.resource.data);
     }
-    match /boardroom_messages/{msgId} {
-      allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
-    }
     // Manager-to-manager information notes. Tasks are deliberately not stored
     // here: manager routing is enforced in the renderer communication policy.
     match /agent_notes/{noteId} {

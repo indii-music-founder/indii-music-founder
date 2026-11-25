@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateBoardroomSteps, boardroomAddressedAgents, withAddressedBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
+import { validateBoardroomSteps, normalizeBoardroomSteps, extractConfirmedProposalContext, boardroomAddressedAgents, withAddressedBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
 
 // Pure scheduling and receipt interpretation; no accounts, provider mocks,
 // persisted product data, or claims that a real customer action succeeded.
@@ -113,5 +113,35 @@ describe('Boardroom action ownership and evidence (structural only)', () => {
         expect(boardroomDependencyField(response, 'data.width')).toBe(3000);
         expect(boardroomDependencyField(response, 'data.missing')).toBeUndefined();
         expect(boardroomDependencyField(response, 'data.constructor')).toBeUndefined();
+    });
+
+    it('maps worker IDs to their department heads and falls back to single-step generalist plan instead of throwing (ISSUE-1671)', () => {
+        const normalized = normalizeBoardroomSteps(
+            [{ id: 'step-0', agentId: 'finance.tax', task: 'Prepare tax estimate', dependencies: [] }],
+            'Prepare tax estimate',
+        );
+        expect(normalized).toEqual([{ id: 'step-0', agentId: 'finance', task: 'Prepare tax estimate', dependencies: [] }]);
+        expect(() => validateBoardroomSteps(normalized)).not.toThrow();
+
+        const fallback = normalizeBoardroomSteps(
+            [{ id: 'step-0', agentId: 'unknown-agent', task: '', dependencies: ['missing'] }],
+            'Fallback task',
+        );
+        expect(fallback).toEqual([{ id: 'step-0', agentId: 'generalist', task: 'Fallback task', dependencies: [] }]);
+    });
+
+    it('extracts preceding model proposal for short confirmations (ISSUE-1670)', () => {
+        const proposal = extractConfirmedProposalContext(
+            {
+                chatHistory: [
+                    { id: 'u1', role: 'user', text: 'Prepare artwork', timestamp: 1 },
+                    { id: 'm1', role: 'model', text: 'Indii is coordinating 4 participants for this turn.', timestamp: 2 },
+                    { id: 'm2', role: 'model', text: 'I can run prepare_print_file at 3000x3000 PNG.', timestamp: 3 },
+                ],
+            },
+            'go ahead',
+        );
+        expect(proposal).toContain('prepare_print_file at 3000x3000 PNG');
+        expect(extractConfirmedProposalContext({ chatHistory: [] }, 'write a press release')).toBeUndefined();
     });
 });

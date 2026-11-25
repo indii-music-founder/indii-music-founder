@@ -1,7 +1,13 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import AgentChat from './AgentChat';
+
+beforeAll(() => {
+    if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !== 'function') {
+        Element.prototype.scrollIntoView = vi.fn();
+    }
+});
 
 const mocks = vi.hoisted(() => ({
     sendCommand: vi.fn().mockResolvedValue('command-1'),
@@ -39,22 +45,25 @@ vi.mock('@/services/firebase', async (importOriginal) => {
     };
 });
 
+vi.mock('@/services/agent/SessionService', () => ({
+    sessionService: { updateMessage: vi.fn().mockResolvedValue(undefined) },
+}));
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     DESKTOP_HEARTBEAT_STALE_MS: 120_000,
-    isFreshStudioState: vi.fn(() => false),
+    isFreshStudioState: vi.fn((state: { online?: boolean } | null | undefined) => Boolean(state?.online)),
     remoteRelayService: {
-        onAllCommands: (callback: (commands: unknown[]) => void) => {
+        onAllCommands: vi.fn((callback: (commands: unknown[]) => void) => {
             callback([]);
             return vi.fn();
-        },
-        onAllResponses: (callback: (responses: unknown[]) => void) => {
+        }),
+        onAllResponses: vi.fn((callback: (responses: unknown[]) => void) => {
             callback([]);
             return vi.fn();
-        },
-        onDesktopState: (callback: (state: null) => void) => {
+        }),
+        onDesktopState: vi.fn((callback: (state: unknown) => void) => {
             callback(null);
             return vi.fn();
-        },
+        }),
         sendCommand: mocks.sendCommand,
         onResponse: mocks.onResponse,
         cancelCommand: vi.fn().mockResolvedValue(true),
@@ -214,6 +223,40 @@ describe('AgentChat Standby dispatch', () => {
             );
         });
 
+        view.unmount();
+    });
+
+    it('saves message rating to SessionService instead of deprecated boardroom_messages (ISSUE-1674)', async () => {
+        const { remoteRelayService } = await import('@/services/agent/RemoteRelayService');
+        const { sessionService } = await import('@/services/agent/SessionService');
+        vi.mocked(remoteRelayService.onAllResponses).mockImplementationOnce((callback) => {
+            callback([{
+                id: 'res-1',
+                commandId: 'cmd-1',
+                text: 'Split sheet ready.',
+                agentId: 'legal',
+                isStreaming: false,
+                boardroomMessageId: 'msg-rated-1',
+                timestamp: Date.now() as never,
+            }]);
+            return vi.fn();
+        });
+        vi.mocked(remoteRelayService.onDesktopState).mockImplementationOnce((callback) => {
+            callback({
+                currentModule: 'boardroom',
+                isAgentProcessing: false,
+                activeSessionId: 'session-remote-1',
+                timestamp: Date.now() as never,
+                online: true,
+            });
+            return vi.fn();
+        });
+        const view = render(<AgentChat onSendCommand={vi.fn()} isPaired />);
+        const starBtn = await screen.findByRole('button', { name: 'Rate 5 stars' });
+        fireEvent.click(starBtn);
+        await waitFor(() => {
+            expect(sessionService.updateMessage).toHaveBeenCalledWith('session-remote-1', 'msg-rated-1', { rating: 5 });
+        });
         view.unmount();
     });
 });
