@@ -509,7 +509,7 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
             await page.evaluate(() => { (window as any).__idleSince = undefined; });
             await page.waitForFunction(() => {
                 const w = window as any;
-                if (w.useStore.getState().isAgentProcessing !== false) {
+                if (!w.useStore || w.useStore.getState().isAgentProcessing !== false) {
                     w.__idleSince = undefined;
                     return false;
                 }
@@ -594,15 +594,22 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
         await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn5.png') });
 
         // ----------------------------------------------------
-        // TURN 6: Summon Creative & Video
+        // TURN 6: Action request addressed to Creative & Video
         // ----------------------------------------------------
         await submitMessageAndWaitForIdle("Creative and Video, let's generate a marketing visual for this campaign.");
 
-        // Verify active agents
-        const seatedAfterTurn6 = await page.evaluate(() => window.useStore.getState().activeAgents);
-        expect(seatedAfterTurn6).toContain('creative');
-        expect(seatedAfterTurn6).toContain('video');
-        console.log('[E2E:Scenario] Turn 6 Creative and Video seating verified.');
+        // Per ISSUE-1668, action plans route addressed specialists per-turn without
+        // mutating the permanent Boardroom table roster.
+        const turn6State = await page.evaluate(() => ({
+            activeAgents: window.useStore.getState().activeAgents,
+            respondedAgents: (window.useStore.getState().agentHistory || [])
+                .filter(m => m.role === 'model' && m.isStreaming === false)
+                .map(m => m.agentId),
+        }));
+        expect(turn6State.respondedAgents).toContain('creative');
+        expect(turn6State.respondedAgents).toContain('video');
+        expect(turn6State.activeAgents).toEqual(['generalist', 'legal']);
+        console.log('[E2E:Scenario] Turn 6 Creative and Video per-turn action routing verified.');
         await page.screenshot({ path: join(scratchDir, 'boardroom-scenario-turn6.png') });
 
         // ----------------------------------------------------

@@ -4,6 +4,9 @@ const { getSessions, getDocs } = vi.hoisted(() => ({
     getSessions: vi.fn(),
     getDocs: vi.fn(),
 }));
+vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn(() => ({ agentHistory: [] })) } }));
+vi.mock('../registry', () => ({ agentRegistry: { get: vi.fn() } }));
+vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user1' } }, db: {} }));
 vi.mock('@/services/firebase', () => ({
     app: {},
     auth: { currentUser: { uid: 'user1' } },
