@@ -1,66 +1,50 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 
+// STRUCTURAL ONLY: uses mock auth/stream fixtures and store setup; not live-account evidence.
 test('Live Test: Boardroom', async ({ authedPage: page }) => {
-  // Catch console errors
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      console.log(`Browser Error: ${msg.text()}`);
-    }
-  });
+    const uncaughtErrors: string[] = [];
+    page.on('pageerror', (error) => {
+        uncaughtErrors.push(error.message);
+    });
 
-  page.on('pageerror', exception => {
-    console.log(`Browser Uncaught Exception: ${exception.message}`);
-  });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.useStore !== undefined);
 
-  // Navigate to dev server
-  await page.goto('http://localhost:4242', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => {
+        window.useStore.getState().setConversationMode('boardroom');
+    });
 
-  // Handle onboarding dialog if it appears
-  try {
-    const exploreGuestBtn = page.getByRole('button', { name: 'Explore as Guest' });
-    await exploreGuestBtn.waitFor({ state: 'visible', timeout: 5000 });
-    await exploreGuestBtn.click();
-    
-    const declineCookiesBtn = page.getByRole('button', { name: 'Decline All' });
-    await declineCookiesBtn.waitFor({ state: 'visible', timeout: 2000 });
-    await declineCookiesBtn.click();
-  } catch (e) {}
+    const boardroom = page.locator('[data-testid="boardroom-module"]');
+    await expect(boardroom).toBeVisible();
 
-  // Navigate to Boardroom
-  // Ensure the sidebar navigation works
-  const boardroomNav = page.getByTestId('nav-item-boardroom');
-  if (await boardroomNav.isVisible()) {
-    await boardroomNav.click();
-  } else {
-    await page.getByRole('button', { name: /Boardroom/i }).click();
-  }
+    const input = page.locator('[data-testid="main-prompt-input"]:visible');
+    await expect(input).toBeVisible();
 
-  // Wait for the boardroom module to load
-  await page.waitForTimeout(2000);
+    await input.fill('hi');
+    await input.press('Enter');
 
-  // Take a screenshot of the initial boardroom state
-  await page.screenshot({ path: 'artifacts/boardroom_initial.png' });
+    await expect.poll(async () => page.evaluate(() => {
+        const state = window.useStore.getState();
+        const latestModelReply = [...state.agentHistory]
+            .reverse()
+            .find(msg => msg.role === 'model' && msg.isStreaming === false);
+        return {
+            processing: state.isAgentProcessing,
+            replyText: latestModelReply?.text?.trim() ?? '',
+        };
+    }), { timeout: 15_000 }).toEqual({
+        processing: false,
+        replyText: expect.stringMatching(/.+/),
+    });
 
-  // Locate the chat input box and type "Hello"
-  // Trying a generic placeholder or locator for the chat input
-  const chatInput = page.getByPlaceholder(/message/i).first(); // bypass-strict: board chat has secondary quick-action input
-  if (await chatInput.isVisible()) {
-      await chatInput.fill('Hello');
-      await chatInput.press('Enter');
-  } else {
-      // Try finding by role if placeholder fails
-      const textbox = page.getByRole('textbox').first(); // bypass-strict: fallback input selection
-      await textbox.fill('Hello');
-      await textbox.press('Enter');
-  }
-
-  // Wait for 5-10 seconds to observe what happens
-  await page.waitForTimeout(8000);
-
-  // Take a screenshot of the result
-  await page.screenshot({ path: 'artifacts/boardroom_result.png' });
-
-  // Test passes if the boardroom session and document body remain healthy and visible
-  await expect(page.locator('body')).toBeVisible();
+    const lastModelMessage = await page.evaluate(() =>
+        [...window.useStore.getState().agentHistory]
+            .reverse()
+            .find(msg => msg.role === 'model' && msg.isStreaming === false)
+    );
+    expect(lastModelMessage).toBeDefined();
+    expect(lastModelMessage!.text).not.toMatch(/^Error:/);
+    await expect(page.locator(`[data-message-id="${lastModelMessage!.id}"] .message-content`)).not.toHaveText(/^\s*$/);
+    expect(uncaughtErrors).toEqual([]);
 });

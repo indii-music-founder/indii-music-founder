@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { livingPlanService, LivingPlan } from '@/services/agent/LivingPlanService';
 import { X, Layers } from 'lucide-react';
 import { PlanCard } from '@/core/components/chat/PlanCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+
+const LIVING_PLANS_SUBSCRIPTION_LIMIT = 20;
 
 interface LivingPlansTrackerProps {
     isOpen: boolean;
@@ -18,59 +21,68 @@ interface LivingPlansTrackerProps {
 
 export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps) {
     const dialogRef = useModalAccessibility(isOpen, onClose);
-    const [plans, setPlans] = useState<LivingPlan[]>([]);
-    const [loading, setLoading] = useState(true);
     const currentProjectId = useStore(state => state.currentProjectId);
+    const subscriptionKey = isOpen && currentProjectId ? currentProjectId : '';
+    const [plansState, setPlansState] = useState<{ key: string; plans: LivingPlan[] }>({
+        key: '',
+        plans: [],
+    });
+    const [actingPlanId, setActingPlanId] = useState<string | null>(null);
+    const actingPlanRef = useRef<string | null>(null);
     const toast = useToast();
 
     useEffect(() => {
-        if (!isOpen || !currentProjectId) {
-            setTimeout(() => {
-                setPlans([]);
-                setLoading(false);
-            }, 0);
-            return;
-        }
-        
-        let isMounted = true;
-        setTimeout(() => {
-            if (isMounted) {
-                setLoading(true);
-                setPlans([]);
-            }
-        }, 0);
-        livingPlanService.getPlansForProject(currentProjectId).then(data => {
-            if (isMounted) {
-                // Sort by newest first
-                setPlans(data.sort((a, b) => toMillisSafe(b.createdAt) - toMillisSafe(a.createdAt)));
-                setLoading(false);
-            }
-        }).catch(err => {
-            logger.error('Failed to load living plans:', err);
-            if (isMounted) {
-                setPlans([]);
-                setLoading(false);
-            }
-        });
+        if (!subscriptionKey) return;
 
-        return () => { isMounted = false; };
-    }, [isOpen, currentProjectId]);
+        let isMounted = true;
+        const unsubscribe = livingPlanService.subscribePlansForProject(
+            subscriptionKey,
+            (data) => {
+                if (!isMounted) return;
+                const sorted = [...data].sort((a, b) => toMillisSafe(b.createdAt) - toMillisSafe(a.createdAt));
+                setPlansState({ key: subscriptionKey, plans: sorted });
+            },
+            (err) => {
+                logger.error('Failed to load living plans:', err);
+                if (isMounted) {
+                    setPlansState({ key: subscriptionKey, plans: [] });
+                }
+            },
+            LIVING_PLANS_SUBSCRIPTION_LIMIT
+        );
+
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
+    }, [subscriptionKey]);
+
+    const loading = Boolean(subscriptionKey && plansState.key !== subscriptionKey);
+    const plans = subscriptionKey && plansState.key === subscriptionKey ? plansState.plans : [];
 
     const handleApprove = async (planId: string) => {
-        if (!currentProjectId) return;
+        if (!currentProjectId || actingPlanRef.current === planId) return;
+        actingPlanRef.current = planId;
+        setActingPlanId(planId);
         try {
             await livingPlanService.approve(currentProjectId, planId);
             const updated = await livingPlanService.get(currentProjectId, planId);
             if (updated) {
-                setPlans(prev => prev.map(p => p.id === planId ? updated : p));
+                setPlansState(prev => ({
+                    ...prev,
+                    plans: prev.plans.map(p => p.id === planId ? updated : p),
+                }));
             }
             toast.success('Plan approved! Strategy is now active.');
-            
+
             // Resume the agent loop with the approved plan
             await agentService.resumeActivePlan(planId);
         } catch (e) {
             logger.error('Failed to approve plan:', e);
             toast.error('Failed to approve plan.');
+        } finally {
+            actingPlanRef.current = null;
+            setActingPlanId(prev => (prev === planId ? null : prev));
         }
     };
 
@@ -80,17 +92,33 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
     };
 
     const handleCancel = async (planId: string) => {
-        if (!currentProjectId) return;
+        if (!currentProjectId || actingPlanRef.current === planId) return;
+        const confirmed = await ConfirmDialog.call({
+            title: 'Cancel Plan',
+            message: 'Cancel this living plan? Active progress will stop.',
+            confirmText: 'Cancel Plan',
+            variant: 'destructive',
+        });
+        if (!confirmed) return;
+
+        actingPlanRef.current = planId;
+        setActingPlanId(planId);
         try {
             await livingPlanService.cancel(currentProjectId, planId);
             const updated = await livingPlanService.get(currentProjectId, planId);
             if (updated) {
-                setPlans(prev => prev.map(p => p.id === planId ? updated : p));
+                setPlansState(prev => ({
+                    ...prev,
+                    plans: prev.plans.map(p => p.id === planId ? updated : p),
+                }));
             }
             toast.info('Plan cancelled.');
         } catch (e) {
             logger.error('Failed to cancel plan:', e);
             toast.error('Failed to cancel plan.');
+        } finally {
+            actingPlanRef.current = null;
+            setActingPlanId(prev => (prev === planId ? null : prev));
         }
     };
 
@@ -141,7 +169,6 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                     <Layers className="mx-auto mb-4 opacity-20" size={20} />
                                     <p className="text-xs font-medium text-gray-300">No living plans found.</p>
                                     <p className="text-xs mt-2 opacity-80">Ask indii Conductor to propose a strategy or plan for your project.</p>
-                                    <p className="text-[10px] mt-2">Ask indii Conductor to propose a strategy or plan for your project.</p>
                                 </div>
                             ) : (
                                 plans.map(plan => (
@@ -159,6 +186,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                             onApprove={() => handleApprove(plan.id)}
                                             onRefine={handleRefine}
                                             onCancel={() => handleCancel(plan.id)}
+                                            isLoading={actingPlanId === plan.id}
                                         />
                                     </div>
                                 ))

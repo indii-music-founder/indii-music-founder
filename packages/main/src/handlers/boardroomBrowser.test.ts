@@ -22,6 +22,14 @@ const mocks = vi.hoisted(() => ({
             url: 'https://artists.spotify.com',
             text: 'Track your streaming performance.',
         }),
+        executeJavaScriptInIsolatedWorld: vi.fn().mockResolvedValue({
+            title: 'Spotify for Artists',
+            url: 'https://artists.spotify.com',
+            text: 'Track your streaming performance.',
+        }),
+        close: vi.fn(),
+        isDestroyed: vi.fn(() => false),
+        removeAllListeners: vi.fn(),
         on: vi.fn(),
         setWindowOpenHandler: vi.fn(),
     },
@@ -192,7 +200,7 @@ describe('BoardroomBrowser IPC Handlers', () => {
         expect(await capture(event)).toMatchObject({ success: false, error: expect.stringContaining('loading or failed') });
         listener('did-fail-load')({}, -105, 'NAME_NOT_RESOLVED', 'https://bad.example', true);
         expect(await capture(event)).toMatchObject({ success: false, error: expect.stringContaining('loading or failed') });
-        expect(mocks.mockWebContents.executeJavaScript).not.toHaveBeenCalled();
+        expect(mocks.mockWebContents.executeJavaScriptInIsolatedWorld).not.toHaveBeenCalled();
         listener('did-start-loading')();
         listener('did-fail-load')({}, -105, 'subframe failed', 'https://frame.example', false);
         listener('did-stop-loading')();
@@ -206,7 +214,7 @@ describe('BoardroomBrowser IPC Handlers', () => {
         const listener = (name: string) => mocks.mockWebContents.on.mock.calls.find(([channel]) => channel === name)?.[1] as (...args: unknown[]) => void;
         listener('did-stop-loading')();
         let complete!: (value: { title: string; url: string; text: string }) => void;
-        mocks.mockWebContents.executeJavaScript.mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+        mocks.mockWebContents.executeJavaScriptInIsolatedWorld.mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
         const result = mocks.ipcMainHandlers.get('boardroom-browser:capture-context')!(event) as Promise<unknown>;
         listener('did-start-loading')();
         complete({ title: 'Old', url: 'https://artists.spotify.com', text: 'Old content' });
@@ -305,5 +313,50 @@ describe('BoardroomBrowser IPC Handlers', () => {
         const jsResult = (await openExternalHandler(mockGoodEvent, 'javascript:alert(1)')) as { success: boolean };
         expect(jsResult.success).toBe(false);
         expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
+
+        const httpLocalResult = (await openExternalHandler(mockGoodEvent, 'http://127.0.0.1')) as { success: boolean };
+        expect(httpLocalResult.success).toBe(false);
+        expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
+
+        const httpPublicResult = (await openExternalHandler(mockGoodEvent, 'http://ascap.com')) as { success: boolean };
+        expect(httpPublicResult.success).toBe(false);
+        expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
+
+        const badTypeResult = (await openExternalHandler(mockGoodEvent, { url: 'https://ascap.com' })) as { success: boolean };
+        expect(badTypeResult.success).toBe(false);
+        expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
+    });
+
+    it('closes webContents and removes listeners on detach (ISSUE-1680)', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        mocks.mockWebContents.close.mockClear();
+        mocks.mockWebContents.removeAllListeners.mockClear();
+
+        const result = (await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event)) as { success: boolean };
+        expect(result.success).toBe(true);
+        expect(mocks.mockWebContents.removeAllListeners).toHaveBeenCalled();
+        expect(mocks.mockWebContents.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('captures context inside an isolated world and validates the returned shape (ISSUE-1681)', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        const listener = (name: string) => mocks.mockWebContents.on.mock.calls.find(([channel]) => channel === name)?.[1] as (...args: unknown[]) => void;
+        listener('did-stop-loading')();
+
+        mocks.mockWebContents.executeJavaScript.mockClear();
+        mocks.mockWebContents.executeJavaScriptInIsolatedWorld.mockClear();
+
+        const ok = (await mocks.ipcMainHandlers.get('boardroom-browser:capture-context')!(event)) as { success: boolean };
+        expect(ok.success).toBe(true);
+        expect(mocks.mockWebContents.executeJavaScript).not.toHaveBeenCalled();
+        expect(mocks.mockWebContents.executeJavaScriptInIsolatedWorld).toHaveBeenCalledTimes(1);
+
+        mocks.mockWebContents.executeJavaScriptInIsolatedWorld.mockResolvedValueOnce({ title: 123, url: null, text: 'x'.repeat(50_000) });
+        const invalid = (await mocks.ipcMainHandlers.get('boardroom-browser:capture-context')!(event)) as { success: boolean };
+        expect(invalid.success).toBe(false);
     });
 });

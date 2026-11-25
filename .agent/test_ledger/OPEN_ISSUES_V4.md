@@ -3293,12 +3293,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1639: LivingPlansTracker [U17]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-wp0-wp6-wp9` (2026-11-24); awaiting CI and live signed-in acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U17 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** `LivingPlansTracker`: (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
+- **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** replaced unbounded `getPlansForProject` + `setTimeout(0)` resets with `livingPlanService.subscribePlansForProject` (`onSnapshot` ordered by `createdAt` desc with `limit(20)`), added `actingPlanId` + ref guard passed as `isLoading` to `PlanCard` so rapid double-clicks on Approve run `resumeActivePlan` once, required `ConfirmDialog.call` confirmation before cancelling a plan, and removed the duplicated empty-state paragraph. Structural tests: `LivingPlansTracker.test.tsx` (4/4). Jev: 1 call, 1,112/261 tokens, 1/4 flagged (unclear 0.26 on existing "indii Conductor" name kept on purpose; 0 flagged on new Cancel Plan copy).
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
@@ -3796,36 +3797,39 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1679: Uncached DNS check per subresource with 5s cutoff (:53-74) [O26]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-wp0-wp6-wp9` (2026-11-24); awaiting CI and live Electron acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O26 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Uncached DNS check per subresource with 5s cutoff (`:53-74`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
+- **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** added bounded 60s per-host verdict cache and in-flight lookup coalescing in `validateSafeHostAsync` (`packages/main/src/utils/network-security.ts`) while keeping synchronous private-IP/localhost blocks first. Structural test: `network-security.test.ts` (28/28, including TTL cache reuse + expiry). Jev: not needed, main-process network security only.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
 
 ### ISSUE-1680: Native view never destroyed; hidden page keeps running (:293-306; renderer BoardroomBrowserView.tsx:226-235) [O27]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — main-process `detach` closes `webContents` on branch `antigravity/boardroom-wp0-wp6-wp9` (2026-11-24); renderer unmount `detach` remains for WP6/UI batch
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O27 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Native view never destroyed; hidden page keeps running (`:293-306`; renderer `BoardroomBrowserView.tsx:226-235`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
+- **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** `BoardroomBrowserController.detach` (`packages/main/src/handlers/boardroomBrowser.ts`) now calls `webContents.removeAllListeners()`, closes `webContents` when not already destroyed, and resets `isLoading`. Structural test: `boardroomBrowser.test.ts` (`closes webContents and removes listeners on detach`). Renderer `BoardroomBrowserView.tsx` unmount detach stays open until the UI batch. Jev: not needed, Electron view lifecycle only.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
 
 ### ISSUE-1681: openExternal lacks zod/private-host check; captureContext runs in main world, result unchecked (:279-325) [O28]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-wp0-wp6-wp9` (2026-11-24); awaiting CI and live Electron acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O28 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** `openExternal` lacks zod/private-host check; `captureContext` runs in main world, result unchecked (`:279-325`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
+- **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** `openExternal` now Zod-validates inputs, enforces `https:` only, and validates public/non-private hosts via `validateSafeUrlAsync`; `captureContext` runs via `executeJavaScriptInIsolatedWorld` and Zod-validates/bounds `title`, `url`, and `text`. Structural tests: `boardroomBrowser.test.ts` (16/16). Jev: not needed, IPC security hardening only.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
@@ -3880,12 +3884,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1686: e2e/boardroom-debug.spec.ts has no expects; e2e/boardroom_test.spec.ts only checks body visible; no Stop/timeo [O33]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — assertion-free `e2e/boardroom-debug.spec.ts` removed and `e2e/boardroom_test.spec.ts` given Boardroom greeting/error assertions on branch `antigravity/boardroom-wp0-wp6-wp9` (2026-11-24); Stop/timeout/lease/session-switch e2e specs still open
 - **Severity:** LOW
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O33 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** `e2e/boardroom-debug.spec.ts` has no expects; `e2e/boardroom_test.spec.ts` only checks body visible; no Stop/timeout/lease/session-switch specs. (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
+- **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** removed assertion-free `e2e/boardroom-debug.spec.ts` and updated `e2e/boardroom_test.spec.ts` to assert Boardroom entry, prompt submission, non-error model reply rendering, settled processing state, and zero uncaught page errors (structural mock-auth test; live run not executed here).
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
