@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { isPrivateIP, expandIPv6 } from './network-security';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import dns from 'node:dns';
+import { isPrivateIP, expandIPv6, validateSafeUrlAsync } from './network-security';
 
 describe('network-security utils', () => {
     describe('isPrivateIP', () => {
@@ -171,6 +172,33 @@ describe('network-security utils', () => {
         it('should expand embedded IPv4 addresses correctly', () => {
             expect(expandIPv6('::ffff:192.168.1.1')).toBe('0000:0000:0000:0000:0000:ffff:c0a8:0101');
             expect(expandIPv6('::192.168.1.1')).toBe('0000:0000:0000:0000:0000:0000:c0a8:0101');
+        });
+    });
+
+    describe('validateSafeUrlAsync host verdict cache (ISSUE-1679)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        });
+
+        it('reuses a cached DNS verdict within 60s across subresources on the same host', async () => {
+            const lookupSpy = vi
+                .spyOn(dns.promises, 'lookup')
+                .mockResolvedValue([{ address: '93.184.216.34', family: 4 }] as never);
+
+            await validateSafeUrlAsync('https://cached-example.test/page');
+            await validateSafeUrlAsync('https://cached-example.test/script.js');
+
+            expect(lookupSpy).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(61_000);
+            await validateSafeUrlAsync('https://cached-example.test/after-ttl.js');
+
+            expect(lookupSpy).toHaveBeenCalledTimes(2);
         });
     });
 });

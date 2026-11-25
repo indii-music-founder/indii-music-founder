@@ -13,7 +13,7 @@ import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { TokenEstimator } from '../governance/TokenEstimator';
 import { getFineTunedModel } from '../fine-tuned-models';
-import { stepsFromBoardroomGraph } from './BoardroomActionPlan';
+import { extractConfirmedProposalContext, stepsFromBoardroomGraph } from './BoardroomActionPlan';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator
@@ -31,6 +31,7 @@ export class GraphDecompositionService {
      */
     async decompose(userQuery: string, context: AgentContext, validationFeedback?: string): Promise<AgentGraph> {
         logger.info(`[GraphDecomposition] Decomposing query: "${userQuery.slice(0, 50)}..."`);
+        const confirmedProposal = extractConfirmedProposalContext(context, userQuery);
 
         const prompt = `
 Bug/feature intake ownership: GitHub issue filing and report_bug/request_feature steps belong to generalist (Conductor), not devops. Other diagnostic work can be assigned separately to an authorized specialist.
@@ -38,7 +39,7 @@ Bug/feature intake ownership: GitHub issue filing and report_bug/request_feature
         You are the indii Architect, the high-reasoning engine responsible for decomposing complex user requests into Directed Acyclic Graphs (DAGs) of specialist agent tasks.
         
         USER REQUEST: "${userQuery}"
-        
+        ${confirmedProposal ? `CONFIRMED PRIOR PROPOSAL (the user is confirming this): "${confirmedProposal}"\n` : ''}
         CURRENT CONTEXT:
         - Active Module: ${context.activeModule || 'none'}
         - Project: ${context.projectHandle?.name || 'none'}

@@ -1,6 +1,42 @@
 import dns from 'node:dns';
 import net from 'node:net';
 
+const HOST_VERDICT_CACHE_TTL_MS = 60_000;
+const MAX_HOST_VERDICT_CACHE_ENTRIES = 512;
+
+interface CachedHostVerdict {
+    ok: boolean;
+    errorMessage?: string;
+    expiresAt: number;
+}
+
+const hostVerdictCache = new Map<string, CachedHostVerdict>();
+const inFlightHostChecks = new Map<string, Promise<void>>();
+
+/** Clears cached DNS safety verdicts (intended for isolated unit tests). */
+export function clearHostVerdictCacheForTests(): void {
+    hostVerdictCache.clear();
+    inFlightHostChecks.clear();
+}
+
+function setCachedHostVerdict(bareHost: string, verdict: CachedHostVerdict): void {
+    const now = Date.now();
+    if (hostVerdictCache.size >= MAX_HOST_VERDICT_CACHE_ENTRIES) {
+        for (const [key, entry] of hostVerdictCache) {
+            if (entry.expiresAt <= now) {
+                hostVerdictCache.delete(key);
+            }
+        }
+        if (hostVerdictCache.size >= MAX_HOST_VERDICT_CACHE_ENTRIES) {
+            const oldestKey = hostVerdictCache.keys().next().value;
+            if (oldestKey !== undefined) {
+                hostVerdictCache.delete(oldestKey);
+            }
+        }
+    }
+    hostVerdictCache.set(bareHost, verdict);
+}
+
 /**
  * Expands an IPv6 address to its full 32-digit hexadecimal representation.
  * Handles :: expansion and IPv4-mapped addresses.
@@ -150,22 +186,58 @@ export async function validateSafeHostAsync(hostInput: string): Promise<void> {
         throw new Error(`Security Violation: Access to private IP ${bareHost} is denied.`);
     }
 
-    // 2. Resolve DNS
-    try {
-        const addresses = await dns.promises.lookup(bareHost, { all: true });
-
-        // 3. Validate ALL Resolved IPs
-        for (const { address } of addresses) {
-            if (isPrivateIP(address)) {
-                throw new Error(`Security Violation: Domain '${hostInput}' resolves to private IP ${address}.`);
+    // 2. Check cached DNS verdict (prevents repeated lookups per subresource, ISSUE-1679)
+    const now = Date.now();
+    const cached = hostVerdictCache.get(bareHost);
+    if (cached) {
+        if (cached.expiresAt > now) {
+            if (!cached.ok) {
+                throw new Error(cached.errorMessage || `Security Violation: Host '${hostname}' is blocked.`);
             }
+            return;
         }
-    } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        if (errMsg.startsWith('Security Violation')) throw error;
-        // Fail closed if DNS resolution fails
-        throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${errMsg}`);
+        hostVerdictCache.delete(bareHost);
     }
+
+    // 3. Coalesce concurrent lookups and resolve DNS
+    const existingCheck = inFlightHostChecks.get(bareHost);
+    if (existingCheck) {
+        return existingCheck;
+    }
+
+    const checkPromise = (async () => {
+        try {
+            const addresses = await dns.promises.lookup(bareHost, { all: true });
+
+            // Validate ALL Resolved IPs
+            for (const { address } of addresses) {
+                if (isPrivateIP(address)) {
+                    const errorMessage = `Security Violation: Domain '${hostInput}' resolves to private IP ${address}.`;
+                    setCachedHostVerdict(bareHost, {
+                        ok: false,
+                        errorMessage,
+                        expiresAt: Date.now() + HOST_VERDICT_CACHE_TTL_MS,
+                    });
+                    throw new Error(errorMessage);
+                }
+            }
+
+            setCachedHostVerdict(bareHost, {
+                ok: true,
+                expiresAt: Date.now() + HOST_VERDICT_CACHE_TTL_MS,
+            });
+        } catch (error: unknown) {
+            const errMsg = error instanceof Error ? error.message : String(error);
+            if (errMsg.startsWith('Security Violation')) throw error;
+            // Fail closed if DNS resolution fails
+            throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${errMsg}`);
+        } finally {
+            inFlightHostChecks.delete(bareHost);
+        }
+    })();
+
+    inFlightHostChecks.set(bareHost, checkPromise);
+    return checkPromise;
 }
 
 /**

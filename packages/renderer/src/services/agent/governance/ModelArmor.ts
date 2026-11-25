@@ -146,7 +146,13 @@ export class ModelArmor {
         const systemDelimiters = [
             '\n\n(SYSTEM NOTE):',
             '\n\n[SEATED_AGENTS]:',
-            '\n\n(PRIOR CONTEXT):'
+            '\n\n(PRIOR CONTEXT):',
+            '\n\n[BOARDROOM REFERENCED ASSETS',
+            '\n\n[AVAILABLE SOURCE ASSETS',
+            '\n\n[IMPLEMENTED PRINT TOOLS',
+            '\n\n[TURN MODE]',
+            '\n\n[ASSET REFERENCES]',
+            '\n\n[DEPENDENCY RESULTS',
         ];
         
         let userContent = prompt;

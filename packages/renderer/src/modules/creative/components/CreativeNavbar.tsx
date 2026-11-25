@@ -35,7 +35,8 @@ export default function CreativeNavbar({ embedded = false, ...props }: CreativeN
         _viewModeIndex,
         goBackModule,
         currentModule,
-        _navigationHistory
+        _navigationHistory,
+        isOffline
     } = useStore(useShallow(state => ({
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
@@ -52,7 +53,8 @@ export default function CreativeNavbar({ embedded = false, ...props }: CreativeN
         _viewModeIndex: state._viewModeIndex,
         goBackModule: state.goBackModule,
         currentModule: state.currentModule,
-        _navigationHistory: state._navigationHistory
+        _navigationHistory: state._navigationHistory,
+        isOffline: state.isOffline
     })));
     const toast = useToast();
 
@@ -207,9 +209,18 @@ export default function CreativeNavbar({ embedded = false, ...props }: CreativeN
                     <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
 
                     {/* System Status */}
-                    <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0" title="Autonomous Systems Status">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-                        <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest hidden lg:block">ONLINE</span>
+                    <div
+                        className="flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0"
+                        title={isOffline ? 'Network Offline — Cloud sync paused' : 'Autonomous Systems Status: Online'}
+                    >
+                        <div
+                            className={isOffline
+                                ? 'w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]'
+                                : 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]'}
+                        />
+                        <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest hidden lg:block">
+                            {isOffline ? 'OFFLINE' : 'ONLINE'}
+                        </span>
                     </div>
 
                     {/* Projector */}

@@ -42,7 +42,6 @@ import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
-import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
 import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from './ToolRiskRegistry';
 import { toolApprovalService } from './governance/ToolApprovalService';
@@ -373,56 +372,16 @@ export class BaseAgent implements SpecializedAgent {
                     seatedAgents: ctxRecord?.seatedAgents,
                 });
                 if (!communication.allowed) {
-                    return toolError(communication.reason || 'This task route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
-                }
-
-                if (mode === 'direct') {
-                    logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
-                    const errorMsg = `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`;
-
-                    const { events } = await importWithRetry(() => import('@/core/events'));
-                    events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.` });
-
-                    return toolError(
-                        errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success. Do NOT say you have sent it over.",
-                        'DIRECT_MODE_NO_DELEGATION'
-                    );
-                }
-
-                if (mode === 'department') {
-                    if (!sameDepartment(this.id, targetAgentId)) {
-                        const myDept = getDepartmentOf(this.id);
-                        logger.warn(`[BaseAgent] Department-scope violation: ${this.id} (${myDept?.id}) -> ${targetAgentId}`);
-                        const errorMsg = `Cross-department delegation is blocked in Department mode. You may only delegate within '${myDept?.id ?? 'unknown'}'. Cross-department work belongs in Boardroom mode where heads can convene.`;
-
+                    if (mode === 'direct' || mode === 'department') {
                         const { events } = await importWithRetry(() => import('@/core/events'));
-                        events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} across departments.` });
-
-                        return toolError(
-                            errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success.",
-                            'DEPARTMENT_SCOPE_VIOLATION'
-                        );
+                        events.emit('SYSTEM_ALERT', {
+                            level: 'error',
+                            message: mode === 'direct'
+                                ? `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.`
+                                : `Scope Violation: Cannot delegate to ${targetAgentId} across departments.`,
+                        });
                     }
-                }
-
-                // Swarm Seating Awareness: Enforce that only seated agents can be delegated to in Boardroom Mode
-                if (ctxRecord?.conversationMode === 'boardroom' && ctxRecord?.seatedAgents) {
-                    const seatedAgents = ctxRecord.seatedAgents as string[];
-                    if (!seatedAgents.includes(targetAgentId)) {
-                        logger.warn(`[BaseAgent] Boardroom seating violation: Agent '${targetAgentId}' is not seated at the table.`);
-                        return toolError(
-                            `Cannot delegate to '${targetAgentId}'. This agent is not currently seated at the boardroom table. You must ask the user to invite them to the boardroom if you need their expertise.`,
-                            'BOARDROOM_SEATING_VIOLATION'
-                        );
-                    }
-                    // Tier enforcement: workers cannot be seated, only department heads.
-                    if (!isHead(targetAgentId)) {
-                        logger.warn(`[BaseAgent] Boardroom tier violation: '${targetAgentId}' is a worker, not a department head.`);
-                        return toolError(
-                            `Cannot delegate to '${targetAgentId}'. Only department heads sit in the Boardroom. Workers operate inside their own department in Department mode.`,
-                            'BOARDROOM_TIER_VIOLATION'
-                        );
-                    }
+                    return toolError(communication.reason || 'This task route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
                 }
 
                 // GEAP: Record delegation provenance for audit trail
@@ -478,61 +437,16 @@ export class BaseAgent implements SpecializedAgent {
                         seatedAgents: ctxRecord?.seatedAgents,
                     });
                     if (!communication.allowed) {
+                        if (mode === 'direct' || mode === 'department') {
+                            const { events } = await importWithRetry(() => import('@/core/events'));
+                            events.emit('SYSTEM_ALERT', {
+                                level: 'error',
+                                message: mode === 'direct'
+                                    ? 'Scope Violation: Cannot consult experts in Direct Mode.'
+                                    : `Scope Violation: Cannot consult ${consultation.targetAgentId} across departments.`,
+                            });
+                        }
                         return toolError(communication.reason || 'This consultation route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
-                    }
-                }
-
-                if (mode === 'direct') {
-                    logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
-                    const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
-
-                    const { events } = await importWithRetry(() => import('@/core/events'));
-                    events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult experts in Direct Mode.` });
-
-                    return toolError(
-                        errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success. Do NOT say you have sent it over.",
-                        'DIRECT_MODE_NO_DELEGATION'
-                    );
-                }
-
-                if (mode === 'department') {
-                    const offDept = consultations.filter(c => !sameDepartment(this.id, c.targetAgentId));
-                    if (offDept.length > 0) {
-                        const offIds = offDept.map(u => u.targetAgentId).join(', ');
-                        const myDept = getDepartmentOf(this.id);
-                        logger.warn(`[BaseAgent] Department-scope violation in consult_experts: ${this.id} -> [${offIds}]`);
-                        const errorMsg = `Cannot consult [${offIds}] in Department mode. They are outside '${myDept?.id ?? 'unknown'}'. Cross-department consultation belongs in Boardroom mode.`;
-
-                        const { events } = await importWithRetry(() => import('@/core/events'));
-                        events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult ${offIds} across departments.` });
-
-                        return toolError(
-                            errorMsg + " CRITICAL INSTRUCTION: You MUST inform the user you cannot do this. Do NOT hallucinate success.",
-                            'DEPARTMENT_SCOPE_VIOLATION'
-                        );
-                    }
-                }
-
-                // Swarm Seating Awareness: Enforce that only seated agents can be consulted in Boardroom Mode
-                if (ctxRecord?.conversationMode === 'boardroom' && ctxRecord?.seatedAgents) {
-                    const seatedAgents = ctxRecord.seatedAgents as string[];
-                    const unseated = consultations.filter(c => !seatedAgents.includes(c.targetAgentId));
-                    if (unseated.length > 0) {
-                        const unseatedIds = unseated.map(u => u.targetAgentId).join(', ');
-                        logger.warn(`[BaseAgent] Boardroom seating violation in consult_experts: Agents [${unseatedIds}] are not seated.`);
-                        return toolError(
-                            `Cannot consult [${unseatedIds}]. These agents are not currently seated at the boardroom table. You can only consult experts that have been invited by the user.`,
-                            'BOARDROOM_SEATING_VIOLATION'
-                        );
-                    }
-                    const workerTargets = consultations.filter(c => !isHead(c.targetAgentId));
-                    if (workerTargets.length > 0) {
-                        const workerIds = workerTargets.map(w => w.targetAgentId).join(', ');
-                        logger.warn(`[BaseAgent] Boardroom tier violation in consult_experts: workers [${workerIds}] cannot be seated.`);
-                        return toolError(
-                            `Cannot consult [${workerIds}]. Only department heads sit in the Boardroom. Workers operate inside their own department in Department mode.`,
-                            'BOARDROOM_TIER_VIOLATION'
-                        );
                     }
                 }
 
@@ -1124,13 +1038,24 @@ ${capabilitiesBlock}
         // Prefer structured history with token-aware truncation over raw character slicing.
         if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
             const { ContextManager } = await importWithRetry(() => import('@/services/intelligence/context/ContextManager'));
-            // Convert AgentMessage[] to Content[] for ContextManager
-            const contentHistory = context.chatHistory.map(msg => ({
-                role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
-                parts: msg.attachments && msg.attachments.length > 0
-                    ? [{ text: msg.text || '' }, ...msg.attachments.map(a => ({ inlineData: { mimeType: a.mimeType, data: a.base64 } }))]
-                    : [{ text: msg.text || '' }]
-            }));
+            const { agentRegistry } = await importWithRetry(() => import('./registry'));
+            const speakerLabels = new WeakMap<object, string>();
+            // Convert AgentMessage[] to Content[], preserving speaker labels for multi-seat turns (ISSUE-1685)
+            const contentHistory = context.chatHistory.map(msg => {
+                const entry = {
+                    role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
+                    parts: msg.attachments && msg.attachments.length > 0
+                        ? [{ text: msg.text || '' }, ...msg.attachments.map(a => ({ inlineData: { mimeType: a.mimeType, data: a.base64 } }))]
+                        : [{ text: msg.text || '' }]
+                };
+                const label = msg.role === 'user'
+                    ? 'User'
+                    : msg.agentId
+                        ? `[${agentRegistry.get(msg.agentId)?.name || msg.agentId}]`
+                        : 'Assistant';
+                speakerLabels.set(entry, label);
+                return entry;
+            });
 
             // Truncate to safe token limit (e.g. 15k tokens reserved for history out of 32k/1M context)
             const SAFE_TOKEN_LIMIT = 15000;
@@ -1138,7 +1063,7 @@ ${capabilitiesBlock}
 
             // Reconstruct string for the prompt
             safeHistory = truncated.map(c => {
-                const role = c.role === 'model' ? 'Assistant' : 'User';
+                const role = speakerLabels.get(c) || (c.role === 'model' ? 'Assistant' : 'User');
                 const text = c.parts.map(p => 'text' in p ? p.text : '[Attachment]').join(' ');
                 return `${role}: ${text}`;
             }).join('\n\n');

@@ -7,6 +7,9 @@ import {
   query,
   where,
   getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
   serverTimestamp,
   addDoc,
   Timestamp,
@@ -171,6 +174,41 @@ export class LivingPlanService {
       id: d.id,
       ...d.data(),
     } as LivingPlan));
+  }
+
+  /**
+   * Subscribe to the most recent living plans for a project with a bounded query limit.
+   */
+  subscribePlansForProject(
+    projectId: string,
+    onPlans: (plans: LivingPlan[]) => void,
+    onError?: (error: Error) => void,
+    maxPlans = 20,
+  ): () => void {
+    if (this.isE2EMode) {
+      onPlans([]);
+      return () => {};
+    }
+    const q = query(
+      collection(db, 'projects', projectId, 'livingPlans'),
+      orderBy('createdAt', 'desc'),
+      limit(maxPlans),
+    );
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const plans = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        } as LivingPlan));
+        onPlans(plans);
+      },
+      (err) => {
+        if (onError) {
+          onError(err instanceof Error ? err : new Error(String(err)));
+        }
+      },
+    );
   }
 
   /**

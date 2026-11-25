@@ -240,22 +240,64 @@ export interface TypesafeJudgeRequest {
     questions: Record<string, unknown>;
 }
 
+/** Default timeout for Boardroom orchestration/routing judgments before falling back (ISSUE-1675). */
+export const BOARDROOM_JUDGMENT_TIMEOUT_MS = 3_000;
+
+export interface InvokeTypesafeJudgeOptions {
+    timeoutMs?: number;
+    signal?: AbortSignal;
+}
+
 /**
  * Shared proxy invocation helper for TypeSafe judgments.
- * Guards against missing/malformed `result.data?.answers` and enforces
- * `SemanticCallAdmission` budget reservations when provided.
+ * Guards against missing/malformed `result.data?.answers`, enforces
+ * `SemanticCallAdmission` budget reservations when provided, and bounds wait
+ * time with `timeoutMs` / `signal` so hung calls fail open cleanly.
  */
 export async function invokeTypesafeJudge(
     request: TypesafeJudgeRequest,
     admission?: SemanticCallAdmission,
+    options?: InvokeTypesafeJudgeOptions,
 ): Promise<Record<string, unknown> | null> {
+    if (options?.signal?.aborted) {
+        throw new Error('Aborted');
+    }
     const call = httpsCallable<TypesafeJudgeRequest, { answers?: Record<string, unknown>; usage?: unknown }>(
         getFunctions(),
         'typesafeJudge',
     );
-    const result = admission
-        ? await runBudgetedSemanticCall(admission, request, () => call(request).then(res => res.data))
-        : (await call(request)).data;
+    const executeCall = () => (admission
+        ? runBudgetedSemanticCall(admission, request, () => call(request).then(res => res.data))
+        : call(request).then(res => res.data));
+
+    let result: { answers?: Record<string, unknown>; usage?: unknown } | null;
+    if (options?.timeoutMs || options?.signal) {
+        const timeoutMs = options.timeoutMs;
+        const signal = options.signal;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        let onAbort: (() => void) | undefined;
+        try {
+            result = await Promise.race([
+                executeCall(),
+                new Promise<never>((_resolve, reject) => {
+                    if (timeoutMs && timeoutMs > 0) {
+                        timeoutId = setTimeout(() => reject(new Error(`TypeSafe judge timed out after ${timeoutMs}ms`)), timeoutMs);
+                    }
+                    if (signal) {
+                        onAbort = () => reject(new Error('Aborted'));
+                        if (signal.aborted) onAbort();
+                        else signal.addEventListener('abort', onAbort, { once: true });
+                    }
+                }),
+            ]);
+        } finally {
+            if (timeoutId !== undefined) clearTimeout(timeoutId);
+            if (signal && onAbort) signal.removeEventListener('abort', onAbort);
+        }
+    } else {
+        result = await executeCall();
+    }
+
     if (!result || typeof result !== 'object') return null;
     const answers = result.answers;
     if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return null;
@@ -734,33 +776,35 @@ export async function judgeSpecialistAgentRoute(
     query: string,
     activeModule?: string,
     hasSourceAssets = false,
+    signal?: AbortSignal,
 ): Promise<{ targetAgentId: string; ragCorpus: string; confidence: number } | null> {
     if (!judgmentsAvailable('judgeSpecialistAgentRoute') || !query.trim()) return null;
     try {
-        const result = await httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(getFunctions(), 'typesafeJudge')({
-            state: {
-                query: query.slice(0, 2000),
-                activeModule: activeModule || 'none',
-                hasSourceAssets,
+        const answers = await invokeTypesafeJudge(
+            {
+                state: {
+                    query: query.slice(0, 2000),
+                    activeModule: activeModule || 'none',
+                    hasSourceAssets,
+                },
+                questions: {
+                    specialist: SPECIALIST_ROUTE_QUESTION,
+                    corpus: RAG_CORPUS_ROUTE_QUESTION,
+                },
             },
-            questions: {
-                specialist: SPECIALIST_ROUTE_QUESTION,
-                corpus: RAG_CORPUS_ROUTE_QUESTION,
-            },
-        });
+            undefined,
+            { timeoutMs: BOARDROOM_JUDGMENT_TIMEOUT_MS, signal },
+        );
         const allowedAgents = Object.keys(SPECIALIST_ROUTE_QUESTION.criteria);
         const allowedCorpora = Object.keys(RAG_CORPUS_ROUTE_QUESTION.criteria);
         const targetAgentId = confidentDeclaredChoice(
-            result.data?.answers?.specialist,
+            answers?.specialist,
             allowedAgents,
             SPECIALIST_ROUTE_MIN_CONFIDENCE,
         );
         if (!targetAgentId) return null;
-        const confidence = boundedConfidenceValue(result.data?.answers?.specialist) ?? SPECIALIST_ROUTE_MIN_CONFIDENCE;
-        const ragCorpus = whitelistedChoice(result.data?.answers?.corpus, allowedCorpora) ?? 'general';
+        const confidence = boundedConfidenceValue(answers?.specialist) ?? SPECIALIST_ROUTE_MIN_CONFIDENCE;
+        const ragCorpus = whitelistedChoice(answers?.corpus, allowedCorpora) ?? 'general';
         return { targetAgentId, ragCorpus, confidence };
     } catch (error) {
         noteJudgmentFailure(error, 'specialist agent route judgment', 'judgeSpecialistAgentRoute');
@@ -768,13 +812,23 @@ export async function judgeSpecialistAgentRoute(
     }
 }
 
-export async function judgeBoardroomIntent(query: string, recentConversation: string, attachedImageCount = 0): Promise<BoardroomIntent | null> {
+export async function judgeBoardroomIntent(
+    query: string,
+    recentConversation: string,
+    attachedImageCount = 0,
+    signal?: AbortSignal,
+): Promise<BoardroomIntent | null> {
     if (!judgmentsAvailable("judgeBoardroomIntent") || !query.trim()) return null;
     try {
-        const result = await httpsCallable<{ state: Record<string, unknown>; questions: Record<string, unknown> }, { answers: Record<string, unknown> }>(
-            getFunctions(), 'typesafeJudge',
-        )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000), attachedImageCount }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
-        return parseBoardroomIntentDecision(result.data?.answers?.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
+        const answers = await invokeTypesafeJudge(
+            {
+                state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000), attachedImageCount },
+                questions: { intent: BOARDROOM_INTENT_QUESTION },
+            },
+            undefined,
+            { timeoutMs: BOARDROOM_JUDGMENT_TIMEOUT_MS, signal },
+        );
+        return parseBoardroomIntentDecision(answers?.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
     } catch (error) { noteJudgmentFailure(error, 'Boardroom intent', "judgeBoardroomIntent"); return null; }
 }
 
@@ -784,23 +838,22 @@ export async function judgeBoardroomIntent(query: string, recentConversation: st
  * Returns the path and confidence, or null when unavailable or low confidence.
  */
 export async function judgeOrchestrationComplexity(
-    query: string
+    query: string,
+    signal?: AbortSignal,
 ): Promise<{ path: OrchestrationPathType; confidence: number } | null> {
     if (!judgmentsAvailable("judgeOrchestrationComplexity") || !query.trim()) return null;
 
     try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
+        const answers = await invokeTypesafeJudge(
+            {
+                state: { query: query.slice(0, 1000) },
+                questions: { complexity: ORCHESTRATION_COMPLEXITY_QUESTION },
+            },
+            undefined,
+            { timeoutMs: BOARDROOM_JUDGMENT_TIMEOUT_MS, signal },
+        );
 
-        const result = await judgeFn({
-            state: { query: query.slice(0, 1000) },
-            questions: { complexity: ORCHESTRATION_COMPLEXITY_QUESTION },
-        });
-
-        const answer = result.data?.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer !== 'object') return null;
 
         const choice = answer.choice;

@@ -29,6 +29,16 @@ const AttachSchema = z.object({
     initialUrl: z.string().trim().max(4096).optional(),
 }).strict();
 
+const OpenExternalSchema = z.string().trim().min(1).max(4096).optional();
+
+const CapturedContextSchema = z.object({
+    title: z.string().max(512),
+    url: z.string().max(4096),
+    text: z.string().max(40_000),
+}).strict();
+
+const ISOLATED_CAPTURE_WORLD_ID = 999;
+
 class BoardroomBrowserController {
     private view: WebContentsView | null = null;
     private pageRevision = 0;
@@ -286,13 +296,17 @@ class BoardroomBrowserController {
 
         const revision = this.pageRevision;
         const view = this.view;
-        const data = await view.webContents.executeJavaScript(`(() => {
-            return {
-                title: document.title || '',
-                url: window.location.href || '',
-                text: (document.body ? document.body.innerText : '').slice(0, 40000)
-            };
-        })()`) as { url: string; title: string; text: string };
+        const rawData: unknown = await view.webContents.executeJavaScriptInIsolatedWorld(
+            ISOLATED_CAPTURE_WORLD_ID,
+            [{
+                code: `(() => ({
+                    title: String(document.title || '').slice(0, 512),
+                    url: String(window.location.href || '').slice(0, 4096),
+                    text: String(document.body ? document.body.innerText : '').slice(0, 40000),
+                }))()`,
+            }]
+        );
+        const data = CapturedContextSchema.parse(rawData);
 
         if (this.view !== view || this.pageRevision !== revision || this.currentState.isLoading || this.currentState.error) {
             throw new Error('Page changed while its content was being captured.');
@@ -301,35 +315,60 @@ class BoardroomBrowserController {
     }
 
     public detach(_event: IpcMainInvokeEvent): { success: boolean } {
-        if (this.view && this.ownerWindow && !this.ownerWindow.isDestroyed()) {
+        const view = this.view;
+        if (view) {
+            if (this.ownerWindow && !this.ownerWindow.isDestroyed()) {
+                try {
+                    view.setVisible(false);
+                    this.ownerWindow.contentView.removeChildView(view);
+                } catch (err) {
+                    log.warn('[BoardroomBrowser] Error removing child view:', err);
+                }
+            }
             try {
-                this.view.setVisible(false);
-                this.ownerWindow.contentView.removeChildView(this.view);
+                const wc = view.webContents as typeof view.webContents & {
+                    isDestroyed?: () => boolean;
+                    close?: () => void;
+                    removeAllListeners?: () => void;
+                };
+                wc.removeAllListeners?.();
+                if (!wc.isDestroyed?.()) {
+                    wc.close?.();
+                }
             } catch (err) {
-                log.warn('[BoardroomBrowser] Error removing child view:', err);
+                log.warn('[BoardroomBrowser] Error closing Boardroom browser webContents:', err);
             }
         }
         this.pageRevision += 1;
         this.view = null;
         this.ownerWindow = null;
+        this.currentState = { ...this.currentState, isLoading: false };
         return { success: true };
     }
 
-    public openExternal(_event: IpcMainInvokeEvent, rawUrl?: string): { success: boolean } {
-        const target = rawUrl?.trim() || this.currentState.url;
-        if (!target) {
+    public async openExternal(_event: IpcMainInvokeEvent, rawUrl?: unknown): Promise<{ success: boolean }> {
+        let candidate: string;
+        try {
+            const validated = OpenExternalSchema.parse(rawUrl);
+            candidate = validated || this.currentState.url;
+        } catch {
+            log.warn('[BoardroomBrowser] Blocked openExternal for invalid input');
+            return { success: false };
+        }
+        if (!candidate) {
             return { success: false };
         }
         try {
-            const parsed = new URL(target);
-            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-                log.warn(`[BoardroomBrowser] Blocked openExternal for non-HTTP(S) protocol: ${parsed.protocol}`);
+            const parsed = new URL(candidate);
+            if (parsed.protocol !== 'https:') {
+                log.warn(`[BoardroomBrowser] Blocked openExternal for non-HTTPS protocol: ${parsed.protocol}`);
                 return { success: false };
             }
+            await validateSafeUrlAsync(parsed.toString());
             void shell.openExternal(parsed.toString());
             return { success: true };
         } catch {
-            log.warn('[BoardroomBrowser] Blocked openExternal for invalid URL');
+            log.warn('[BoardroomBrowser] Blocked openExternal for unsafe or invalid URL');
             return { success: false };
         }
     }
@@ -417,7 +456,7 @@ export function registerBoardroomBrowserHandlers(): void {
     ipcMain.handle('boardroom-browser:open-external', async (event, rawUrl) => {
         try {
             validateSender(event);
-            return boardroomBrowserController.openExternal(event, rawUrl);
+            return await boardroomBrowserController.openExternal(event, rawUrl);
         } catch (error) {
             return { success: false, error: String(error) };
         }
