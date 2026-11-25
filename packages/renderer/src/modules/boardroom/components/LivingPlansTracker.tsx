@@ -145,7 +145,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 bottom-0 w-[450px] max-w-full bg-[#0a0a0e] border-l border-white/10 z-[100001] flex flex-col shadow-2xl"
+                        className="fixed top-0 right-0 bottom-0 w-[450px] max-w-full bg-bg-dark border-l border-white/10 z-[100001] flex flex-col shadow-2xl"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
@@ -162,7 +162,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {loading ? (
                                 <div className="flex justify-center p-8">
-                                    <div className={`w-6 h-6 border-2 ${getColorForModule('agent').border.replace('/20', '').replace('/30', '')} border-t-transparent rounded-full animate-spin`} />
+                                    <div className={`w-6 h-6 border-2 ${getColorForModule('agent').border.replace('/20', '').replace('/30', '')} border-t-transparent rounded-full motion-safe:animate-spin`} />
                                 </div>
                             ) : plans.length === 0 ? (
                                 <div className="text-center p-8 text-white/40">

@@ -81,6 +81,26 @@ export function resolveRemoteConversationMode(raw: unknown): AgentSendOptions['c
     return raw === 'boardroom' || raw === 'department' || raw === 'direct' ? raw : undefined;
 }
 
+const MAX_ASSET_PROMPT_CHARS = 200;
+const BOARDROOM_SWARM_CHUNK_SIZE = 3;
+const MAX_PRIOR_CONTEXT_CHARS = 2000;
+
+function buildBoardroomAssetManifest(
+    attachments: AgentAttachment[],
+    uploadedImages: readonly { prompt?: string; id: string }[] | undefined,
+    generatedHistory: Parameters<typeof buildGalleryManifestEntries>[0],
+) {
+    return [
+        ...buildAttachmentManifestEntries(attachments, 'attached to this message; you can see its pixels', 'attached to this message'),
+        ...(uploadedImages ?? []).map((asset, index) => ({
+            alias: `upload-${index}`,
+            type: 'image',
+            name: (asset.prompt || asset.id).slice(0, MAX_ASSET_PROMPT_CHARS),
+        })),
+        ...buildGalleryManifestEntries(generatedHistory),
+    ];
+}
+
 /**
  * Formats attached files into Boardroom asset manifest entries preserving original index aliases.
  */
@@ -1590,13 +1610,11 @@ export class AgentService {
         // already attached. Give them the same alias manifest the action flow uses.
         const allAttachments = attachments ?? [];
         const attachedImageCount = allAttachments.filter(attachment => attachment.mimeType.startsWith('image/')).length;
-        const discussionAssetManifest = [
-            ...buildAttachmentManifestEntries(allAttachments, 'attached to this message; you can see its pixels', 'attached to this message'),
-            ...(state.uploadedImages ?? []).map((asset, index) => ({
-                alias: `upload-${index}`, type: 'image', name: (asset.prompt || asset.id).slice(0, 200),
-            })),
-            ...buildGalleryManifestEntries(state.generatedHistory),
-        ];
+        const discussionAssetManifest = buildBoardroomAssetManifest(
+            allAttachments,
+            state.uploadedImages,
+            state.generatedHistory,
+        );
         const attachedFileNote = allAttachments.length === 0
             ? ''
             : allAttachments.length === attachedImageCount
@@ -1608,12 +1626,11 @@ export class AgentService {
         const readOnlyDiscussionNote = context.isReadOnly
             ? '\n\n[TURN MODE]: This turn is a read-only discussion, so action tools (generation, editing, mockups, publishing) are not enabled for THIS turn. This is a turn-mode limit, not an outage: never say a capability is broken, unavailable, or "cannot be done right now". Do not promise to call a tool yourself. Describe exactly what will be produced and with which source asset, then tell the user that replying "go ahead" will execute it.'
             : '';
-        const CHUNK_SIZE = 3;
         try {
-          for (let i = 0; i < activeAgents.length; i += CHUNK_SIZE) {
+          for (let i = 0; i < activeAgents.length; i += BOARDROOM_SWARM_CHUNK_SIZE) {
             // Stop means stop: do not seat, message or trace any further chunk (ISSUE-1666).
             if (signal?.aborted) break;
-            const chunkAgents = activeAgents.slice(i, i + CHUNK_SIZE);
+            const chunkAgents = activeAgents.slice(i, i + BOARDROOM_SWARM_CHUNK_SIZE);
             const chunkPromises = chunkAgents.map(async (agentId, chunkIdx) => {
                 const index = i + chunkIdx;
                 if (!agentId) return { agentId: '', result: null };
@@ -1655,38 +1672,22 @@ export class AgentService {
             (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
 
                 try {
-                    logger.debug(`[AgentService] Boardroom: executing agent ${agentId} (chunk ${i/CHUNK_SIZE})`);
+                    logger.debug(`[AgentService] Boardroom: executing agent ${agentId} (chunk ${i / BOARDROOM_SWARM_CHUNK_SIZE})`);
+                    const onProgress = this.createProgressHandler(
+                        useStore,
+                        resId,
+                        isLive => isLive(),
+                        delta => { currentStreamedText += delta; },
+                        () => currentStreamedText,
+                        () => this.findRunMessage(useStore, resId, runSessionId),
+                    );
                     // Hard per-seat timeout that also aborts the seat and drops late events (ISSUE-1665).
                     const result = await runSeatWithTimeout(({ signal: seatSignal, isLive }) => this.executor.execute(
                         agentId,
                         enhancedText,
                         // The executor writes trace and attachment metadata to this object.
                         { ...context } as PipelineContext,
-                        (event) => {
-                            if (!isLive()) return;
-                            if (event.type === 'token') {
-                                currentStreamedText += event.content;
-                                useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
-                            }
-                            if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                                const currentMsg = this.findRunMessage(useStore, resId, runSessionId);
-                                const newThought: AgentThought = {
-                                    id: uuidv4(),
-                                    text: event.content || '',
-                                    timestamp: Date.now(),
-                                    type: event.type as AgentThought["type"],
-                                };
-                                if (event.type === 'tool' || event.type === 'tool_result') {
-                                    if (event.toolName) newThought.toolName = event.toolName;
-                                }
-
-                                if (currentMsg) {
-                                    useStore.getState().updateAgentMessage(resId, {
-                                        thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
-                                    });
-                                }
-                            }
-                        },
+                        (event) => onProgress(event, isLive),
                         seatSignal,
                         undefined,
                         attachments
@@ -1797,8 +1798,8 @@ export class AgentService {
             const chunkResults = await Promise.all(chunkPromises);
             for (const { agentId, result } of chunkResults) {
                 if (agentId && result?.text) {
-                    const clippedText = result.text.length > 2000
-                        ? result.text.slice(0, 2000) + '... [discussion truncated for length]'
+                    const clippedText = result.text.length > MAX_PRIOR_CONTEXT_CHARS
+                        ? result.text.slice(0, MAX_PRIOR_CONTEXT_CHARS) + '... [discussion truncated for length]'
                         : result.text;
                     accumulatedContext += `\n[${agentId.toUpperCase()}]: ${clippedText}`;
                 }
@@ -2334,15 +2335,49 @@ The user will see this plan and can approve it to start execution.`;
         }
     }
 
+    private createProgressHandler(
+        useStore: Awaited<ReturnType<AgentService['getStore']>>,
+        resId: string,
+        checkLive: (isLiveFn: () => boolean) => boolean,
+        appendText: (delta: string) => void,
+        getText: () => string,
+        findMessage: () => AgentMessage | undefined,
+    ) {
+        return (event: { type: string; content?: string; toolName?: string }, isLive: () => boolean) => {
+            if (!checkLive(isLive)) return;
+            if (event.type === 'token' && event.content) {
+                appendText(event.content);
+                useStore.getState().updateAgentMessage(resId, { text: getText() });
+                return;
+            }
+            if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                const currentMsg = findMessage();
+                if (!currentMsg) return;
+                const newThought: AgentThought = {
+                    id: uuidv4(),
+                    text: event.content || '',
+                    timestamp: Date.now(),
+                    type: event.type as AgentThought['type'],
+                    ...(event.toolName && (event.type === 'tool' || event.type === 'tool_result')
+                        ? { toolName: event.toolName }
+                        : {}),
+                };
+                useStore.getState().updateAgentMessage(resId, {
+                    thoughts: [...(currentMsg.thoughts || []), newThought],
+                });
+            }
+        };
+    }
+
     /**
      * Executes the MultiTurnAutorater post-completion to evaluate the conversation quality.
      * High-quality traces will automatically be registered for future fine-tuning.
      */
-    private async triggerAutorater(userId: string, agentId: string, traceId: string, isBoardroomMode: boolean): Promise<void> {
+    private async triggerAutorater(userId: string, agentId: string, traceId: string, _isBoardroomMode: boolean): Promise<void> {
         try {
             const useStore = await this.getStore();
             const state = useStore.getState();
-            const history = isBoardroomMode ? state.agentHistory : state.agentHistory;
+            const history = state.agentHistory;
             
             // Extract the last 10 messages for context evaluation
             const recentMessages = history

@@ -1,8 +1,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+    Activity,
+    AlertTriangle,
+    Clock3,
     ShieldCheck,
     Bot,
+    Globe,
     Layers,
     Sliders,
     ChevronRight,
@@ -32,11 +36,105 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
     const [selectedAgent, setSelectedAgent] = React.useState<string | null>(null);
     const opener = React.useRef<HTMLButtonElement | null>(null);
     const closeButton = React.useRef<HTMLButtonElement>(null);
-    const history = useStore(state => state.agentHistory);
     const isAgentProcessing = useStore(state => state.isAgentProcessing);
-    const a2aMessages = useStore(state => state.a2aMessages);
-    const latestStep = history?.slice().reverse().find(message => message.agentId === selectedAgent && message.metadata?.boardroomStepId);
-    const latestHandoff = a2aMessages?.slice().reverse().find(message => message.toAgent === selectedAgent);
+    const workingAgentsKey = useStore(state => {
+        if (!state.isAgentProcessing || !state.agentHistory?.length) return '';
+        const workingIds = new Set<string>();
+        const awaitingIds = new Set<string>();
+        for (const message of state.agentHistory) {
+            if (!message.isStreaming || !message.agentId || !message.metadata?.boardroomStepId) continue;
+            if (message.metadata.boardroomStepStatus === 'awaiting_approval') {
+                awaitingIds.add(message.agentId);
+            } else {
+                workingIds.add(message.agentId);
+            }
+        }
+        return `${Array.from(workingIds).sort().join(',')}|${Array.from(awaitingIds).sort().join(',')}`;
+    });
+    const pendingHandoffAgentsKey = useStore(state => {
+        if (!state.a2aMessages?.length) return '';
+        const pendingIds = new Set<string>();
+        for (const message of state.a2aMessages) {
+            if (message.toAgent && message.requiresApproval && !message.approved) {
+                pendingIds.add(message.toAgent);
+            }
+        }
+        return Array.from(pendingIds).sort().join(',');
+    });
+    const selectedStepIsStreaming = useStore(state => {
+        if (!selectedAgent || !state.agentHistory?.length) return false;
+        for (let i = state.agentHistory.length - 1; i >= 0; i -= 1) {
+            const msg = state.agentHistory[i];
+            if (msg.agentId === selectedAgent && msg.metadata?.boardroomStepId) {
+                return Boolean(msg.isStreaming);
+            }
+        }
+        return false;
+    });
+    const selectedStepStatus = useStore(state => {
+        if (!selectedAgent || !state.agentHistory?.length) return '';
+        for (let i = state.agentHistory.length - 1; i >= 0; i -= 1) {
+            const msg = state.agentHistory[i];
+            if (msg.agentId === selectedAgent && msg.metadata?.boardroomStepId) {
+                return typeof msg.metadata.boardroomStepStatus === 'string' ? msg.metadata.boardroomStepStatus : '';
+            }
+        }
+        return '';
+    });
+    const selectedStepTask = useStore(state => {
+        if (!selectedAgent || !state.agentHistory?.length) return '';
+        for (let i = state.agentHistory.length - 1; i >= 0; i -= 1) {
+            const msg = state.agentHistory[i];
+            if (msg.agentId === selectedAgent && msg.metadata?.boardroomStepId) {
+                return typeof msg.metadata.boardroomStepTask === 'string' ? msg.metadata.boardroomStepTask : '';
+            }
+        }
+        return '';
+    });
+    const selectedStepToolName = useStore(state => {
+        if (!selectedAgent || !state.agentHistory?.length) return '';
+        for (let i = state.agentHistory.length - 1; i >= 0; i -= 1) {
+            const msg = state.agentHistory[i];
+            if (msg.agentId === selectedAgent && msg.metadata?.boardroomStepId) {
+                return msg.thoughts?.at(-1)?.toolName ?? '';
+            }
+        }
+        return '';
+    });
+    const selectedHandoffSummary = useStore(state => {
+        if (!selectedAgent || !state.a2aMessages?.length) return '';
+        for (let i = state.a2aMessages.length - 1; i >= 0; i -= 1) {
+            const msg = state.a2aMessages[i];
+            if (msg.toAgent === selectedAgent) {
+                return `${msg.requiresApproval && !msg.approved ? 'Approval requested' : 'Latest handoff'} from ${msg.fromAgent}`;
+            }
+        }
+        return '';
+    });
+
+    const boardroomHostedBrowserActive = useStore(state => Boolean(state.boardroomHostedBrowserActive));
+    const requestBoardroomBrowserGrant = useStore(state => state.requestBoardroomBrowserGrant);
+    const latestA2AKey = useStore(state => {
+        const last = state.a2aMessages?.at(-1);
+        return last?.id && last?.toAgent ? `${last.id}:${last.toAgent}` : '';
+    });
+    const [highlightedAgent, setHighlightedAgent] = React.useState<string | null>(null);
+    const prevA2AKeyRef = React.useRef(latestA2AKey);
+
+    React.useEffect(() => {
+        if (!latestA2AKey || latestA2AKey === prevA2AKeyRef.current) {
+            prevA2AKeyRef.current = latestA2AKey;
+            return;
+        }
+        prevA2AKeyRef.current = latestA2AKey;
+        const receiver = latestA2AKey.slice(latestA2AKey.indexOf(':') + 1);
+        if (!receiver) return;
+        setHighlightedAgent(receiver);
+        const timer = window.setTimeout(() => {
+            setHighlightedAgent(current => (current === receiver ? null : current));
+        }, 2000);
+        return () => window.clearTimeout(timer);
+    }, [latestA2AKey]);
 
     React.useEffect(() => {
         onOpenChange?.(isOpen);
@@ -51,20 +149,29 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
     const activeAgents = useStore(state => state.activeAgents) || [];
     const soloAgent = useStore(state => state.soloAgent);
     const toggleAgent = useStore(state => state.toggleAgent);
+    const seatAllDepartmentHeads = useStore(state => state.seatAllDepartmentHeads);
     const referencedAssets = useStore(state => state.referencedAssets) || [];
     const removeReferencedAsset = useStore(state => state.removeReferencedAsset);
     const clearReferencedAssets = useStore(state => state.clearReferencedAssets);
 
     const handleSeatAll = () => {
-        useStore.setState({
-            activeAgents: ['generalist', ...BOARDROOM_PRIMARY_HEAD_IDS],
-        });
+        if (seatAllDepartmentHeads) {
+            seatAllDepartmentHeads();
+        } else {
+            useStore.setState({
+                activeAgents: ['generalist', ...BOARDROOM_PRIMARY_HEAD_IDS],
+            });
+        }
     };
 
     const handleReset = () => {
-        useStore.setState({
-            activeAgents: ['generalist'],
-        });
+        if (soloAgent) {
+            soloAgent('generalist');
+        } else {
+            useStore.setState({
+                activeAgents: ['generalist'],
+            });
+        }
     };
 
     const tabs = [
@@ -75,16 +182,16 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
     ];
 
     const agents = [
-        { id: 'generalist', name: 'Conductor', icon: Sparkles, color: 'text-emerald-300' },
+        { id: 'generalist', name: 'Conductor', icon: Sparkles, accent: '#6ee7b7' },
         ...AVAILABLE_AGENTS.map(agent => ({
-            id: agent.id, name: agent.shortTitle, icon: agent.icon, color: agent.brightText,
+            id: agent.id, name: agent.shortTitle, icon: agent.icon, accent: agent.accent,
         })),
     ];
 
     return (
         <aside
             data-testid="boardroom-right-rail"
-            className="h-full border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl shrink-0 flex flex-row z-40 shadow-2xl relative"
+            className="h-full border-l border-white/5 bg-bg-dark/90 backdrop-blur-2xl shrink-0 flex flex-row z-40 shadow-2xl relative"
         >
             {/* Popout Content Panel */}
             <AnimatePresence mode="wait">
@@ -95,7 +202,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                        className="absolute right-full top-0 h-full w-[min(22rem,calc(100vw-3.5rem))] flex flex-col border-r border-white/10 overflow-hidden bg-zinc-950 shadow-2xl"
+                        className="absolute right-full top-0 h-full w-[min(22rem,calc(100vw-3.5rem))] flex flex-col border-r border-white/10 overflow-hidden bg-bg-dark shadow-2xl"
                         onKeyDown={event => {
                             if (event.key === 'Escape' && !event.defaultPrevented) {
                                 event.stopPropagation();
@@ -124,25 +231,44 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                             {activeTab === 'team' && (
                                 selectedAgent ? (
                                     <div className="space-y-3">
-                                        <p>{isAgentProcessing && latestStep?.isStreaming
-                                            ? latestStep.metadata?.boardroomStepStatus === 'awaiting_approval' ? 'Awaiting approval' : 'Working on assigned step'
+                                        <p>{isAgentProcessing && selectedStepIsStreaming
+                                            ? selectedStepStatus === 'awaiting_approval' ? 'Awaiting approval' : 'Working on assigned step'
                                             : 'Idle'}</p>
-                                        {typeof latestStep?.metadata?.boardroomStepTask === 'string' && (
-                                            <p className="whitespace-pre-wrap break-words">{latestStep.metadata.boardroomStepTask}</p>
+                                        {selectedStepTask && (
+                                            <p className="whitespace-pre-wrap break-words">{selectedStepTask}</p>
                                         )}
-                                        {latestStep?.thoughts?.at(-1)?.toolName && (
-                                            <p>Latest tool: {latestStep.thoughts.at(-1)?.toolName}</p>
+                                        {selectedStepToolName && (
+                                            <p>Latest tool: {selectedStepToolName}</p>
                                         )}
-                                        {latestHandoff && (
-                                            <p>{latestHandoff.requiresApproval && !latestHandoff.approved ? 'Approval requested' : 'Latest handoff'} from {latestHandoff.fromAgent}</p>
+                                        {selectedHandoffSummary && (
+                                            <p>{selectedHandoffSummary}</p>
                                         )}
-                                        <button
-                                            type="button"
-                                            className="rounded-lg border border-white/15 p-2 hover:bg-white/10"
-                                            onClick={() => toggleAgent(selectedAgent)}
-                                        >
-                                            {activeAgents.includes(selectedAgent) ? 'Unseat agent' : 'Seat agent'}
-                                        </button>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                className="rounded-lg border border-white/15 px-2.5 py-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                                onClick={() => toggleAgent(selectedAgent)}
+                                            >
+                                                {activeAgents.includes(selectedAgent) ? 'Unseat agent' : 'Seat agent'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-2 text-emerald-200 hover:bg-emerald-500/25 focus-visible:ring-2 focus-visible:ring-emerald-400"
+                                                onClick={() => soloAgent(selectedAgent)}
+                                            >
+                                                Solo
+                                            </button>
+                                            {boardroomHostedBrowserActive && (
+                                                <button
+                                                    type="button"
+                                                    className="flex items-center gap-1.5 rounded-lg border border-indigo-400/30 bg-indigo-500/15 px-2.5 py-2 text-indigo-200 hover:bg-indigo-500/25 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                                    onClick={() => requestBoardroomBrowserGrant?.(selectedAgent)}
+                                                >
+                                                    <Globe size={12} aria-hidden="true" />
+                                                    <span>Grant browser control</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ) : agents.map(agent => (
                                     <button
@@ -276,14 +402,16 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                                         </span>
                                         <div className="mt-2 flex flex-wrap gap-1.5">
                                             {activeAgents.map(id => (
-                                                <span
+                                                <button
                                                     key={id}
+                                                    type="button"
                                                     onClick={() => toggleAgent(id)}
-                                                    className="px-2 py-1 rounded-full bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-[10px] font-semibold text-white/80 border border-white/10 cursor-pointer transition-colors"
-                                                    title="Click to remove from table"
+                                                    aria-label={`Remove ${id} from table`}
+                                                    className="px-2 py-1 rounded-full bg-white/10 hover:bg-rose-500/20 hover:text-rose-300 text-[10px] font-semibold text-white/80 border border-white/10 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                                                    title={`Remove ${id} from table`}
                                                 >
                                                     {id} ×
-                                                </span>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
@@ -333,11 +461,13 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
             {/* Vertical Icon Rail */}
             <div className="w-14 shrink-0 flex flex-col items-center overflow-y-auto py-3 gap-2 bg-black/60">
                 {agents.filter(agent => agent.id === 'generalist' || activeAgents.includes(agent.id)).map(agent => {
-                    const working = isAgentProcessing && history?.some(message =>
-                        message.agentId === agent.id && message.isStreaming && message.metadata?.boardroomStepId);
-                    const approval = (isAgentProcessing && history?.some(message =>
-                        message.agentId === agent.id && message.isStreaming && message.metadata?.boardroomStepStatus === 'awaiting_approval'))
-                        || a2aMessages?.some(message => message.toAgent === agent.id && message.requiresApproval && !message.approved);
+                    const [workingRaw, awaitingRaw] = workingAgentsKey.split('|');
+                    const working = Boolean(workingRaw && workingRaw.split(',').includes(agent.id));
+                    const approval = Boolean(
+                        (awaitingRaw && awaitingRaw.split(',').includes(agent.id)) ||
+                        (pendingHandoffAgentsKey && pendingHandoffAgentsKey.split(',').includes(agent.id))
+                    );
+                    const isHighlighted = highlightedAgent === agent.id;
                     const status = approval ? 'Approval requested' : working ? 'Working' : 'Idle';
                     return (
                         <button
@@ -346,17 +476,43 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                             title={`${agent.name} · ${status}`}
                             aria-label={`${agent.name} · ${status}`}
                             aria-expanded={isOpen && activeTab === 'team' && selectedAgent === agent.id}
+                            data-handoff-highlight={isHighlighted ? 'true' : undefined}
                             onClick={event => {
                                 opener.current = event.currentTarget;
                                 setSelectedAgent(agent.id);
                                 setActiveTab('team');
                                 setIsOpen(true);
                             }}
-                            className={cn("relative shrink-0 rounded-full border border-white/10 bg-white/5 p-2.5 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400", agent.color)}
+                            className={cn(
+                                "relative shrink-0 rounded-full border border-white/10 bg-white/5 p-2.5 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400 transition-colors",
+                                isHighlighted && "motion-safe:ring-2 motion-safe:ring-indigo-400 motion-safe:animate-pulse"
+                            )}
+                            style={{ color: agent.accent }}
                         >
                             <agent.icon size={16} />
                             {working && <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-emerald-400 motion-safe:animate-pulse" />}
-                            {approval && <span aria-hidden="true" className="absolute -right-1 -top-1 rounded-full bg-amber-300 px-1 text-[10px] font-bold text-black">!</span>}
+                            {approval ? (
+                                <span
+                                    aria-label="Approval requested"
+                                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-black"
+                                >
+                                    <AlertTriangle size={10} aria-hidden="true" />
+                                </span>
+                            ) : working ? (
+                                <span
+                                    aria-label="Working"
+                                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400 text-black"
+                                >
+                                    <Activity size={10} aria-hidden="true" />
+                                </span>
+                            ) : (
+                                <span
+                                    aria-label="Idle"
+                                    className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-white/80"
+                                >
+                                    <Clock3 size={10} aria-hidden="true" />
+                                </span>
+                            )}
                         </button>
                     );
                 })}

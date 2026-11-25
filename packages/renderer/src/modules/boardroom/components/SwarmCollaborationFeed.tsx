@@ -54,7 +54,7 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 bottom-0 w-[450px] max-w-full bg-[#0a0a0e] border-l border-white/10 z-[100001] flex flex-col shadow-2xl"
+                        className="fixed top-0 right-0 bottom-0 w-[450px] max-w-full bg-bg-dark border-l border-white/10 z-[100001] flex flex-col shadow-2xl"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">

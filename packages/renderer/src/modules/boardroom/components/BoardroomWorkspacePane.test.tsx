@@ -72,12 +72,42 @@ describe('BoardroomWorkspacePane', () => {
         expect(screen.getByTestId('mock-browser-view')).toBeInTheDocument();
     });
 
-    it('switches tabs on click', () => {
-        render(<BoardroomWorkspacePane />);
+    it('keeps previously visited tabs mounted when switching tabs so state is preserved', () => {
+        const view = render(<BoardroomWorkspacePane />);
+        const browserEl = screen.getByTestId('mock-browser-view');
 
+        mockStoreState.boardroomWorkspaceTab = 'agent-feed';
+        view.rerender(<BoardroomWorkspacePane />);
+        const feedEl = screen.getByTestId('mock-agent-feed-view');
+        expect(screen.getByTestId('mock-browser-view')).toBe(browserEl);
+        expect(browserEl.closest('[hidden]')).not.toBeNull();
+        expect(feedEl.closest('[hidden]')).toBeNull();
+
+        mockStoreState.boardroomWorkspaceTab = 'module';
+        view.rerender(<BoardroomWorkspacePane />);
+        expect(screen.getByTestId('mock-browser-view')).toBe(browserEl);
+        expect(screen.getByTestId('mock-agent-feed-view')).toBe(feedEl);
+        expect(feedEl.closest('[hidden]')).not.toBeNull();
+        expect(screen.getByTestId('mock-module-view').closest('[hidden]')).toBeNull();
+    });
+
+    it('switches tabs on click and supports roving arrow-key navigation with tabpanel linkage (ISSUE-1653)', () => {
+        const view = render(<BoardroomWorkspacePane />);
+
+        const tablist = screen.getByRole('tablist', { name: 'Boardroom workspace sections' });
+        const browserTab = screen.getByTestId('boardroom-tab-browser');
         const moduleTab = screen.getByTestId('boardroom-tab-module');
-        fireEvent.click(moduleTab);
 
+        expect(browserTab).toHaveAttribute('aria-controls', 'boardroom-tabpanel-browser');
+        expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', browserTab.id);
+
+        browserTab.focus();
+        fireEvent.keyDown(tablist, { key: 'ArrowRight' });
+        expect(mockStoreState.setBoardroomWorkspaceTab).toHaveBeenCalledWith('module');
+        expect(moduleTab).toHaveFocus();
+
+        view.rerender(<BoardroomWorkspacePane />);
+        fireEvent.click(moduleTab);
         expect(mockStoreState.setBoardroomWorkspaceTab).toHaveBeenCalledWith('module');
     });
 

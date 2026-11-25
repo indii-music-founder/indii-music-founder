@@ -336,7 +336,7 @@ When a WP's branch is published, add a row here (in the WP's branch) and hand th
 
 | WP | Branch | PR (if the owner asked for one) | Head SHA | Local gate output attached | V4 IDs updated | Screenshots (UI WPs) | Not verified |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| WP1, WP6 (renderer), WP7, WP8 (8a–8c), WP10, WP11, WP12 | `antigravity/boardroom-ui-modernization-wp1-wp12` | Open PR on `main` | pending commit | Vitest suites, `typecheck`, `eslint`, `check-test-quality.js`, `validate-issue-ledger.mjs`, `jev-latest` copy check | `1626`, `1634`, `1636`, `1643`, `1645`, `1647`, `1648`, `1649`, `1650`, `1651`, `1652`, `1653`, `1682`, `1683`, `1684`, `1690`, `1722`, `1723`, `1724` | Browser evidence unavailable (no live signed-in session; see `.agent/REAL_USER_AUTHENTICITY.md`) | Signed-in 1440×900 & 390×844 browser UI, reduced motion live check, live Electron unmount detach, remote CI |
 
 Claude's approval review checks, per WP:
 1. Every listed V4 item has a test that failed before and passes after (output in the PR).

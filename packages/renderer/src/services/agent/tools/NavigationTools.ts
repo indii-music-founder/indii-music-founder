@@ -7,6 +7,7 @@ import type { OrgId } from '@/modules/registration/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { z } from 'zod';
 import { PREVIEW_MODULES } from '@/modules/boardroom/components/boardroomPreviewModules';
+import { executeWorkspaceAction, type BoardroomWorkspaceTargetKind } from '../boardroomWorkspaceActions';
 
 async function navigateForAgent(module: AppSlice['currentModule'], context?: AgentContext) {
     const { useStore } = await importWithRetry(() => import('@/core/store'));
@@ -18,7 +19,20 @@ async function navigateForAgent(module: AppSlice['currentModule'], context?: Age
         if (!PREVIEW_MODULES.some(preview => preview.id === module)) {
             return toolError('This module is unavailable in Studio Preview.', 'BOARDROOM_PREVIEW_UNAVAILABLE');
         }
-        store.openBoardroomModulePreview(module);
+        const actionResult = await executeWorkspaceAction({
+            missionId: context.boardroomExecution.requestId,
+            stepId: context.boardroomExecution.stepId,
+            agentId: context.boardroomExecution.ownerAgentId,
+            target: 'studio',
+            operation: 'open',
+            payload: { moduleId: module },
+        });
+        if (!actionResult.ok) {
+            return toolError(
+                actionResult.error || navigationNotCompletedMessage(module, useStore.getState().boardroomPreviewModuleId),
+                'NAVIGATION_NOT_COMPLETED',
+            );
+        }
         return toolSuccess({ module, surface: 'boardroom' }, `Opened ${module} in Boardroom Studio Preview`);
     }
 
@@ -126,21 +140,49 @@ export const NavigationTools = {
                     return toolError('The Boardroom changed while opening the page.', 'BOARDROOM_MISSION_INACTIVE');
                 }
                 if (!receipt.success) return toolError('Live Browser could not open the requested page.', 'NAVIGATION_NOT_COMPLETED');
-                current.openBoardroomBrowser(receipt.url ?? page.href);
+                const actionResult = await executeWorkspaceAction({
+                    missionId: context?.boardroomExecution?.requestId ?? 'conductor',
+                    stepId: context?.boardroomExecution?.stepId ?? 'browser',
+                    agentId: context?.boardroomExecution?.ownerAgentId ?? 'generalist',
+                    target: 'browser',
+                    operation: 'open',
+                    payload: { url: receipt.url ?? page.href },
+                });
+                if (!actionResult.ok) return toolError(actionResult.error || 'Live Browser did not open.', 'NAVIGATION_NOT_COMPLETED');
                 return toolSuccess({ tab: 'browser', pageLoaded: true }, 'Opened the requested page in Live Browser.');
             }
-            state.openBoardroomBrowser(page.href);
+            const webResult = await executeWorkspaceAction({
+                missionId: context?.boardroomExecution?.requestId ?? 'conductor',
+                stepId: context?.boardroomExecution?.stepId ?? 'browser',
+                agentId: context?.boardroomExecution?.ownerAgentId ?? 'generalist',
+                target: 'browser',
+                operation: 'open',
+                payload: { url: page.href },
+            });
+            if (!webResult.ok) return toolError(webResult.error || 'Live Browser did not open.', 'NAVIGATION_NOT_COMPLETED');
             return toolSuccess({ tab: 'browser', pageLoaded: false, requiresExternalOpen: true },
                 'Google Fonts is ready in Live Browser. Choose Open in browser to view the catalog.');
         }
 
-        if (asset) state.openBoardroomWorkbench({ kind: 'asset', itemId: asset.id });
-        else if (preview) state.openBoardroomModulePreview(preview.id);
-        else state.setBoardroomWorkspaceTab(tab.data);
+        const tabTarget: Record<BoardroomWorkspaceTab, BoardroomWorkspaceTargetKind> = {
+            browser: 'browser',
+            module: 'studio',
+            workbench: 'workbench',
+            'agent-feed': 'feed',
+        };
+        const actionResult = await executeWorkspaceAction({
+            missionId: context?.boardroomExecution?.requestId ?? 'conductor',
+            stepId: context?.boardroomExecution?.stepId ?? 'tab',
+            agentId: context?.boardroomExecution?.ownerAgentId ?? 'generalist',
+            target: tabTarget[tab.data],
+            operation: asset ? 'open_asset' : 'open',
+            payload: {
+                ...(preview ? { moduleId: preview.id } : {}),
+                ...(asset ? { itemId: asset.id } : {}),
+            },
+        });
         const current = useStore.getState();
-        if (current.boardroomWorkspaceTab !== tab.data || current.boardroomWorkspaceLayout === 'closed'
-            || (preview && current.boardroomPreviewModuleId !== preview.id)
-            || (asset && (current.boardroomWorkbenchTarget?.kind !== 'asset' || current.boardroomWorkbenchTarget.itemId !== asset.id))) {
+        if (!actionResult.ok) {
             return toolError('The workspace tab did not open.', 'NAVIGATION_NOT_COMPLETED');
         }
         return toolSuccess({

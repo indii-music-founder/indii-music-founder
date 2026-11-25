@@ -334,6 +334,17 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         socket.send(JSON.stringify({ type: 'takeover' }));
     };
 
+    // Publish hosted browser availability and honor rail "Grant browser control" clicks (spec L4).
+    const setHostedBrowserActive = useStore(state => state.setBoardroomHostedBrowserActive);
+    const grantRequest = useStore(state => state.boardroomBrowserGrantRequest);
+    const lastGrantNonce = useRef(grantRequest?.nonce ?? 0);
+    useEffect(() => {
+        setHostedBrowserActive?.(true);
+        return () => {
+            setHostedBrowserActive?.(false);
+        };
+    }, [setHostedBrowserActive]);
+
     // Stop mission anywhere in the Boardroom takes the browser back (spec W4/D2).
     const lastRevocation = useRef(controlRevocation);
     useEffect(() => {
@@ -341,6 +352,21 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         lastRevocation.current = controlRevocation;
         takeControl();
     }, [controlRevocation]);
+
+    useEffect(() => {
+        if (!grantRequest || grantRequest.nonce === lastGrantNonce.current) return;
+        lastGrantNonce.current = grantRequest.nonce;
+        if (!mayOperate) return;
+        const requestId = typeof workingStep?.metadata?.boardroomRequestId === 'string'
+            ? workingStep.metadata.boardroomRequestId
+            : `rail-request-${grantRequest.nonce}`;
+        const stepId = typeof workingStep?.metadata?.boardroomStepId === 'string'
+            ? workingStep.metadata.boardroomStepId
+            : `rail-grant-${grantRequest.nonce}`;
+        const assignment = { requestId, stepId, agentId: grantRequest.agentId };
+        activeAssignment.current = assignment;
+        send('grant', { assignment });
+    }, [grantRequest, mayOperate, workingStep]);
 
     const controllerAgentId = activeAssignment.current?.agentId ?? workingStep?.agentId;
     const controllerName = controllerAgentId ? (agentRegistry.get(controllerAgentId)?.name ?? controllerAgentId) : 'A specialist';

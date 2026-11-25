@@ -5,6 +5,7 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { isSafeExternalAssetUrl } from '../utils/boardroomUrls';
 
 /**
  * BoardroomAssetStrip — a horizontal strip of the artist's most recent
@@ -25,15 +26,6 @@ function AssetIcon({ type }: { type: HistoryItem['type'] }) {
         case 'music': return <Music size={12} className="text-green-400" />;
         case 'text': return <FileText size={12} className="text-amber-400" />;
         default: return <ImageIcon size={12} className="text-indigo-400" />;
-    }
-}
-
-function isSafeExternalAssetUrl(rawUrl: string): boolean {
-    try {
-        const parsed = new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'https://localhost');
-        return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'blob:';
-    } catch {
-        return false;
     }
 }
 
@@ -107,55 +99,49 @@ export const BoardroomAssetStrip: React.FC = () => {
         <div className="shrink-0 border-b border-white/5 px-4 py-2 bg-white/[0.02]">
             <div className="flex items-center gap-1.5 mb-1.5">
                 <ImageIcon size={11} className="text-indigo-400" />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
                     Recent Assets
                 </span>
-                <span className="text-[9px] text-white/20 ml-1">(click to preview)</span>
+                <span className="text-[10px] text-white/20 ml-1">(click to preview)</span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1" data-testid="boardroom-asset-strip">
                 {assets.map(item => (
                     <div
                         key={item.id}
-                        onClick={() => openPreview(item)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                openPreview(item);
-                            }
-                        }}
-                        className="group relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-indigo-400/50 hover:scale-105 transition-all bg-black/40 flex items-center justify-center cursor-pointer"
-                        title={item.prompt || 'Asset'}
-                        aria-label={`Preview ${item.prompt || 'asset'}`}
-                        data-testid={`boardroom-asset-${item.id}`}
+                        className="group relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-indigo-400/50 transition-colors bg-black/40"
                     >
-                        {item.type === 'image' ? (
-                            <img
-                                src={item.url}
-                                alt={item.prompt || 'Generated asset'}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                onError={(e) => {
-                                    // Unresolved storage URIs must never leave a
-                                    // broken image — fall back to an icon tile.
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                            />
-                        ) : (
-                            <AssetIcon type={item.type} />
-                        )}
-                        <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] text-white/70 px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                            {item.type}
-                        </span>
-                        {/* ISSUE-1371: hover Export (download) — save the asset
-                            to the computer without leaving the Boardroom. */}
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                void exportAsset(item);
-                            }}
-                            className="absolute top-0.5 right-0.5 p-1 rounded bg-black/70 text-white/80 hover:text-white hover:bg-green-600/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            type="button"
+                            onClick={() => openPreview(item)}
+                            className="w-full h-full flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            title={item.prompt || 'Asset'}
+                            aria-label={`Preview ${item.prompt || 'asset'}`}
+                            data-testid={`boardroom-asset-${item.id}`}
+                        >
+                            {item.type === 'image' ? (
+                                <img
+                                    src={item.url}
+                                    alt={item.prompt || 'Generated asset'}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                        // Unresolved storage URIs must never leave a
+                                        // broken image — fall back to an icon tile.
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <AssetIcon type={item.type} />
+                            )}
+                            <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[10px] text-white/70 px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                                {item.type}
+                            </span>
+                        </button>
+                        {/* ISSUE-1371: Export (download) as sibling button so controls are not nested. */}
+                        <button
+                            type="button"
+                            onClick={() => void exportAsset(item)}
+                            className="absolute top-0.5 right-0.5 p-1 rounded bg-black/70 text-white/80 hover:text-white hover:bg-green-600/80 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
                             title="Export to computer"
                             aria-label={`Export ${item.prompt || 'asset'}`}
                             data-testid={`boardroom-asset-export-${item.id}`}

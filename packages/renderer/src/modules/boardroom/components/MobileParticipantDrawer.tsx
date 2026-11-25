@@ -14,8 +14,61 @@ interface MobileParticipantDrawerProps {
 
 export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDrawerProps) {
     const activeAgents = useStore(useShallow(state => state.activeAgents));
+    const statusSummaryKey = useStore(state => {
+        const workingIds = new Set<string>();
+        const awaitingIds = new Set<string>();
+        if (state.isAgentProcessing && state.agentHistory?.length) {
+            for (const msg of state.agentHistory) {
+                if (!msg.isStreaming || !msg.agentId || !msg.metadata?.boardroomStepId) continue;
+                if (msg.metadata.boardroomStepStatus === 'awaiting_approval') awaitingIds.add(msg.agentId);
+                else workingIds.add(msg.agentId);
+            }
+        }
+        if (state.a2aMessages?.length) {
+            for (const msg of state.a2aMessages) {
+                if (msg.toAgent && msg.requiresApproval && !msg.approved) awaitingIds.add(msg.toAgent);
+            }
+        }
+        return `${Array.from(workingIds).sort().join(',')}|${Array.from(awaitingIds).sort().join(',')}`;
+    });
+    const latestActionsKey = useStore(state => {
+        const entries: string[] = [];
+        for (const agentId of listSeatedManagerIds(state.activeAgents || [])) {
+            let summary = '';
+            const history = state.agentHistory ?? [];
+            for (let i = history.length - 1; i >= 0; i -= 1) {
+                const msg = history[i];
+                if (msg.agentId === agentId && typeof msg.metadata?.boardroomStepTask === 'string') {
+                    summary = msg.metadata.boardroomStepTask;
+                    break;
+                }
+            }
+            if (!summary && state.a2aMessages?.length) {
+                for (let i = state.a2aMessages.length - 1; i >= 0; i -= 1) {
+                    const msg = state.a2aMessages[i];
+                    if (msg.toAgent === agentId) {
+                        summary = msg.requiresApproval && !msg.approved
+                            ? `Approval requested from ${msg.fromAgent}`
+                            : `Handoff from ${msg.fromAgent}`;
+                        break;
+                    }
+                }
+            }
+            entries.push(`${agentId}\u0000${summary}`);
+        }
+        return entries.join('\u0001');
+    });
     const seatedManagers = listSeatedManagerIds(activeAgents).map(
         agentId => resolveAgentVisualIdentity(agentId)
+    );
+    const [workingRaw, awaitingRaw] = statusSummaryKey.split('|');
+    const workingSet = new Set(workingRaw ? workingRaw.split(',') : []);
+    const awaitingSet = new Set(awaitingRaw ? awaitingRaw.split(',') : []);
+    const latestActionMap = new Map(
+        latestActionsKey ? latestActionsKey.split('\u0001').map(entry => {
+            const sep = entry.indexOf('\u0000');
+            return [entry.slice(0, sep), entry.slice(sep + 1)] as const;
+        }) : [],
     );
 
     const trapRef = useModalAccessibility(isOpen, onClose);
@@ -43,7 +96,7 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed inset-x-0 bottom-0 z-[101] bg-slate-900 border-t border-white/10 rounded-t-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+                        className="fixed inset-x-0 bottom-0 z-[101] bg-bg-dark border-t border-white/10 rounded-t-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
                     >
                         <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
                             <div>
@@ -85,12 +138,24 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                                                 {identity.initials}
                                             </span>
                                         </div>
-                                        <div className="flex-1 text-left">
-                                            <div className="text-sm font-bold" style={{ color: identity.accent }}>
-                                                {identity.displayName}
+                                        <div className="flex-1 text-left min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-sm font-bold" style={{ color: identity.accent }}>
+                                                    {identity.displayName}
+                                                </span>
+                                                <span
+                                                    data-testid={`mobile-status-${identity.agentId}`}
+                                                    className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/80"
+                                                >
+                                                    {awaitingSet.has(identity.agentId)
+                                                        ? 'Approval requested'
+                                                        : workingSet.has(identity.agentId)
+                                                            ? 'Working'
+                                                            : 'Idle'}
+                                                </span>
                                             </div>
                                             <div className="text-[10px] text-white/50 truncate pr-4">
-                                                {identity.role}
+                                                {latestActionMap.get(identity.agentId) || identity.role}
                                             </div>
                                         </div>
                                         

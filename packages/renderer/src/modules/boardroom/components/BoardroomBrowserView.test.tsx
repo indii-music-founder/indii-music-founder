@@ -15,13 +15,14 @@ const fallback = { category: 'dsp', categoryLabel: 'DSP', recommendedDepartment:
 describe('Boardroom page classification', () => {
     beforeEach(() => { vi.clearAllMocks(); mocks.url = 'https://artists.spotify.com'; mocks.judge.mockResolvedValue(fallback); });
     afterEach(() => { vi.unstubAllGlobals(); });
-    it('does not reattach the native browser when its URL changes', () => {
+    it('does not reattach the native browser when its URL changes and detaches on unmount', () => {
         const attach = vi.fn().mockResolvedValue({ success: true });
+        const detach = vi.fn().mockResolvedValue({ success: true });
         const unsubscribe = vi.fn();
         const setBounds = vi.fn().mockResolvedValue(undefined);
         vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
         vi.stubGlobal('electronAPI', { boardroomBrowser: {
-            attach, setBounds, onStateChange: vi.fn(() => unsubscribe),
+            attach, detach, setBounds, onStateChange: vi.fn(() => unsubscribe),
         } });
         const view = render(<BoardroomBrowserView />);
         expect(attach).toHaveBeenCalledTimes(1);
@@ -29,8 +30,10 @@ describe('Boardroom page classification', () => {
         view.rerender(<BoardroomBrowserView />);
         expect(attach).toHaveBeenCalledTimes(1);
         expect(unsubscribe).not.toHaveBeenCalled();
+        expect(detach).not.toHaveBeenCalled();
         view.unmount();
         expect(unsubscribe).toHaveBeenCalledTimes(1);
+        expect(detach).toHaveBeenCalledTimes(1);
     });
 
     it('shows native page failures and prevents pinning until the page recovers', async () => {

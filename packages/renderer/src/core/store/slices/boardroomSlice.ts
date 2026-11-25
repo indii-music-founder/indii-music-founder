@@ -13,7 +13,17 @@ export type BoardroomWorkbenchTarget =
     | { kind: 'asset'; itemId: string }
     | { kind: 'artifact'; filename: string }
     | { kind: 'canvas'; panelId: string }
+    | { kind: 'split-sheet'; itemId?: string; title?: string }
     | null;
+
+export type BoardroomControlSurface = 'browser' | 'studio' | 'workbench';
+
+export interface BoardroomControlState {
+    surface: BoardroomControlSurface;
+    holder: 'artist' | string;
+    grantId: string | null;
+    revision: number;
+}
 
 export interface SeatAllDepartmentHeadsResult {
     seatedCount: number;
@@ -85,11 +95,13 @@ export interface BoardroomSlice {
     boardroomWorkspaceLayout: BoardroomWorkspaceLayout;
     boardroomWorkspaceTab: BoardroomWorkspaceTab;
     boardroomBrowserUrl: string;
-    boardroomBrowserHistory: string[];
     boardroomPreviewModuleId: ModuleId;
     boardroomWorkbenchTarget: BoardroomWorkbenchTarget;
     /** Increments when Stop mission revokes agent control of shared surfaces. */
     boardroomControlRevocation: number;
+    boardroomControl: BoardroomControlState;
+    boardroomHostedBrowserActive?: boolean;
+    boardroomBrowserGrantRequest?: { agentId: string; nonce: number } | null;
 
     toggleAgent: (agentId: string) => void;
     soloAgent: (agentId: string) => void;
@@ -108,6 +120,10 @@ export interface BoardroomSlice {
     openBoardroomModulePreview: (moduleId: ModuleId, layout?: 'split' | 'stage') => void;
     openBoardroomWorkbench: (target?: BoardroomWorkbenchTarget, layout?: 'split' | 'stage') => void;
     openBoardroomAgentFeed: (layout?: 'split' | 'stage') => void;
+    setBoardroomHostedBrowserActive: (active: boolean) => void;
+    requestBoardroomBrowserGrant: (agentId: string) => void;
+    grantBoardroomControl: (surface: BoardroomControlSurface, holder: string, grantId: string) => void;
+    takeBoardroomControl: (surface?: BoardroomControlSurface) => void;
 
     addReferencedAsset: (asset: ReferencedAsset) => void;
     addAutomaticReferencedAssets: (assets: readonly ReferencedAsset[]) => void;
@@ -131,10 +147,17 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     boardroomWorkspaceLayout: 'closed',
     boardroomWorkspaceTab: 'browser',
     boardroomBrowserUrl: 'https://artists.spotify.com',
-    boardroomBrowserHistory: ['https://artists.spotify.com'],
     boardroomPreviewModuleId: 'creative',
     boardroomWorkbenchTarget: null,
     boardroomControlRevocation: 0,
+    boardroomControl: {
+        surface: 'browser',
+        holder: 'artist',
+        grantId: null,
+        revision: 0,
+    },
+    boardroomHostedBrowserActive: false,
+    boardroomBrowserGrantRequest: null,
 
     toggleAgent: (agentId) => set((state) => {
         const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
@@ -225,13 +248,11 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
         boardroomWorkspaceLayout: state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout,
     })),
 
-    setBoardroomBrowserUrl: (url) => set((state) => {
+    setBoardroomBrowserUrl: (url) => set(() => {
         const trimmed = url.trim();
-        if (!trimmed) return state;
-        const exists = state.boardroomBrowserHistory[state.boardroomBrowserHistory.length - 1] === trimmed;
+        if (!trimmed) return {};
         return {
             boardroomBrowserUrl: trimmed,
-            boardroomBrowserHistory: exists ? state.boardroomBrowserHistory : [...state.boardroomBrowserHistory.slice(-20), trimmed],
         };
     }),
 
@@ -242,12 +263,10 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     openBoardroomBrowser: (url, layout) => set((state) => {
         const targetUrl = url?.trim() || state.boardroomBrowserUrl;
         const nextLayout = layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout);
-        const exists = state.boardroomBrowserHistory[state.boardroomBrowserHistory.length - 1] === targetUrl;
         return {
             boardroomWorkspaceLayout: nextLayout,
             boardroomWorkspaceTab: 'browser',
             boardroomBrowserUrl: targetUrl,
-            boardroomBrowserHistory: exists ? state.boardroomBrowserHistory : [...state.boardroomBrowserHistory.slice(-20), targetUrl],
         };
     }),
 
@@ -266,6 +285,34 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     openBoardroomAgentFeed: (layout) => set((state) => ({
         boardroomWorkspaceLayout: layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout),
         boardroomWorkspaceTab: 'agent-feed',
+    })),
+
+    setBoardroomHostedBrowserActive: (active) => set({ boardroomHostedBrowserActive: active }),
+
+    requestBoardroomBrowserGrant: (agentId) => set((state) => ({
+        boardroomBrowserGrantRequest: {
+            agentId,
+            nonce: (state.boardroomBrowserGrantRequest?.nonce ?? 0) + 1,
+        },
+    })),
+
+    grantBoardroomControl: (surface, holder, grantId) => set((state) => ({
+        boardroomControl: {
+            surface,
+            holder,
+            grantId,
+            revision: (state.boardroomControl?.revision ?? 0) + 1,
+        },
+    })),
+
+    takeBoardroomControl: (surface) => set((state) => ({
+        boardroomControl: {
+            surface: surface ?? state.boardroomControl?.surface ?? 'browser',
+            holder: 'artist',
+            grantId: null,
+            revision: (state.boardroomControl?.revision ?? 0) + 1,
+        },
+        boardroomControlRevocation: (state.boardroomControlRevocation ?? 0) + 1,
     })),
 
     addReferencedAsset: asset => set(state => {

@@ -2,34 +2,23 @@ import React from 'react';
 import { motion, PanInfo, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import {
-    Briefcase,
-    Target,
-    Scale,
-    DollarSign,
-    Palette,
-    Film,
-    Share2,
-    Library,
-    Headphones,
-    ChevronRight,
-    type LucideIcon,
-} from 'lucide-react';
+import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { DEPARTMENTS, getDepartmentOf, listHeadIds } from '@/services/agent/departments';
+import { AGENT_ICONS } from '../constants/agentIcons';
 
 export interface AgentOrbitalConfig {
     readonly id: string;
     readonly shortTitle: string;
     readonly fullName: string;
     readonly icon: LucideIcon;
-    readonly brightText: string;
-    readonly brightBg: string;
-    readonly brightBorder: string;
-    readonly brightGlow: string;
-    readonly dotColor: string;
+    readonly accent: string;
+    readonly surface: string;
+    readonly border: string;
+    readonly glow: string;
+    readonly foreground: string;
 }
 
 /**
@@ -49,107 +38,35 @@ export const BOARDROOM_PRIMARY_HEAD_IDS = [
     'music',
 ] as const;
 
-export const AVAILABLE_AGENTS: readonly AgentOrbitalConfig[] = Object.freeze([
-    {
-        id: 'marketing',
-        shortTitle: 'Marketing',
-        fullName: 'Marketing Department',
-        icon: Target,
-        brightText: 'text-rose-400',
-        brightBg: 'bg-rose-500/25',
-        brightBorder: 'border-rose-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(244,63,94,0.45)]',
-        dotColor: 'bg-rose-400',
-    },
-    {
-        id: 'finance',
-        shortTitle: 'Finance',
-        fullName: 'Finance Department',
-        icon: DollarSign,
-        brightText: 'text-emerald-400',
-        brightBg: 'bg-emerald-500/25',
-        brightBorder: 'border-emerald-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(52,211,153,0.45)]',
-        dotColor: 'bg-emerald-400',
-    },
-    {
-        id: 'legal',
-        shortTitle: 'Legal',
-        fullName: 'Legal Department',
-        icon: Scale,
-        brightText: 'text-amber-400',
-        brightBg: 'bg-amber-500/25',
-        brightBorder: 'border-amber-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(251,191,36,0.45)]',
-        dotColor: 'bg-amber-400',
-    },
-    {
-        id: 'brand',
-        shortTitle: 'Brand',
-        fullName: 'Brand Strategy',
-        icon: Briefcase,
-        brightText: 'text-fuchsia-400',
-        brightBg: 'bg-fuchsia-500/25',
-        brightBorder: 'border-fuchsia-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(192,132,252,0.45)]',
-        dotColor: 'bg-fuchsia-400',
-    },
-    {
-        id: 'creative',
-        shortTitle: 'Creative',
-        fullName: 'Creative Direction',
-        icon: Palette,
-        brightText: 'text-purple-400',
-        brightBg: 'bg-purple-500/25',
-        brightBorder: 'border-purple-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(168,85,247,0.45)]',
-        dotColor: 'bg-purple-400',
-    },
-    {
-        id: 'video',
-        shortTitle: 'Video',
-        fullName: 'Video Production',
-        icon: Film,
-        brightText: 'text-sky-400',
-        brightBg: 'bg-sky-500/25',
-        brightBorder: 'border-sky-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(56,189,248,0.45)]',
-        dotColor: 'bg-sky-400',
-    },
-    {
-        id: 'social',
-        shortTitle: 'Social',
-        fullName: 'Social Media',
-        icon: Share2,
-        brightText: 'text-cyan-400',
-        brightBg: 'bg-cyan-500/25',
-        brightBorder: 'border-cyan-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(0,188,212,0.45)]',
-        dotColor: 'bg-cyan-400',
-    },
-    {
-        id: 'publishing',
-        shortTitle: 'Publishing',
-        fullName: 'Music Publishing',
-        icon: Library,
-        brightText: 'text-orange-400',
-        brightBg: 'bg-orange-500/25',
-        brightBorder: 'border-orange-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(251,146,60,0.45)]',
-        dotColor: 'bg-orange-400',
-    },
-    {
-        id: 'music',
-        shortTitle: 'Music',
-        fullName: 'Sonic Director',
-        icon: Headphones,
-        brightText: 'text-teal-400',
-        brightBg: 'bg-teal-500/25',
-        brightBorder: 'border-teal-400/60',
-        brightGlow: 'shadow-[0_0_20px_rgba(45,212,191,0.45)]',
-        dotColor: 'bg-teal-400',
-    },
-]);
+const PRIMARY_SHORT_TITLES: Readonly<Record<(typeof BOARDROOM_PRIMARY_HEAD_IDS)[number], { shortTitle: string; fullName: string }>> = {
+    marketing: { shortTitle: 'Marketing', fullName: 'Marketing Department' },
+    finance: { shortTitle: 'Finance', fullName: 'Finance Department' },
+    legal: { shortTitle: 'Legal', fullName: 'Legal Department' },
+    brand: { shortTitle: 'Brand', fullName: 'Brand Strategy' },
+    creative: { shortTitle: 'Creative', fullName: 'Creative Direction' },
+    video: { shortTitle: 'Video', fullName: 'Video Production' },
+    social: { shortTitle: 'Social', fullName: 'Social Media' },
+    publishing: { shortTitle: 'Publishing', fullName: 'Music Publishing' },
+    music: { shortTitle: 'Music', fullName: 'Sonic Director' },
+};
+
+export const AVAILABLE_AGENTS: readonly AgentOrbitalConfig[] = Object.freeze(
+    BOARDROOM_PRIMARY_HEAD_IDS.map((id) => {
+        const identity = resolveAgentVisualIdentity(id);
+        const titles = PRIMARY_SHORT_TITLES[id];
+        return {
+            id,
+            shortTitle: titles.shortTitle,
+            fullName: titles.fullName,
+            icon: AGENT_ICONS[identity.iconKey],
+            accent: identity.accent,
+            surface: identity.surface,
+            border: identity.border,
+            glow: identity.glow,
+            foreground: identity.foreground,
+        };
+    }),
+);
 
 export type ParticipantLayoutMode = 'compact' | 'wide';
 
@@ -372,9 +289,9 @@ export default function ParticipantSelector() {
                 title={`Open ${department?.displayName ?? 'department'} department to work with its specialists`}
                 data-testid={`boardroom-worker-${workerId}`}
                 className={cn(
-                    "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all border",
+                    "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors border",
                     isWorkerExecuting
-                        ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold animate-pulse"
+                        ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold motion-safe:animate-pulse"
                         : isDepartmentOpen
                             ? "bg-white/15 border-white/30 text-white font-semibold"
                             : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white"
@@ -465,23 +382,6 @@ export default function ParticipantSelector() {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <motion.div
-                                        data-testid={`boardroom-seat-${agent.id}`}
-                                        data-agent-id={agent.id}
-                                        data-agent-role={identity.role}
-                                        data-agent-accent={identity.accent}
-                                        data-agent-icon={identity.iconKey}
-                                        data-seat-ring="0"
-                                        aria-label={`${agent.fullName}, ${isExecuting ? 'executing workflow' : isActive ? 'active' : 'inactive'}`}
-                                        aria-pressed={isActive}
-                                        role="button"
-                                        tabIndex={0}
-                                        onClick={(e) => handleBadgeClick(e, agent.id)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                toggleAgent(agent.id);
-                                            }
-                                        }}
                                         drag
                                         dragSnapToOrigin
                                         onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
@@ -489,67 +389,94 @@ export default function ParticipantSelector() {
                                         animate={{ left: `${left}%`, top: `${top}%` }}
                                         transition={{ type: 'spring', stiffness: 150, damping: 20 }}
                                         className={cn(
-                                            // Pill-shaped container with clear readable title
-                                            "absolute -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full flex items-center gap-1.5 border transition-all duration-300 pointer-events-auto cursor-grab active:cursor-grabbing backdrop-blur-md select-none group",
-                                            // High-Visibility Active Studio Strobe / Pulse Beacon
+                                            "absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 rounded-full flex items-center gap-1 border transition-colors duration-300 pointer-events-auto cursor-grab active:cursor-grabbing backdrop-blur-md select-none group",
                                             isExecuting
-                                                ? "animate-pulse border-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.9),0_0_80px_rgba(52,211,153,0.5)] scale-110 bg-emerald-500/40 z-30 ring-2 ring-emerald-400 ring-offset-2 ring-offset-black"
+                                                ? "motion-safe:animate-pulse border-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.9),0_0_80px_rgba(52,211,153,0.5)] scale-110 bg-emerald-500/40 z-30 ring-2 ring-emerald-400 ring-offset-2 ring-offset-black"
                                                 : isActive
-                                                    ? `${agent.brightBg} ${agent.brightBorder} ${agent.brightGlow} z-20 shadow-lg`
-                                                    : "bg-[#12161f]/90 border-white/10 opacity-75 hover:opacity-100 hover:scale-105 z-10 shadow-md",
+                                                    ? "z-20 shadow-lg"
+                                                    : "bg-bg-dark/90 border-white/10 opacity-80 hover:opacity-100 hover:scale-105 z-10 shadow-md",
                                             isSoloed && "ring-2 ring-amber-400 ring-offset-1 ring-offset-black"
                                         )}
+                                        style={isActive && !isExecuting ? {
+                                            backgroundColor: identity.surface,
+                                            borderColor: identity.border,
+                                            boxShadow: `0 0 20px ${identity.glow}`,
+                                        } : undefined}
                                         whileHover={{ scale: isExecuting ? 1.08 : isActive ? 1.06 : 1.1 }}
                                         whileTap={{ scale: 0.95 }}
                                     >
-                                        {/* High-visibility executing ripple halo rings */}
                                         {isExecuting && (
                                             <>
-                                                <span className="absolute -inset-2 rounded-full border border-emerald-400 animate-ping opacity-60 pointer-events-none" />
-                                                <span className="absolute -inset-4 rounded-full border border-emerald-400/40 animate-pulse pointer-events-none" />
+                                                <span className="absolute -inset-2 rounded-full border border-emerald-400 motion-safe:animate-ping opacity-60 pointer-events-none" />
+                                                <span className="absolute -inset-4 rounded-full border border-emerald-400/40 motion-safe:animate-pulse pointer-events-none" />
                                             </>
                                         )}
 
-                                        {/* Department Icon */}
-                                        <IconComponent
-                                            size={14}
-                                            aria-hidden="true"
-                                            className={cn(
-                                                "shrink-0 transition-colors duration-300",
-                                                isExecuting
-                                                    ? "text-emerald-300 animate-bounce"
-                                                    : isActive
-                                                        ? agent.brightText
-                                                        : "text-white/60"
-                                            )}
-                                        />
-
-                                        {/* Clear, readable shortened title */}
-                                        <span
-                                            className={cn(
-                                                "text-xs font-semibold tracking-wide whitespace-nowrap",
-                                                isExecuting
-                                                    ? "text-emerald-200 font-black tracking-wider"
-                                                    : isActive
-                                                        ? "text-white font-bold"
-                                                        : "text-white/80"
-                                            )}
+                                        <button
+                                            type="button"
+                                            data-testid={`boardroom-seat-${agent.id}`}
+                                            data-agent-id={agent.id}
+                                            data-agent-role={identity.role}
+                                            data-agent-accent={identity.accent}
+                                            data-agent-icon={identity.iconKey}
+                                            data-seat-ring="0"
+                                            aria-label={`${agent.fullName}, ${isExecuting ? 'executing workflow' : isActive ? 'active' : 'inactive'}`}
+                                            aria-pressed={isActive}
+                                            onClick={(e) => handleBadgeClick(e, agent.id)}
+                                            className="flex items-center gap-1.5 rounded-full px-1 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                                         >
-                                            {agent.shortTitle}
-                                        </span>
+                                            <IconComponent
+                                                size={14}
+                                                aria-hidden="true"
+                                                className={cn(
+                                                    "shrink-0 transition-colors duration-300",
+                                                    isExecuting && "text-emerald-300 motion-safe:animate-bounce"
+                                                )}
+                                                style={!isExecuting ? { color: isActive ? identity.accent : identity.foreground } : undefined}
+                                            />
+
+                                            <span
+                                                className={cn(
+                                                    "text-xs font-semibold tracking-wide whitespace-nowrap",
+                                                    isExecuting
+                                                        ? "text-emerald-200 font-black tracking-wider"
+                                                        : isActive
+                                                            ? "text-white font-bold"
+                                                            : "text-white/80"
+                                                )}
+                                            >
+                                                {agent.shortTitle}
+                                            </span>
+
+                                            {(isActive || isExecuting) && (
+                                                <span className="relative flex h-2 w-2 shrink-0">
+                                                    <span
+                                                        className={cn(
+                                                            "motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+                                                            isExecuting && "bg-emerald-400"
+                                                        )}
+                                                        style={!isExecuting ? { backgroundColor: identity.accent } : undefined}
+                                                    />
+                                                    <span
+                                                        className={cn(
+                                                            "relative inline-flex rounded-full h-2 w-2",
+                                                            isExecuting && "bg-emerald-400 shadow-[0_0_8px_#34d399]"
+                                                        )}
+                                                        style={!isExecuting ? { backgroundColor: identity.accent } : undefined}
+                                                    />
+                                                </span>
+                                            )}
+                                        </button>
 
                                         {/* Mixing Console Solo Toggle Button */}
                                         <button
                                             type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                soloAgent(agent.id);
-                                            }}
+                                            onClick={() => soloAgent(agent.id)}
                                             className={cn(
-                                                "text-[9px] font-black uppercase px-1 rounded transition-all ml-0.5",
+                                                "text-[10px] font-black uppercase px-1 rounded transition-colors ml-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300",
                                                 isSoloed
                                                     ? "bg-amber-400 text-black font-extrabold shadow-xs"
-                                                    : "bg-white/10 text-white/50 hover:bg-amber-400 hover:text-black opacity-0 group-hover:opacity-100"
+                                                    : "bg-white/10 text-white/50 hover:bg-amber-400 hover:text-black opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                                             )}
                                             title={`Solo ${agent.shortTitle} (mutes others)`}
                                             aria-label={`Solo ${agent.shortTitle}`}
@@ -561,12 +488,9 @@ export default function ParticipantSelector() {
                                         {workerIds.length > 0 && (
                                             <button
                                                 type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setFocusedHeadId(isFocused ? null : agent.id);
-                                                }}
+                                                onClick={() => setFocusedHeadId(isFocused ? null : agent.id)}
                                                 className={cn(
-                                                    "p-0.5 rounded-full hover:bg-white/20 transition-transform",
+                                                    "p-0.5 rounded-full hover:bg-white/20 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
                                                     isFocused && "rotate-90 text-white"
                                                 )}
                                                 title={`View ${agent.shortTitle} worker hierarchy`}
@@ -575,27 +499,9 @@ export default function ParticipantSelector() {
                                                 <ChevronRight size={11} className={isFocused ? "text-white" : "text-white/40"} />
                                             </button>
                                         )}
-
-                                        {/* Active / Executing pulse dot beacon */}
-                                        {(isActive || isExecuting) && (
-                                            <span className="relative flex h-2 w-2 shrink-0">
-                                                <span
-                                                    className={cn(
-                                                        "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                                                        isExecuting ? "bg-emerald-400" : agent.dotColor
-                                                    )}
-                                                />
-                                                <span
-                                                    className={cn(
-                                                        "relative inline-flex rounded-full h-2 w-2",
-                                                        isExecuting ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : agent.dotColor
-                                                    )}
-                                                />
-                                            </span>
-                                        )}
                                     </motion.div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide">
+                                <TooltipContent side="top" className="bg-surface text-white border border-white/10 px-3 py-2 font-medium tracking-wide">
                                     <p className="text-white text-xs">
                                         <span className="font-bold">{agent.fullName}</span>
                                         <span className="opacity-70 ml-1.5">
@@ -632,10 +538,10 @@ export default function ParticipantSelector() {
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <div className="flex items-center justify-between pb-1 border-b border-white/10 px-1">
-                                            <span className="text-[9px] font-black uppercase tracking-wider text-white/50">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-white/50">
                                                 {agent.shortTitle} Hierarchy
                                             </span>
-                                            <span className="text-[9px] font-mono text-white/30">
+                                            <span className="text-[10px] font-mono text-white/30">
                                                 {workerIds.length} sub-agents
                                             </span>
                                         </div>

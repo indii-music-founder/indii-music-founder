@@ -38,30 +38,3 @@ export function getHarnessCatalogEntry(domain: HarnessDomain): HarnessCatalogEnt
   return BUSINESS_HARNESS_CATALOG.find(entry => entry.domain === domain);
 }
 
-export type HarnessImplementationStatus = 'Done' | 'Partial' | 'Planned';
-
-export const HARNESS_IMPLEMENTATION_STATUS: Record<HarnessDomain, HarnessImplementationStatus> = {
-  artist_memory: 'Planned',
-  song_dna: 'Done',
-  creator_protection: 'Done',
-  distribution_ddex: 'Done',
-  release: 'Partial',
-  finance: 'Done',
-  activity_time_value: 'Done',
-  road_travel: 'Done',
-  gear_asset: 'Done',
-  merch_pod: 'Done',
-  marketing_growth: 'Done',
-  fan_crm: 'Done',
-  publishing_rights: 'Done',
-  collaboration_splits: 'Done',
-  licensing_sync: 'Done',
-  royalty_revenue: 'Done',
-  legal_compliance: 'Done',
-  creative_production: 'Done',
-  opportunity: 'Done',
-  education_curriculum: 'Done',
-  security_trust: 'Done',
-  boardroom_meta: 'Done',
-};
-

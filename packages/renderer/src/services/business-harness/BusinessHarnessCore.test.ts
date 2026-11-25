@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { activityValueService } from './ActivityValueService';
 import { boardroomMetaHarnessService } from './BoardroomMetaHarnessService';
 import { hiddenCostHarnessService } from './HiddenCostHarnessService';
-import { BUSINESS_HARNESS_CATALOG, HARNESS_IMPLEMENTATION_STATUS } from './HarnessCatalog';
+import { BUSINESS_HARNESS_CATALOG } from './HarnessCatalog';
 import { merchPodHarnessService } from './MerchPodHarnessService';
 import { uploadIntakeHarnessService } from './UploadIntakeHarnessService';
 import { createHarnessRun } from './types';
@@ -144,9 +144,11 @@ describe('Business Harness core', () => {
     expect(result.creatorProtectionRun.output.profile.aiVoiceLikenessPermission).toBe('not_authorized');
   });
 
-  it('defines a status for every domain in BUSINESS_HARNESS_CATALOG', () => {
+  it('keeps catalog domain entries well-formed', () => {
+    expect(BUSINESS_HARNESS_CATALOG.length).toBeGreaterThan(0);
     BUSINESS_HARNESS_CATALOG.forEach(entry => {
-      expect(HARNESS_IMPLEMENTATION_STATUS[entry.domain]).toBeDefined();
+      expect(entry.domain).toBeTruthy();
+      expect(entry.ownerAgentId).toBeTruthy();
     });
   });
 
@@ -359,5 +361,33 @@ describe('Business Harness core', () => {
 
     expect(decision.mode).toBe('blocked');
     expect(decision.blockers[0]).toContain('Travel Budget');
+  });
+
+  it('uses singular domain pluralization for same-domain runs and never marks high legal risk execution_ready (ISSUE-1684)', () => {
+    const runOne = createHarnessRun({
+      userId: 'user-a',
+      domain: 'legal_compliance',
+      inputRefs: [], scores: [],
+      findings: [{ id: 'f1', domain: 'legal_compliance', severity: 'high', title: 'Sample unclear', detail: 'Verify sample clearance.', confidence: 'high' }],
+      recommendations: [], costLines: [], legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 0.9, output: {}, approvalGates: [],
+    });
+    const runTwo = createHarnessRun({
+      userId: 'user-a',
+      domain: 'legal_compliance',
+      inputRefs: [], scores: [], findings: [],
+      recommendations: [], costLines: [], legalBasis: [], evidenceRefs: [], agentBriefs: [], assumptions: [],
+      confidence: 0.9, output: {}, approvalGates: [],
+    });
+
+    const decision = boardroomMetaHarnessService.createDecision({
+      userId: 'user-a',
+      requestedAction: 'release',
+      runs: [runOne, runTwo] as any,
+    });
+
+    expect(decision.decision).toBe('escalate');
+    expect(decision.mode).toBe('approval');
+    expect(decision.rationale[0]).toBe('2 harness runs reviewed across 1 domain.');
   });
 });

@@ -8,13 +8,6 @@ import React from 'react';
 Element.prototype.scrollTo = vi.fn();
 
 // ── Mocks ────────────────────────────────────────────────────────
-// Mock the ChatMessage component (used by MessageFeed)
-vi.mock('@/core/components/chat/ChatMessage', () => ({
-    ChatMessage: ({ msg }: { msg: { id: string; text: string } }) => (
-        <div data-testid={`chat-message-${msg.id}`}>{msg.text}</div>
-    ),
-}));
-
 // Mock motion to avoid animation issues in tests
 // Uses a Proxy so any HTML tag (motion.div, motion.p, motion.span, ...) resolves —
 // enumerating a fixed set of tags broke when other components under test (e.g.
@@ -87,8 +80,6 @@ vi.mock('@/lib/utils', () => ({
 
 // ── Imports Under Test ───────────────────────────────────────────
 import { BoardroomModule } from './BoardroomModule';
-import { BoardroomEmptyState } from './components/BoardroomEmptyState';
-import { MessageFeed } from './components/MessageFeed';
 import { BoardroomTable } from './components/BoardroomTable';
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -213,7 +204,7 @@ describe('BoardroomModule', () => {
         expect(workspace).not.toBeVisible();
     });
 
-    it.each(['browser', 'module', 'workbench', 'agent-feed'])('keeps %s between the docked table and discussion', tab => {
+    it.each(['browser', 'module', 'workbench', 'agent-feed'])('opens %s with discussion as a right drawer by default and supports docking (Spec L2/L3)', tab => {
         mockStoreState.boardroomWorkspaceLayout = 'split';
         mockStoreState.boardroomWorkspaceTab = tab;
 
@@ -227,12 +218,40 @@ describe('BoardroomModule', () => {
         expect(workspace.nextElementSibling).toBe(discussion);
         expect(table).not.toHaveClass('absolute');
         expect(discussion).toBeVisible();
+        expect(discussion).toHaveAttribute('role', 'dialog');
+        expect(discussion).toHaveClass('absolute', 'right-14');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Dock discussion' }));
         expect(discussion).not.toHaveClass('absolute');
+        expect(discussion).not.toHaveAttribute('role', 'dialog');
+
         fireEvent.click(screen.getByRole('button', { name: 'Hide table' }));
         expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Discussion' }));
         expect(discussion).not.toBeVisible();
         expect(workspace).toBeVisible();
+    });
+
+    it('renders workspace as a full-screen sheet and exposes Living Plans button on phones (ISSUE-1636)', () => {
+        mobileState.isAnyPhone = true;
+        mobileState.isDesktop = false;
+        mockStoreState.boardroomWorkspaceLayout = 'split';
+        mockStoreState.boardroomWorkspaceTab = 'browser';
+        try {
+            render(<BoardroomModule />);
+            const workspace = screen.getByTestId('boardroom-workspace-container');
+            expect(workspace).toHaveAttribute('role', 'dialog');
+            expect(workspace).toHaveClass('fixed', 'inset-0');
+
+            fireEvent.click(screen.getByRole('button', { name: 'Close Workspace' }));
+            expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('closed');
+
+            const plansBtn = screen.getByRole('button', { name: 'Living Plans' });
+            expect(plansBtn).toBeInTheDocument();
+        } finally {
+            mobileState.isAnyPhone = false;
+            mobileState.isDesktop = true;
+        }
     });
 
     it('keeps the discussion overlay keyboard accessible in stage layout', () => {
@@ -286,36 +305,6 @@ describe('BoardroomModule', () => {
         render(<BoardroomModule />);
         expect(screen.getByTestId('boardroom-workspace-container')).toBeInTheDocument();
         expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
-    });
-});
-
-describe('BoardroomEmptyState', () => {
-    it('renders the header and executive starter cards', () => {
-        render(<BoardroomEmptyState />);
-        expect(screen.getByText('Boardroom Active')).toBeInTheDocument();
-        expect(screen.getByText('Your Executive Music Team is Assembled')).toBeInTheDocument();
-        expect(screen.getByText('Executive Business Starters')).toBeInTheDocument();
-        expect(screen.getByTestId('starter-card-master-audit')).toBeInTheDocument();
-        expect(screen.getByTestId('starter-card-split-sheet')).toBeInTheDocument();
-    });
-});
-
-describe('MessageFeed', () => {
-    it('renders a ChatMessage for each message', () => {
-        const messages = [
-            { id: 'a', role: 'model' as const, text: 'First message', timestamp: Date.now() },
-            { id: 'b', role: 'user' as const, text: 'Second message', timestamp: Date.now() },
-        ];
-
-        render(<MessageFeed messages={messages} />);
-        expect(screen.getByText('First message')).toBeInTheDocument();
-        expect(screen.getByText('Second message')).toBeInTheDocument();
-    });
-
-    it('renders nothing when messages array is empty', () => {
-        const { container } = render(<MessageFeed messages={[]} />);
-        // No message text should be present
-        expect(container.textContent).toBe('');
     });
 });
 

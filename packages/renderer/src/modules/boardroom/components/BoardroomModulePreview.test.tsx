@@ -2,7 +2,18 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ storeSelectorCalls: 0, moduleId: 'creative', crash: false }));
+const mocks = vi.hoisted(() => ({
+    storeSelectorCalls: 0,
+    moduleId: 'creative',
+    crash: false,
+    boardroomControl: { surface: 'studio', holder: 'artist', grantId: null, revision: 0 } as {
+        surface: string;
+        holder: string;
+        grantId: string | null;
+        revision: number;
+    },
+    takeBoardroomControl: vi.fn(),
+}));
 
 vi.mock('@/core/store', () => ({
     useStore: (selector: (state: Record<string, unknown>) => unknown) => {
@@ -13,6 +24,8 @@ vi.mock('@/core/store', () => ({
             activeAgents: [],
             setModule: vi.fn(),
             setConversationMode: vi.fn(),
+            boardroomControl: mocks.boardroomControl,
+            takeBoardroomControl: mocks.takeBoardroomControl,
         });
     },
 }));
@@ -36,6 +49,8 @@ describe('BoardroomModulePreview render isolation', () => {
         mocks.storeSelectorCalls = 0;
         mocks.moduleId = 'creative';
         mocks.crash = false;
+        mocks.boardroomControl = { surface: 'studio', holder: 'artist', grantId: null, revision: 0 };
+        mocks.takeBoardroomControl.mockClear();
     });
 
     it('skips its store selector when the parent rerenders for streamed messages', async () => {
@@ -59,5 +74,15 @@ describe('BoardroomModulePreview render isolation', () => {
 
         expect(await screen.findByText('Finance preview loaded')).toBeVisible();
         expect(screen.queryByRole('heading', { name: 'finance paused' })).not.toBeInTheDocument();
+    });
+
+    it('shows single controller status and Take control button when a specialist holds Studio (Spec D2)', async () => {
+        mocks.boardroomControl = { surface: 'studio', holder: 'creative', grantId: 'g-1', revision: 1 };
+        render(<BoardroomModulePreview />);
+        await screen.findByText('Creative preview loaded');
+
+        expect(screen.getByText(/Creative Director has control/i)).toBeVisible();
+        fireEvent.click(screen.getByRole('button', { name: 'Take control' }));
+        expect(mocks.takeBoardroomControl).toHaveBeenCalledWith('studio');
     });
 });
