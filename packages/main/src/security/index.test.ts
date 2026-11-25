@@ -114,7 +114,7 @@ describe('security/index.ts', () => {
                 expect(response.responseHeaders['Some-Header']).toEqual(['value']);
             });
 
-            it('injects CORS wildcard headers for Google and Firebase endpoints', () => {
+            it('injects explicit non-wildcard CORS headers for Google and Firebase endpoints', () => {
                 configureSecurity(mockSession as unknown as Session);
 
                 const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
@@ -123,6 +123,8 @@ describe('security/index.ts', () => {
                     url: 'https://securetoken.googleapis.com/v1/token',
                     responseHeaders: {
                         'access-control-allow-origin': ['https://indii.music'],
+                        'access-control-allow-headers': ['*', 'x-upstream-allowed'],
+                        'access-control-expose-headers': ['*', 'x-upstream-exposed'],
                         'content-type': ['application/json']
                     }
                 };
@@ -131,14 +133,27 @@ describe('security/index.ts', () => {
 
                 expect(callback).toHaveBeenCalled();
                 const response = callback.mock.calls[0][0];
+                const allowHeaders = response.responseHeaders['access-control-allow-headers'][0].split(', ');
+                const exposeHeaders = response.responseHeaders['access-control-expose-headers'][0].split(', ');
+
                 expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
                 expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
                 expect(response.responseHeaders['access-control-allow-methods'][0]).toContain('POST');
-                expect(response.responseHeaders['access-control-allow-headers']).toEqual(['*']);
+                expect(allowHeaders).not.toContain('*');
+                expect(allowHeaders).toEqual(expect.arrayContaining([
+                    'authorization',
+                    'content-type',
+                    'x-firebase-appcheck',
+                    'x-goog-api-client',
+                    'x-app-client-type',
+                    'x-upstream-allowed',
+                ]));
+                expect(exposeHeaders).not.toContain('*');
+                expect(exposeHeaders).toContain('x-upstream-exposed');
                 expect(response.responseHeaders['content-type']).toEqual(['application/json']);
             });
 
-            it('injects CORS wildcard headers for Cloud Functions and Cloud Run endpoints', () => {
+            it('injects explicit CORS headers for Cloud Functions and Cloud Run endpoints', () => {
                 configureSecurity(mockSession as unknown as Session);
 
                 const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
@@ -156,9 +171,11 @@ describe('security/index.ts', () => {
                 const response = callback.mock.calls[0][0];
                 expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
                 expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+                expect(response.responseHeaders['access-control-allow-headers'][0]).not.toBe('*');
+                expect(response.responseHeaders['access-control-allow-headers'][0]).toContain('authorization');
             });
 
-            it('preserves file:// initiator and enables credentials for local Electron requests', () => {
+            it('maps file:// initiator to null serialized origin for local Electron requests', () => {
                 configureSecurity(mockSession as unknown as Session);
 
                 const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
@@ -175,8 +192,63 @@ describe('security/index.ts', () => {
 
                 expect(callback).toHaveBeenCalled();
                 const response = callback.mock.calls[0][0];
-                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['file://']);
+                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
                 expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+            });
+
+            it('preserves http/https dev origin for localhost Electron requests', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
+                const callback = vi.fn();
+                const details = {
+                    url: 'https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel',
+                    initiator: 'http://localhost:4242',
+                    responseHeaders: {}
+                };
+
+                handler(details, callback);
+
+                expect(callback).toHaveBeenCalled();
+                const response = callback.mock.calls[0][0];
+                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['http://localhost:4242']);
+                expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+            });
+
+            it('echoes Access-Control-Request-Headers captured in onBeforeSendHeaders into onHeadersReceived', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const beforeSendHandler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
+                const headersReceivedHandler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
+                const sendCallback = vi.fn();
+                const recvCallback = vi.fn();
+
+                beforeSendHandler(
+                    {
+                        id: 42,
+                        url: 'https://firestore.googleapis.com/google.firestore.v1.Firestore/Write/channel',
+                        requestHeaders: {
+                            'Access-Control-Request-Headers': 'authorization, x-custom-firebase-header'
+                        }
+                    },
+                    sendCallback,
+                );
+
+                headersReceivedHandler(
+                    {
+                        id: 42,
+                        url: 'https://firestore.googleapis.com/google.firestore.v1.Firestore/Write/channel',
+                        initiator: 'file://',
+                        responseHeaders: {}
+                    },
+                    recvCallback,
+                );
+
+                const response = recvCallback.mock.calls[0][0];
+                const allowHeaders = response.responseHeaders['access-control-allow-headers'][0].split(', ');
+                expect(allowHeaders).toContain('authorization');
+                expect(allowHeaders).toContain('x-custom-firebase-header');
+                expect(allowHeaders).not.toContain('*');
             });
         });
 

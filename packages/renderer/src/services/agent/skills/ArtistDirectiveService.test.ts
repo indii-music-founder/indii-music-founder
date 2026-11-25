@@ -90,6 +90,42 @@ describe('ArtistDirectiveService', () => {
         });
     });
 
+    describe('offline server read', () => {
+        const saved: ArtistMasterDirective = { ...DEFAULT_ARTIST_MASTER_DIRECTIVE, artistName: 'Offline Signal' };
+        const snap = (d: ArtistMasterDirective) => ({ exists: () => true, data: () => d }) as any;
+        const offlineError = () => Object.assign(
+            new Error('Failed to get document because the client is offline.'),
+            { code: 'unavailable' }
+        );
+
+        it('falls back to getDocFromCache when getDoc rejects immediately as offline and queries server next time', async () => {
+            vi.mocked(getDoc).mockRejectedValueOnce(offlineError());
+            vi.mocked(getDocFromCache).mockResolvedValueOnce(snap(saved));
+
+            await expect(service.getDirective('user-test-123')).resolves.toMatchObject({ artistName: 'Offline Signal' });
+            expect(getDocFromCache).toHaveBeenCalledTimes(1);
+
+            vi.mocked(getDoc).mockResolvedValueOnce(snap({ ...saved, artistName: 'Reconnected Server' }));
+            await expect(service.getDirective('user-test-123')).resolves.toMatchObject({ artistName: 'Reconnected Server' });
+        });
+
+        it('rethrows the offline error when no cached directive exists on this device', async () => {
+            const err = offlineError();
+            vi.mocked(getDoc).mockRejectedValueOnce(err);
+            vi.mocked(getDocFromCache).mockResolvedValueOnce({ exists: () => false, data: () => undefined } as any);
+
+            await expect(service.getDirective('user-test-123')).rejects.toThrow('Failed to get document because the client is offline.');
+        });
+
+        it('does not call getDocFromCache on permission-denied errors', async () => {
+            const err = Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' });
+            vi.mocked(getDoc).mockRejectedValueOnce(err);
+
+            await expect(service.getDirective('user-test-123')).rejects.toThrow('Missing or insufficient permissions.');
+            expect(getDocFromCache).not.toHaveBeenCalled();
+        });
+    });
+
     it('rejects a corrupt stored directive without replacing it', async () => {
         vi.mocked(getDoc).mockResolvedValueOnce({
             exists: () => true,

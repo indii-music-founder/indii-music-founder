@@ -1,5 +1,10 @@
 import { app, Session, session as electronSession } from 'electron';
 import log from 'electron-log';
+import {
+    applyGoogleFirebaseCorsHeaders,
+    recordPreflightRequestHeaders,
+    clearPreflightRequestHeaders,
+} from './cors';
 
 const FIREBASE_DESKTOP_REFERRER = 'https://indii.music/';
 const FIREBASE_DESKTOP_ORIGIN = 'https://indii.music';
@@ -55,30 +60,10 @@ export function configureSecurity(session: Session) {
             'Cross-Origin-Embedder-Policy': ['unsafe-none']
         };
 
-        const url = details?.url || '';
-        const isGoogleOrFirebase = url.includes('.googleapis.com') ||
-            url.includes('.firebaseapp.com') ||
-            url.includes('.cloudfunctions.net') ||
-            url.includes('.run.app') ||
-            url.includes('localhost') ||
-            url.includes('127.0.0.1');
-
-        if (isGoogleOrFirebase) {
-            // Delete existing access-control headers to prevent casing/collision issues
-            for (const key of Object.keys(responseHeaders)) {
-                if (key.toLowerCase().startsWith('access-control-')) {
-                    delete (responseHeaders as Record<string, unknown>)[key];
-                }
-            }
-            const initiator = (details as any).initiator;
-            const allowedOrigin = (initiator && initiator !== 'null') ? initiator : 'null';
-            responseHeaders['access-control-allow-origin'] = [allowedOrigin];
-            responseHeaders['access-control-allow-credentials'] = ['true'];
-            responseHeaders['access-control-allow-methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'];
-            responseHeaders['access-control-allow-headers'] = ['*'];
-            responseHeaders['access-control-expose-headers'] = ['*'];
-            responseHeaders['access-control-max-age'] = ['86400'];
-        }
+        applyGoogleFirebaseCorsHeaders(
+            details as { id?: number; url?: string; method?: string; initiator?: string },
+            responseHeaders,
+        );
 
         callback({ responseHeaders });
     });
@@ -151,6 +136,11 @@ export function configureSecurity(session: Session) {
             'http://localhost:*/*'
         ] },
         (details, callback) => {
+            recordPreflightRequestHeaders(
+                (details as { id?: number }).id,
+                details.requestHeaders,
+            );
+
             // Firebase's web API key rejects Electron's empty file:// referrer or null origin.
             // Identify the native Studio with its canonical product origin; the
             // Founder marketing origin is a separate site and must never be used
@@ -167,13 +157,15 @@ export function configureSecurity(session: Session) {
 
     // 6. Network Diagnostics Monitoring
     session.webRequest.onErrorOccurred?.({ urls: ['*://*/*'] }, (details) => {
+        clearPreflightRequestHeaders((details as { id?: number }).id);
         const url = details?.url || '';
         if (url.includes('googleapis.com') || url.includes('cloudfunctions.net') || url.includes('firebaseapp.com') || url.includes('run.app')) {
-            log.error(`[WebRequest ERROR] ${details.method} ${details.url} -> ${details.error} (initiator: ${(details as any).initiator})`);
+            log.error(`[WebRequest ERROR] ${details.method} ${details.url} -> ${details.error} (initiator: ${(details as { initiator?: string }).initiator})`);
         }
     });
 
     session.webRequest.onCompleted?.({ urls: ['*://*/*'] }, (details) => {
+        clearPreflightRequestHeaders((details as { id?: number }).id);
         const url = details?.url || '';
         if (url.includes('securetoken.googleapis.com') || url.includes('mintElectronAppCheckToken') || url.includes('generateContentStream')) {
             log.info(`[WebRequest OK] ${details.statusCode} ${details.method} ${details.url}`);

@@ -137,6 +137,7 @@ describe('CreativeNavbar', () => {
         goBackModule: mockGoBackModule,
         currentModule: 'creative',
         _navigationHistory: ['dashboard', 'creative'],
+        isOffline: false,
         videoInputs: {
             firstFrame: null,
             lastFrame: null,
@@ -185,8 +186,30 @@ describe('CreativeNavbar', () => {
         );
         expect(screen.getByText('Studio')).toBeInTheDocument();
         expect(screen.getByText('ONLINE')).toBeInTheDocument();
+        expect(screen.getByTitle('Autonomous Systems Status: Online')).toBeInTheDocument();
         expect(screen.getByTestId('canvas-mode-picker')).toBeInTheDocument();
         expect(screen.getByTestId('canvas-mode-picker')).not.toHaveClass('absolute');
+    });
+
+    it('shows OFFLINE indicator when store reports isOffline=true', () => {
+        const offlineState = {
+            ...defaultState,
+            isOffline: true,
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(offlineState);
+            return offlineState;
+        });
+
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        expect(screen.getByText('OFFLINE')).toBeInTheDocument();
+        expect(screen.queryByText('ONLINE')).not.toBeInTheDocument();
+        expect(screen.getByTitle('Network Offline — Cloud sync paused')).toBeInTheDocument();
     });
 
     it('keeps creative journeys inside the single header row instead of a stacked second bar', () => {

@@ -112,5 +112,36 @@ describe('Content Security Policy', () => {
             expect(response.responseHeaders['X-Content-Type-Options']).toEqual(['nosniff']);
             expect(response.responseHeaders['X-Test']).toEqual(['test']);
         });
+
+        it('applies explicit non-wildcard CORS headers and null origin for file:// Firestore requests', () => {
+            applyCSP();
+
+            const mockedFn = vi.mocked(session.defaultSession.webRequest.onHeadersReceived);
+            type HeadersListener = (
+                details: { url?: string; method?: string; initiator?: string; responseHeaders: Record<string, string[]> },
+                cb: (r: Record<string, unknown>) => void,
+            ) => void;
+            const callback = mockedFn.mock.calls[0][0] as unknown as HeadersListener;
+
+            const cbFn = vi.fn();
+            callback(
+                {
+                    url: 'https://firestore.googleapis.com/v1/projects/test/databases/(default)/documents:commit',
+                    method: 'POST',
+                    initiator: 'file://',
+                    responseHeaders: { 'access-control-allow-origin': ['https://indii.music'] },
+                },
+                cbFn,
+            );
+
+            expect(cbFn).toHaveBeenCalled();
+            const response = cbFn.mock.calls[0][0] as { responseHeaders: Record<string, string[]> };
+            const allowHeaders = response.responseHeaders['access-control-allow-headers'][0].split(', ');
+            expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
+            expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+            expect(allowHeaders).toContain('authorization');
+            expect(allowHeaders).toContain('x-firebase-appcheck');
+            expect(allowHeaders).not.toContain('*');
+        });
     });
 });
