@@ -1,4 +1,5 @@
 import type { AgentMessage } from '@/core/store';
+import { agentRegistry } from '../registry';
 import { SummaryService } from '../utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
 import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
@@ -56,7 +57,11 @@ export class HistoryManager {
         if (messages.length === 0) return '';
 
         return messages.map(msg => {
-            const role = msg.role === 'user' ? 'User' : 'Assistant';
+            const role = msg.role === 'user'
+                ? 'User'
+                : msg.agentId
+                    ? `[${agentRegistry.get(msg.agentId)?.name || msg.agentId}]`
+                    : 'Assistant';
             const trimmedText = typeof msg.text === 'string' ? msg.text.trim() : '';
             const attachmentSummary = Array.isArray(msg.attachments) && msg.attachments.length > 0
                 ? `[Attached: ${msg.attachments.map(att => (

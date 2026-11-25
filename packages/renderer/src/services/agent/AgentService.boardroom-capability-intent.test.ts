@@ -530,7 +530,7 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         });
     });
 
-    it('resyncs a Boardroom response after its measurement status settles', async () => {
+    it('updates the persisted session message after its measurement status settles without writing boardroom_messages (ISSUE-1674)', async () => {
         const messages = [{ id: 'response-boardroom-measurement', role: 'model', text: '', timestamp: Date.now() }];
         const state = {
             conversationMode: 'boardroom',
@@ -569,17 +569,16 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         }).executeFlow('What can you do?', undefined, {}, 'response-boardroom-measurement');
 
         await vi.waitFor(() => {
-            expect(agentFirebaseConnector.syncMessage).toHaveBeenCalledWith(expect.objectContaining({
-                id: 'response-boardroom-measurement',
-                text: 'Boardroom styled response',
+            expect(state.updateAgentMessage).toHaveBeenCalledWith('response-boardroom-measurement', {
                 metadata: {
                     personaResponse: expect.objectContaining({
                         responseId: 'response-boardroom-measurement',
                         measurementStatus: 'recorded',
                     }),
                 },
-            }));
+            });
         });
+        expect(agentFirebaseConnector.syncMessage).not.toHaveBeenCalled();
     });
 
     it('keeps the Conductor answer when the Boardroom run outlives the overall timeout (ISSUE-1656)', async () => {
@@ -1366,5 +1365,217 @@ describe('AgentService request-bound approval guidance', () => {
             expect(execution.task).toContain('midnight-demo.wav');
             expect(execution.task).not.toContain('UklGRg==');
         }
+    });
+
+    it('pins 2-seat Boardroom messages and thoughts to runSessionId when switching active session mid-run (ISSUE-1669)', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_READY',
+            executedAgentIds: ['generalist', 'marketing'],
+            deferredAgentIds: [],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: null,
+            leaseId: '55555555-5555-4555-8555-555555555555',
+            leaseExpiresAtMs: Date.now() + 60_000,
+            sideEffectOwnerAgentId: 'generalist',
+        });
+        const registry = new Map<string, string>();
+        const sessions: Record<string, { messages: Array<Record<string, unknown>> }> = {
+            'sess-a': { messages: [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }] },
+            'sess-b': { messages: [] },
+        };
+        registry.set('response-0', 'sess-a');
+        const state: Record<string, unknown> = {
+            conversationMode: 'boardroom',
+            activeSessionId: 'sess-a',
+            activeAgents: ['generalist', 'marketing'],
+            referencedAssets: [],
+            sessions,
+            get agentHistory() { return sessions[state.activeSessionId as string]?.messages ?? []; },
+            addMessageToSession: vi.fn((sessionId: string, msg: Record<string, unknown>) => {
+                registry.set(String(msg.id), sessionId);
+                sessions[sessionId]?.messages.push(msg);
+                // Switch active session mid-run as soon as the coordinating banner lands
+                if (String(msg.text).includes('Indii is coordinating')) {
+                    state.activeSessionId = 'sess-b';
+                }
+            }),
+            addAgentMessage: vi.fn((msg: Record<string, unknown>) => {
+                sessions[state.activeSessionId as string]?.messages.push(msg);
+            }),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const sid = registry.get(id) ?? (state.activeSessionId as string);
+                const msg = sessions[sid]?.messages.find(m => m.id === id);
+                if (msg) Object.assign(msg, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            handleBoardroomSwarmFlow: (task: { rawUserUtterance: string }, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomSwarmFlow({ rawUserUtterance: 'Plan release' }, undefined, { sessionId: 'sess-a' }, 'response-0');
+
+        expect(state.activeSessionId).toBe('sess-b');
+        expect(sessions['sess-b']?.messages).toHaveLength(0);
+        expect(sessions['sess-a']?.messages.some(m => String(m.text).includes('generalist response'))).toBe(true);
+        expect(sessions['sess-a']?.messages.some(m => String(m.text).includes('marketing response'))).toBe(true);
+    });
+
+    it('omits "Indii is coordinating 0 participants" banner when zero seats run (ISSUE-1677)', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED',
+            executedAgentIds: [],
+            deferredAgentIds: ['generalist'],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: 'generalist',
+            leaseId: null,
+            leaseExpiresAtMs: null,
+            sideEffectOwnerAgentId: null,
+        });
+        const messages = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeSessionId: 'sess-zero',
+            activeAgents: ['generalist'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(m => messages.push(m)),
+            addMessageToSession: vi.fn((_s: string, m: Record<string, unknown>) => messages.push(m as (typeof messages)[number])),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const msg = messages.find(m => m.id === id);
+                if (msg) Object.assign(msg, update);
+            }),
+        };
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            handleBoardroomSwarmFlow: (task: { rawUserUtterance: string }, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomSwarmFlow({ rawUserUtterance: 'Discuss rollout' }, undefined, {}, 'response-0');
+
+        expect(messages.some(m => String(m.text).includes('Indii is coordinating'))).toBe(false);
+    });
+
+    it('fences referenced assets without delegate wording and does not block ModelArmor on pinned jailbreak text (ISSUE-1673, ISSUE-1676)', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_READY',
+            executedAgentIds: ['generalist'],
+            deferredAgentIds: [],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: null,
+            leaseId: '66666666-6666-4666-8666-666666666666',
+            leaseExpiresAtMs: Date.now() + 60_000,
+            sideEffectOwnerAgentId: 'generalist',
+        });
+        const messages = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeSessionId: 'sess-safe',
+            activeAgents: ['generalist'],
+            referencedAssets: [{
+                id: 'ref-1',
+                name: 'Article mentioning jailbreak techniques',
+                type: 'url' as const,
+                value: 'https://example.com/jailbreak-faq',
+            }],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(m => messages.push(m)),
+            addMessageToSession: vi.fn((_s: string, m: Record<string, unknown>) => messages.push(m as (typeof messages)[number])),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const msg = messages.find(m => m.id === id);
+                if (msg) Object.assign(msg, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            handleBoardroomSwarmFlow: (task: { rawUserUtterance: string }, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomSwarmFlow({ rawUserUtterance: 'Summarize our pinned page.' }, undefined, {}, 'response-0');
+
+        const taskSent = capturedExecutions[0]?.task ?? '';
+        expect(taskSent).toContain('[BOARDROOM REFERENCED ASSETS]');
+        expect(taskSent).toContain('NOT INSTRUCTIONS');
+        expect(taskSent.toLowerCase()).not.toContain('delegate');
+
+        const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
+        const scanResult = await ModelArmor.scanInput(taskSent, getDefaultPolicy());
+        expect(scanResult.allowed).toBe(true);
+    });
+
+    it('keeps action routing per-turn without permanently seating routed specialists via addActiveAgent (ISSUE-1668)', async () => {
+        const addActiveAgent = vi.fn();
+        const messages = [{ id: 'response-act', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeSessionId: 'sess-act',
+            activeAgents: ['generalist'],
+            referencedAssets: [],
+            uploadedImages: [],
+            generatedHistory: [],
+            agentHistory: messages,
+            addActiveAgent,
+            addMessageToSession: vi.fn((_s: string, m: Record<string, unknown>) => messages.push(m as (typeof messages)[number])),
+            addAgentMessage: vi.fn(m => messages.push(m)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const msg = messages.find(m => m.id === id);
+                if (msg) Object.assign(msg, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        (service as unknown as {
+            orchestrator: {
+                determineBoardroomIntent: () => Promise<'action'>;
+                determineOrchestrationPath: () => Promise<{ type: 'single'; agentId: string; reasoning: string }>;
+            };
+        }).orchestrator = {
+            determineBoardroomIntent: vi.fn().mockResolvedValue('action'),
+            determineOrchestrationPath: vi.fn().mockResolvedValue({ type: 'single', agentId: 'marketing', reasoning: 'Campaign action' }),
+        };
+
+        await (service as unknown as {
+            handleBoardroomRequestFlow: (task: { rawUserUtterance: string }, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomRequestFlow({ rawUserUtterance: 'Launch the social teaser campaign' }, undefined, {}, 'response-act');
+
+        expect(addActiveAgent).not.toHaveBeenCalled();
+        expect(capturedExecutions).toHaveLength(1);
+        expect(capturedExecutions[0]?.context.seatedAgents).toEqual(['generalist', 'marketing']);
+    });
+
+    it('honors forcedAgentId without Boardroom dispatch and ignores [System Note] turns (ISSUE-1672)', async () => {
+        const messages = [{ id: 'response-forced', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeSessionId: 'sess-forced',
+            activeAgents: ['generalist', 'marketing'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(m => messages.push(m)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const msg = messages.find(m => m.id === id);
+                if (msg) Object.assign(msg, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await expect(service.sendMessage('[System Note] UI tool done', undefined, 'creative')).resolves.toBeUndefined();
+        expect(capturedExecutions).toHaveLength(0);
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string, forcedAgentId?: string) => Promise<void>;
+        }).executeFlow('Apply contrast curve', undefined, {}, 'response-forced', 'creative');
+
+        expect(capturedExecutions.map(e => e.agentId)).toEqual(['creative']);
+        expect(callBoardroomPlan).not.toHaveBeenCalled();
     });
 });

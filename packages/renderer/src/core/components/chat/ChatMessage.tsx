@@ -229,14 +229,6 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
     const handleRate = async (rating: number) => {
         setOptimisticRating(rating);
         updateAgentMessage(messageId, { rating });
-        try {
-            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
-            await agentFirebaseConnector.update(messageId, { rating });
-        } catch (err) {
-            logger.error('[ChatMessage] Failed to save message rating or load connector:', { messageId, rating, error: err });
-            setOptimisticRating(current => current === rating ? currentRating : current);
-            updateAgentMessage(messageId, { rating: currentRating });
-        }
     };
 
     return (

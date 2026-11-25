@@ -41,6 +41,8 @@ function referenceKeys(asset: ReferencedAsset): string[] {
     return keys;
 }
 
+export const MAX_BOARDROOM_REFERENCED_ASSETS = 12;
+
 function mergeReferences(current: ReferencedAsset[], incoming: readonly ReferencedAsset[], dismissed: readonly string[] = []) {
     const seen = new Set([...dismissed, ...current.flatMap(referenceKeys)]);
     const next = [...current];
@@ -50,7 +52,10 @@ function mergeReferences(current: ReferencedAsset[], incoming: readonly Referenc
         keys.forEach(key => seen.add(key));
         next.push(asset);
     }
-    return next.length === current.length ? current : next;
+    const bounded = next.length > MAX_BOARDROOM_REFERENCED_ASSETS
+        ? next.slice(-MAX_BOARDROOM_REFERENCED_ASSETS)
+        : next;
+    return bounded.length === current.length && bounded.every((item, index) => item === current[index]) ? current : bounded;
 }
 
 export function deduplicateBoardroomReferences(assets: ReferencedAsset[]): ReferencedAsset[] {

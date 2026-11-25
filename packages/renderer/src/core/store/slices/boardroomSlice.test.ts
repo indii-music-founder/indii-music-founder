@@ -5,7 +5,7 @@ import {
     listWorkerIds,
     normalizeBoardroomAgentIds,
 } from '@/services/agent/departments';
-import { BoardroomSlice, createBoardroomSlice } from './boardroomSlice';
+import { BoardroomSlice, createBoardroomSlice, MAX_BOARDROOM_REFERENCED_ASSETS } from './boardroomSlice';
 
 function createBoardroomStore() {
     return createStore<BoardroomSlice>()(createBoardroomSlice);
@@ -21,6 +21,21 @@ describe('Boardroom references', () => {
         getState().addReferencedAsset(manual);
         getState().addAutomaticReferencedAssets([art, art]);
         expect(getState().referencedAssets).toEqual([manual]);
+    });
+
+    it('caps pinned referencedAssets at MAX_BOARDROOM_REFERENCED_ASSETS (ISSUE-1673)', () => {
+        const { getState } = createBoardroomStore();
+        for (let i = 0; i < 20; i++) {
+            getState().addReferencedAsset({
+                id: `asset-${i}`,
+                name: `Reference ${i}`,
+                type: 'url',
+                value: `https://example.com/${i}.png`,
+            });
+        }
+        expect(getState().referencedAssets).toHaveLength(MAX_BOARDROOM_REFERENCED_ASSETS);
+        expect(getState().referencedAssets[0]?.id).toBe(`asset-${20 - MAX_BOARDROOM_REFERENCED_ASSETS}`);
+        expect(getState().referencedAssets.at(-1)?.id).toBe('asset-19');
     });
 
     it('remembers removals and Clear All without excluding new assets or explicit pins', () => {

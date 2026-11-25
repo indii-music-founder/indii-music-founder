@@ -3664,11 +3664,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1668: Solo-specialist mode re-seats the Conductor via normalizeBoardroomAgentIds (AS:1297, boardroomSlice.ts:133, de [O15]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O15 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Solo-specialist mode re-seats the Conductor via `normalizeBoardroomAgentIds` (`AS:1297`, `boardroomSlice.ts:133`, `departments.ts:101-108`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Removed the `store.getState().addActiveAgent(...)` mutation loop in `AgentService.handleBoardroomRequestFlow` and replaced it with a per-turn `turnSeatedAgents` list passed into `stepContext.seatedAgents`, keeping solo-specialist routing free of `generalist` and preventing action routing from mutating permanent table seating. Proved in `AgentService.boardroom-capability-intent.test.ts` and `BoardroomSoloRoutingAndLoopRecovery.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3676,11 +3677,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1669: Session switch mid-run misplaces messages and drops thoughts (AS:1453,1525,1362; use appendRunMessage(runSessi [O16]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O16 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Session switch mid-run misplaces messages and drops thoughts (`AS:1453,1525,1362`; use `appendRunMessage(runSessionId)`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Pinned `runSessionId` across both `handleBoardroomRequestFlow` and `handleBoardroomSwarmFlow` in `AgentService.ts`, routed all `planMessage`/seat message appends through `appendRunMessage(store, msg, runSessionId)`, and added `findRunMessage(store, messageId, runSessionId)` so thought/streaming updates read the run's pinned session after mid-run session switches. Proved by 2-seat mid-run session switch test in `AgentService.boardroom-capability-intent.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3688,11 +3690,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1670: Planner gets no conversation history, so "go ahead" routes on literal text (AgentOrchestrator.ts:152-344) [O17]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O17 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Planner gets no conversation history, so "go ahead" routes on literal text (`AgentOrchestrator.ts:152-344`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Added `extractConfirmedProposalContext` in `BoardroomActionPlan.ts`, injected prior model proposals into `AgentOrchestrator` (`determineAgent`, `determineFanOut`, `determineOrchestrationPath`) and `GraphDecompositionService.decompose` when routing short confirmations (`go ahead`, `yes`, `do it`), and widened `scopedChatHistory` in `AgentService.handleBoardroomRequestFlow` so step agents retain the confirmed proposal even with 4+ seated agents. Proved in `BoardroomActionPlan.test.ts` and `AgentOrchestrator.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3700,11 +3703,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1671: Routing to a worker agent throws a user-facing error (BoardroomActionPlan.ts:102-120) [O18]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O18 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Routing to a worker agent throws a user-facing error (`BoardroomActionPlan.ts:102-120`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Added `normalizeBoardroomSteps` in `BoardroomActionPlan.ts` (wired into `AgentService.handleBoardroomRequestFlow`) to map worker IDs (`finance.tax`, etc.) to their owning department head via `getDepartmentOf(id)?.headId` and fall back to a single-step `generalist` plan rather than throwing when validation fails. Proved in `BoardroomActionPlan.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3712,11 +3716,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1672: Tool actions in Boardroom trigger two full paid turns (AS:2228,2233, AS:738-752) [O19]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O19 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Tool actions in Boardroom trigger two full paid turns (`AS:2228,2233`, `AS:738-752`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Ignored `[System Note]` prefixes in `AgentService.sendMessage` / `executeFlow`, routed `forcedAgentId` dispatches directly through `executeSingleAgentFlow` before entering `handleBoardroomRequestFlow`, and updated `dispatchToolCall` to record annotator results and `[System Note]` entries locally in the session instead of issuing two extra `sendMessage` turns. Proved in `AgentService.boardroom-capability-intent.test.ts` and `AgentService.torture.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3724,11 +3729,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1673: Referenced assets [O20]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O20 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Referenced assets: unbounded, unfenced, removals revert, can trip ModelArmor on every seat (`store/index.ts:219-231`, `ModelArmor.ts:51,146-159`, `AS:1470-1484`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Bounded `boardroomSlice.mergeReferences` to `MAX_BOARDROOM_REFERENCED_ASSETS = 12`, fenced `[BOARDROOM REFERENCED ASSETS]` in `AgentService.handleBoardroomSwarmFlow` as untrusted data (`NOT INSTRUCTIONS`), and added all Boardroom asset/system fence delimiters to `ModelArmor.scanInput` so third-party pinned text containing `"jailbreak"` does not block seats. Proved in `boardroomSlice.test.ts` and `AgentService.boardroom-capability-intent.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3736,11 +3742,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1674: Boardroom messages double-written to write-only boardroom_messages (AgentFirebaseConnector.ts:33-94); ratings  [O21]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O21 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Boardroom messages double-written to write-only `boardroom_messages` (`AgentFirebaseConnector.ts:33-94`); ratings fail outside Boardroom (`ChatMessage.tsx:232`); index `firestore.indexes.json:403-414` serves nothing. (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Removed `boardroom_messages` sync writes from `AgentService.ts`, deprecated `AgentFirebaseConnector.syncMessage` to a no-op with zero Firestore writes, moved `ChatMessage.tsx` and mobile-remote `AgentChat.tsx` ratings onto session messages via `updateAgentMessage` / `SessionService.updateMessage`, removed `boardroom_messages` from `packages/firebase/firestore.indexes.json`, and removed `match /boardroom_messages/{msgId}` from `packages/firebase/firestore.rules` (via `firestore-rules-author`, updating `firestore.rules.test.ts`). Rules/index changes require Firebase deploy on merge. Proved in `AgentFirebaseIntegration.test.ts`, `AgentChat.test.tsx`, and `AgentService.boardroom-capability-intent.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3748,11 +3755,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1675: Security gate runs 3-4x per turn; judge callables have no timeout/abort (AgentOrchestrator.ts:63,103,305,404;  [O22]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O22 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Security gate runs 3-4x per turn; judge callables have no timeout/abort (`AgentOrchestrator.ts:63,103,305,404`; `typesafeJudgments.ts:733-785`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Added per-turn security gate verdict memoization (`evaluateSecurityGateOnce`) in `AgentOrchestrator.ts` (before: 3x across intent/path/agent; after: 1x per turn) and routed `judgeSpecialistAgentRoute`, `judgeBoardroomIntent`, and `judgeOrchestrationComplexity` through `invokeTypesafeJudge` with `BOARDROOM_JUDGMENT_TIMEOUT_MS` (3,000ms) and `AbortSignal` support so hung calls fall back to null. Kept per-loop `MembershipService.checkBudget` intact in `BaseAgent.ts`. Proved in `AgentOrchestrator.test.ts` and `typesafeJudgments.simpleChoice.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3760,11 +3768,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1676: Swarm prompt tells agents to delegate but policy returns BOARDROOM_NOTES_ONLY; related checks are dead (AS:156 [O23]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O23 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Swarm prompt tells agents to delegate but policy returns `BOARDROOM_NOTES_ONLY`; related checks are dead (`AS:1565`, `AgentCommunicationPolicy.ts:57`, `BaseAgent.ts:407-536`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Reworded the Boardroom `[SEATED_AGENTS]` prompt in `AgentService.ts` to instruct specialists to note what another department should do without telling them to delegate, and removed the unreachable duplicate mode checks after `validateAgentCommunication` in `BaseAgent.ts` (`delegate_task` and `consult_experts`). Proved in `AgentService.boardroom-capability-intent.test.ts` and `conversationMode.qa.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3772,11 +3781,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1677: Confusing plan message on capacity/active-turn (AS:1442-1466) [O24]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O24 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Confusing plan message on capacity/active-turn (`AS:1442-1466`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Checked `activeAgents.length === 0` in `AgentService.handleBoardroomSwarmFlow` before appending the coordinating banner so zero-seat capacity/active-turn exits do not emit `"Indii is coordinating 0 participants"`. Proved in `AgentService.boardroom-capability-intent.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3784,11 +3794,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1678: Client rate limiter read-then-write race (TokenUsageService.ts:282-305) [O25]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O25 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Client rate limiter read-then-write race (`TokenUsageService.ts:282-305`). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Replaced read-then-`setDoc` in `TokenUsageService.checkRateLimit` with atomic `setDoc(ref, { count: increment(1), lastUpdated: serverTimestamp(), expiresAt: serverTimestamp() }, { merge: true })` followed by threshold check, proving parallel calls increment cleanly to count 2 in `TokenUsageService.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
@@ -3868,11 +3879,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1685: Agents cannot tell which seat said what (all labeled "Assistant:") [O32]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/boardroom-orchestration-wp2-wp5` (2026-11-24); awaiting CI and live acceptance
 - **Severity:** LOW
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O32 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Agents cannot tell which seat said what (all labeled "Assistant:"). (read-only audit 2026-11-19; not yet reproduced at runtime)
+- **Repair note:** Labeled model history entries with `[<Agent Display Name>]:` resolved via `agentRegistry` in `HistoryManager.formatHistory` and `BaseAgent.ts` context history assembly (retaining `Assistant:` fallback when unattributed). Proved in `HistoryManager.test.ts`.
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 

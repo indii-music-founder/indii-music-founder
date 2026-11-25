@@ -65,24 +65,24 @@ interface AgentChatProps {
     onClearInitialAttachment?: () => void;
 }
 
-const MessageRating = memo(({ 
-    boardroomMessageId, 
-    currentRating 
-}: { 
-    boardroomMessageId?: string, 
-    currentRating?: number 
+const MessageRating = memo(({
+    sessionId,
+    boardroomMessageId,
+    currentRating
+}: {
+    sessionId?: string;
+    boardroomMessageId?: string;
+    currentRating?: number;
 }) => {
     const [hoverRating, setHoverRating] = useState<number>(0);
     const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
 
     const handleRate = async (rating: number) => {
-        if (!boardroomMessageId) return;
+        if (!boardroomMessageId || !sessionId) return;
         setOptimisticRating(rating);
         try {
-            // Import dynamically to avoid circular dependencies if any, 
-            // though we can import directly at the top.
-            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
-            await agentFirebaseConnector.update(boardroomMessageId, { rating });
+            const { sessionService } = await import('@/services/agent/SessionService');
+            await sessionService.updateMessage(sessionId, boardroomMessageId, { rating });
         } catch (err) {
             logger.error('[AgentChat] Failed to save rating:', err);
             // Revert on failure
@@ -90,7 +90,7 @@ const MessageRating = memo(({
         }
     };
 
-    if (!boardroomMessageId) return null;
+    if (!boardroomMessageId || !sessionId) return null;
 
     return (
         <div className="flex items-center gap-1 mt-3 pt-3 border-t border-white/5 opacity-60 hover:opacity-100 transition-opacity">
@@ -692,8 +692,12 @@ export default function AgentChat({
                                         <span className="inline-block w-2 h-3.5 bg-[#00ff66] animate-pulse ml-1 align-middle rounded-xs" />
                                     )}
                                     {/* Agent Grading / Feedback */}
-                                    {!isUser && !msg.isStreaming && msg.boardroomMessageId && (
-                                        <MessageRating boardroomMessageId={msg.boardroomMessageId} currentRating={msg.rating} />
+                                    {!isUser && !msg.isStreaming && msg.boardroomMessageId && desktopState?.activeSessionId && (
+                                        <MessageRating
+                                            sessionId={desktopState.activeSessionId}
+                                            boardroomMessageId={msg.boardroomMessageId}
+                                            currentRating={msg.rating}
+                                        />
                                     )}
                                 </div>
                                 

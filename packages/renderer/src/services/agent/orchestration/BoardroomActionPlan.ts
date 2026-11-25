@@ -1,6 +1,51 @@
-import type { AgentGraph, AgentResponse, ToolFunctionResult } from '../types';
-import { DEPARTMENTS, isHead } from '../departments';
+import type { AgentContext, AgentGraph, AgentResponse, ToolFunctionResult } from '../types';
+import { DEPARTMENTS, getDepartmentOf, isHead } from '../departments';
 import { isCapabilityQuestion } from '../capabilityTruth';
+
+const SHORT_CONFIRMATION_PATTERN = /^(?:yes|yep|yeah|sure|ok|okay|go ahead|do it|proceed|approve|approved|continue|start|sounds good|looks good|let['’]s do it)[.!?, ]*$/i;
+const PLACEHOLDER_MODEL_TEXT_PATTERN = /^(?:\*\((?:Reviewing|Understanding)[^)]*\)\*|Indii is coordinating \d+ participant)/i;
+
+/** Returns true when `query` is a brief affirmative reply confirming an earlier proposal. */
+export function isShortConfirmationUtterance(query: string): boolean {
+    return SHORT_CONFIRMATION_PATTERN.test(query.trim());
+}
+
+/**
+ * Extracts the immediately preceding substantive model proposal from
+ * conversation history when the user sends a short confirmation ("go ahead",
+ * "yes", "do it") so routers and action planners know what is being approved
+ * even in multi-seat Boardroom turns (ISSUE-1670).
+ */
+export function extractConfirmedProposalContext(context: Pick<AgentContext, 'chatHistory' | 'chatHistoryString'>, userQuery: string): string | undefined {
+    if (!isShortConfirmationUtterance(userQuery)) return undefined;
+
+    if (Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
+        const trimmedQuery = userQuery.trim();
+        for (let i = context.chatHistory.length - 1; i >= 0; i--) {
+            const msg = context.chatHistory[i];
+            if (!msg) continue;
+            const text = typeof msg.text === 'string' ? msg.text.trim() : '';
+            if (!text) continue;
+            if (i === context.chatHistory.length - 1 && msg.role === 'user' && text === trimmedQuery) continue;
+            if (msg.role === 'model' && !PLACEHOLDER_MODEL_TEXT_PATTERN.test(text)) {
+                return text.slice(0, 1500);
+            }
+        }
+    }
+
+    if (typeof context.chatHistoryString === 'string' && context.chatHistoryString.trim()) {
+        const lines = context.chatHistoryString.trim().split('\n');
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i]?.trim() ?? '';
+            const match = line.match(/^(?:Assistant|\[[^\]]+\]):\s*(.+)$/);
+            if (match?.[1] && !PLACEHOLDER_MODEL_TEXT_PATTERN.test(match[1].trim())) {
+                return match[1].trim().slice(0, 1500);
+            }
+        }
+    }
+
+    return undefined;
+}
 
 /** Exact IDs win; the longest unique label avoids confusing a variant with its parent. */
 export function boardroomRequestedSourceId(query: string, sources: ReadonlyArray<{ id: string; alias?: string; name?: string }>): string | undefined {
@@ -109,6 +154,32 @@ export function validateBoardroomSteps(steps: BoardroomActionStep[]): void {
         const ready = steps.filter(step => remaining.has(step.id) && step.dependencies.every(id => !remaining.has(id)));
         if (!ready.length) throw new Error('Boardroom action dependencies contain a cycle.');
         ready.forEach(step => remaining.delete(step.id));
+    }
+}
+
+/**
+ * Normalizes Boardroom steps by mapping worker agent IDs to their owning
+ * department head (`getDepartmentOf`), falling back cleanly to a single-step
+ * generalist plan instead of throwing when a step lacks a valid owner (ISSUE-1671).
+ */
+export function normalizeBoardroomSteps(
+    steps: BoardroomActionStep[],
+    fallbackTask: string,
+): BoardroomActionStep[] {
+    const safeTask = fallbackTask.trim() || 'Handle request';
+    const mapped = steps.map(step => {
+        if (step.agentId === 'generalist' || isHead(step.agentId)) return step;
+        const deptHeadId = getDepartmentOf(step.agentId)?.headId;
+        return {
+            ...step,
+            agentId: deptHeadId ?? 'generalist',
+        };
+    });
+    try {
+        validateBoardroomSteps(mapped);
+        return mapped;
+    } catch {
+        return [{ id: 'step-0', agentId: 'generalist', task: safeTask, dependencies: [] }];
     }
 }
 

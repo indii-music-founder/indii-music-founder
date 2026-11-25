@@ -395,4 +395,57 @@ describe('AgentOrchestrator', () => {
             }
         });
     });
+
+    describe('Boardroom turn efficiency and confirmation context (ISSUE-1675, ISSUE-1670)', () => {
+        it('evaluates security gate at most once across Boardroom intent, path, and routing for a single turn (ISSUE-1675)', async () => {
+            const { InputSanitizer } = await import('@/services/intelligence/utils/InputSanitizer');
+            const securitySpy = vi.spyOn(InputSanitizer, 'securityCheck');
+            vi.spyOn(typesafeJudgments, 'judgeBoardroomIntent').mockResolvedValueOnce('action');
+            vi.spyOn(typesafeJudgments, 'judgeOrchestrationComplexity').mockResolvedValueOnce({ path: 'simple', confidence: 0.95 });
+            vi.spyOn(typesafeJudgments, 'judgeSpecialistAgentRoute').mockResolvedValueOnce({
+                targetAgentId: 'creative',
+                ragCorpus: 'visual',
+                confidence: 0.95,
+            });
+
+            const turnContext = createMockContext({ chatHistoryString: 'User: Check art' });
+            const intent = await orchestrator.determineBoardroomIntent(turnContext, 'Generate cover art');
+            const spreadContext = { ...turnContext, boardroomSourceManifest: '[]' };
+            const path = await orchestrator.determineOrchestrationPath(spreadContext, 'Generate cover art');
+
+            expect(intent).toBe('action');
+            expect(path).toEqual(expect.objectContaining({ type: 'single', agentId: 'creative' }));
+            expect(securitySpy).toHaveBeenCalledTimes(1);
+            securitySpy.mockRestore();
+        });
+
+        it('includes the prior model proposal when routing short confirmations like "go ahead" (ISSUE-1670)', async () => {
+            const jevRouteSpy = vi.spyOn(typesafeJudgments, 'judgeSpecialistAgentRoute').mockResolvedValueOnce(null);
+            vi.spyOn(typesafeJudgments, 'judgeOrchestrationComplexity').mockResolvedValueOnce({ path: 'simple', confidence: 0.95 });
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                response: {
+                    text: () => JSON.stringify({
+                        targetAgentId: 'creative',
+                        ragCorpus: 'visual',
+                        confidence: 0.95,
+                        reasoning: 'Continuing confirmed artwork proposal',
+                    }),
+                },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+
+            const ctx = createMockContext({
+                chatHistory: [
+                    { id: 'u1', role: 'user', text: 'Resize the tour poster for print', timestamp: 1 },
+                    { id: 'm1', role: 'model', agentId: 'creative', text: 'I can export a 3000x3000 300 DPI PNG using prepare_print_file.', timestamp: 2 },
+                    { id: 'u2', role: 'user', text: 'go ahead', timestamp: 3 },
+                ],
+            });
+
+            const result = await orchestrator.determineOrchestrationPath(ctx, 'go ahead');
+            expect(result.agentId).toBe('creative');
+            expect(jevRouteSpy.mock.calls[0]?.[0]).toContain('prepare_print_file');
+            expect(JSON.stringify(vi.mocked(AI.generateContent).mock.calls[0]?.[0])).toContain('3000x3000 300 DPI PNG');
+            jevRouteSpy.mockRestore();
+        });
+    });
 });

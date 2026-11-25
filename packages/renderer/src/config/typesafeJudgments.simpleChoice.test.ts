@@ -7,9 +7,12 @@ import {
     judgePreviewErrorGuidance,
     judgeUpscaleModel,
     judgeBoardroomIntent,
+    judgeOrchestrationComplexity,
+    judgeSpecialistAgentRoute,
     judgeCreativeJourneyIntent,
     judgeCatalogCollisionRisk,
     invokeTypesafeJudge,
+    BOARDROOM_JUDGMENT_TIMEOUT_MS,
     __resetJudgmentCooldownForTests,
 } from './typesafeJudgments';
 import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
@@ -86,5 +89,24 @@ describe('invokeTypesafeJudge & answer shape hardening', () => {
             existingCatalog: [{ id: 'trk_1', title: 'Lunar Eclipse', isrc: 'USABC2600001' }],
         });
         expect(res.collisionConfidence).toBe(5);
+    });
+
+    it('resolves hung Boardroom/routing judgments to null on timeout or abort (ISSUE-1675)', async () => {
+        vi.useFakeTimers();
+        try {
+            mocks.call.mockImplementation(() => new Promise(() => {}));
+            const pendingIntent = judgeBoardroomIntent('make cover art', '');
+            await vi.advanceTimersByTimeAsync(BOARDROOM_JUDGMENT_TIMEOUT_MS + 10);
+            expect(await pendingIntent).toBeNull();
+
+            const controller = new AbortController();
+            const pendingRoute = judgeSpecialistAgentRoute('draft contract', undefined, false, controller.signal);
+            const pendingComplexity = judgeOrchestrationComplexity('analyze and release', controller.signal);
+            controller.abort();
+            expect(await pendingRoute).toBeNull();
+            expect(await pendingComplexity).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

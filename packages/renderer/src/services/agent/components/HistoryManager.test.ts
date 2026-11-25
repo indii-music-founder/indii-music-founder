@@ -200,6 +200,18 @@ describe('HistoryManager compaction', () => {
                 vi.useRealTimers();
             }
         });
+
+        it('labels multi-seat model history lines by speaking agent name (ISSUE-1685)', () => {
+            const formatted = new HistoryManager().formatHistory([
+                { id: 'u1', role: 'user', text: 'Review rollout', timestamp: 1 },
+                { id: 'm1', role: 'model', agentId: 'marketing', text: 'Focus on short-form teasers.', timestamp: 2 },
+                { id: 'm2', role: 'model', agentId: 'legal', text: 'Confirm clearances first.', timestamp: 3 },
+                { id: 'm3', role: 'model', text: 'Generic reply.', timestamp: 4 },
+            ]);
+            expect(formatted).toContain('[Marketing Director]: Focus on short-form teasers.');
+            expect(formatted).toContain('[Legal Director]: Confirm clearances first.');
+            expect(formatted).toContain('Assistant: Generic reply.');
+        });
     });
 });
 
