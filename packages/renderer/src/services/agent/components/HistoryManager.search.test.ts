@@ -7,6 +7,12 @@ const { getSessions, getDocs } = vi.hoisted(() => ({
 vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn(() => ({ agentHistory: [] })) } }));
 vi.mock('../registry', () => ({ agentRegistry: { get: vi.fn() } }));
 vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user1' } }, db: {} }));
+vi.mock('@/services/firebase', () => ({
+    app: {},
+    auth: { currentUser: { uid: 'user1' } },
+    db: {},
+    remoteConfig: null,
+}));
 vi.mock('../utils/SummaryService', () => ({ SummaryService: { summarize: vi.fn() } }));
 vi.mock('../memory/AlwaysOnMemoryEngine', () => ({ alwaysOnMemoryEngine: { retrieve: vi.fn() } }));
 vi.mock('@/services/agent/SessionService', () => ({
@@ -16,6 +22,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal<typeof import('firebase/firestore')>();
     return {
         ...actual,
+        getFirestore: vi.fn(() => ({})),
         collection: vi.fn(() => ({})),
         orderBy: vi.fn(() => ({})),
         limit: vi.fn(() => ({})),
