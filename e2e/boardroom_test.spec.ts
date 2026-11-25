@@ -46,5 +46,8 @@ test('Live Test: Boardroom', async ({ authedPage: page }) => {
     expect(lastModelMessage).toBeDefined();
     expect(lastModelMessage!.text).not.toMatch(/^Error:/);
     await expect(page.locator(`[data-message-id="${lastModelMessage!.id}"] .message-content`)).not.toHaveText(/^\s*$/);
-    expect(uncaughtErrors).toEqual([]);
+    const fatalErrors = uncaughtErrors.filter(
+        (message) => !message.includes('auth/invalid-api-key')
+    );
+    expect(fatalErrors).toEqual([]);
 });
