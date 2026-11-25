@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   initializeAppCheck: vi.fn(),
   ReCaptchaV3Provider: vi.fn(),
   ReCaptchaEnterpriseProvider: vi.fn(),
+  CustomProvider: vi.fn(),
 }));
 
 vi.mock('firebase/app', () => ({
@@ -25,7 +26,8 @@ vi.mock('firebase/app-check', () => ({
   serverTimestamp: vi.fn(),
   initializeAppCheck: mocks.initializeAppCheck,
   ReCaptchaV3Provider: mocks.ReCaptchaV3Provider,
-  ReCaptchaEnterpriseProvider: mocks.ReCaptchaEnterpriseProvider
+  ReCaptchaEnterpriseProvider: mocks.ReCaptchaEnterpriseProvider,
+  CustomProvider: mocks.CustomProvider,
 }));
 
 // Mock other firebase modules to avoid errors during import
@@ -35,6 +37,7 @@ vi.mock('firebase/auth', () => ({
   initializeAuth: vi.fn(() => ({
     serverTimestamp: vi.fn(), currentUser: null, onAuthStateChanged: vi.fn()
   })),
+  connectAuthEmulator: vi.fn(),
   browserLocalPersistence: {},
   browserSessionPersistence: {},
   indexedDBLocalPersistence: {},
@@ -45,6 +48,7 @@ vi.mock('firebase/firestore', () => ({
   initializeFirestore: vi.fn(() => ({
     serverTimestamp: vi.fn(),
   })),
+  connectFirestoreEmulator: vi.fn(),
   persistentLocalCache: vi.fn(() => ({
     serverTimestamp: vi.fn(),
   })),
@@ -60,13 +64,15 @@ vi.mock('firebase/firestore', () => ({
 }));
 vi.mock('firebase/storage', () => ({
   serverTimestamp: vi.fn(),
-  getStorage: vi.fn()
+  getStorage: vi.fn(),
+  connectStorageEmulator: vi.fn()
 }));
 vi.mock('firebase/functions', () => ({
   serverTimestamp: vi.fn(),
   getFunctions: vi.fn(() => ({
     serverTimestamp: vi.fn(),
   })),
+  connectFunctionsEmulator: vi.fn(),
   httpsCallable: vi.fn()
 }));
 vi.mock('firebase/ai', () => ({
@@ -115,7 +121,7 @@ describe('Firebase App Check Initialization', () => {
     expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
   });
 
-  it('should NOT initialize App Check in Electron environment (no debug token)', async () => {
+  it('initializes App Check with CustomProvider in Electron production environment', async () => {
     Object.defineProperty(window, 'electronAPI', { value: {}, writable: true, configurable: true });
 
     vi.doMock('@/config/env', () => ({
@@ -129,10 +135,12 @@ describe('Firebase App Check Initialization', () => {
 
     await import('./firebase');
 
-    expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
+    expect(mocks.initializeAppCheck).toHaveBeenCalledTimes(1);
+    expect(mocks.CustomProvider).toHaveBeenCalledTimes(1);
+    expect(mocks.ReCaptchaEnterpriseProvider).not.toHaveBeenCalled();
   });
 
-  it('should NOT initialize App Check in Electron environment (empty Referer headers)', async () => {
+  it('skips App Check in Electron dev emulator mode', async () => {
     Object.defineProperty(window, 'electronAPI', { value: {}, writable: true, configurable: true });
 
     vi.doMock('@/config/env', () => ({
@@ -140,15 +148,14 @@ describe('Firebase App Check Initialization', () => {
       env: {
         appCheckKey: 'test-key',
         appCheckDebugToken: 'debug-token',
-        DEV: true
+        DEV: true,
+        VITE_USE_FUNCTIONS_EMULATOR: 'true'
       },
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
     await import('./firebase');
 
-    // App Check is always skipped in Electron because ReCaptcha Enterprise requires
-    // a web origin and Electron has empty Referer headers which Firebase blocks.
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
 

@@ -27,6 +27,13 @@ import {
 /** How long to wait for the server before trying this device's saved copy. */
 const SERVER_READ_GRACE_MS = 5_000;
 
+function isOfflineOrUnavailableError(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false;
+    const code = (err as { code?: unknown }).code;
+    if (code === 'unavailable') return true;
+    return err instanceof Error && /\b(offline|unavailable)\b/i.test(err.message);
+}
+
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
 }
@@ -101,11 +108,27 @@ export class ArtistDirectiveService {
             const ref = getDirectiveDocRef(uid);
             const serverRead = getDoc(ref);
             let graceTimer: ReturnType<typeof setTimeout> | undefined;
-            const fast = await Promise.race([
-                serverRead.then(snap => ({ snap })),
+            const fast = await Promise.race<
+                { status: 'ok'; snap: DocumentSnapshot } | { status: 'error'; err: unknown } | undefined
+            >([
+                serverRead.then(
+                    snap => ({ status: 'ok' as const, snap }),
+                    err => ({ status: 'error' as const, err }),
+                ),
                 new Promise<undefined>(resolve => { graceTimer = setTimeout(() => resolve(undefined), SERVER_READ_GRACE_MS); }),
             ]).finally(() => clearTimeout(graceTimer));
-            if (fast) return this.acceptSnapshot(uid, fast.snap);
+            if (fast?.status === 'ok') return this.acceptSnapshot(uid, fast.snap);
+
+            if (fast?.status === 'error') {
+                if (isOfflineOrUnavailableError(fast.err)) {
+                    const cached = await getDocFromCache(ref).catch(() => undefined);
+                    if (cached?.exists()) {
+                        logger.warn('[ArtistDirectiveService] Server read unavailable; using the copy saved on this device');
+                        return this.parseSnapshot(cached);
+                    }
+                }
+                throw fast.err;
+            }
 
             // ISSUE-1710: with several app tabs sharing the Firestore cache, a read
             // can wait 30 s+ behind a throttled background tab. Use this device's
@@ -321,5 +344,5 @@ export class ArtistDirectiveService {
 export const artistDirectiveService = new ArtistDirectiveService();
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    (window as any).artistDirectiveService = artistDirectiveService;
+    (window as unknown as Record<string, unknown>).artistDirectiveService = artistDirectiveService;
 }
