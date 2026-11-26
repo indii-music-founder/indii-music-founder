@@ -24,9 +24,9 @@ test.describe('Boardroom lifecycle controls (ISSUE-1686)', () => {
             const store = window.useStore.getState();
             const controller = new AbortController();
             store.setAgentAbortController?.(controller);
-            store.setIsAgentProcessing(true);
+            store.setAgentProcessing(true);
             controller.abort('USER_STOP');
-            store.setIsAgentProcessing(false);
+            store.setAgentProcessing(false);
             store.setAgentAbortController?.(null);
             const after = window.useStore.getState();
             return {
@@ -95,7 +95,7 @@ test.describe('Boardroom lifecycle controls (ISSUE-1686)', () => {
         await page.evaluate(() => {
             const store = window.useStore.getState();
             store.setConversationMode('boardroom');
-            store.setIsAgentProcessing(true);
+            store.setAgentProcessing(true);
         });
 
         await page.reload({ waitUntil: 'domcontentloaded' });
