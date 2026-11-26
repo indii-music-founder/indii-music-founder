@@ -10,8 +10,8 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_CONDUCTOR: 'gemini-4-argon',            // Founder-approved Conductor reasoning target
-    TEXT_AGENT: 'gemini-3.8-flash',              // Default agent intelligence; Conductor remains Argon
+    TEXT_CONDUCTOR: 'gemini-4-neon',             // Founder-approved Conductor & Orchestra reasoning target (Gemini 4 Neon)
+    TEXT_AGENT: 'gemini-3.8-flash',              // Default agent intelligence; Conductor remains Neon
     TEXT_FAST: 'gemini-3.8-flash',               // Workhorse agentic & fast tasks (GA) — per MODEL_POLICY.md
     TEXT_FLASH_3_8: 'gemini-3.8-flash',          // Gemini 3.8 Flash GA (September 2026)
     TEXT_FLASH_PREVIEW: 'gemini-3-flash-preview', // Legacy fast preview reference
@@ -87,6 +87,9 @@ export const ModelIdSchema = z.enum(Object.values(APPROVED_MODELS) as [string, .
 
 export const INTELLIGENCE_CONFIG = {
     THINKING: {
+        XHIGH: {
+            thinkingConfig: { thinkingLevel: "XHIGH" }
+        },
         HIGH: {
             thinkingConfig: { thinkingLevel: "HIGH" }
         },
@@ -147,6 +150,9 @@ export const INTELLIGENCE_CONFIG = {
 import { GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING } from '@indii/shared';
 
 export const MODEL_PRICING = {
+    // Gemini 4 Neon: conservative non-global regional Standard list price ($3.00/$15.00 global; $3.30/$16.50 regional).
+    // https://cloud.google.com/vertex-ai/generative-ai/pricing (verified 2026-11-26).
+    'gemini-4-neon': { input: 3.30, output: 16.50 },
     // Argon: non-global Standard list price, excluding promotional credits.
     // Conservative admission estimate; https://cloud.google.com/model-garden/pricing (2026-11-05).
     'gemini-4-argon': { input: 4.40, output: 22.00 },
@@ -236,7 +242,8 @@ function validateModels(): void {
 
 // Centralized mapping of Model IDs to display names in UI components to prevent hardcoding.
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
-    [APPROVED_MODELS.TEXT_CONDUCTOR]: 'Gemini 4 Argon',
+    [APPROVED_MODELS.TEXT_CONDUCTOR]: 'Gemini 4 Neon',
+    'gemini-4-argon': 'Gemini 4 Argon',
     [APPROVED_MODELS.TEXT_FAST]: 'Gemini 3.8 Flash',
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',

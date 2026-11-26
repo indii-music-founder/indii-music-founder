@@ -76,9 +76,10 @@ export class BaseAgent implements SpecializedAgent {
     /** Fine-tuned Vertex endpoint for this agent. Agent execution must never
      *  silently downgrade to a base Gemini model. */
     protected modelId: string;
-    /** Judgment layer: per-agent output-token cap and iteration cap overrides. */
+    /** Judgment layer: per-agent output-token cap, iteration cap, and thinking-level overrides. */
     private readonly maxOutputTokens?: number;
     private readonly maxIterations?: number;
+    private readonly thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'XHIGH';
     private llmCallHistory: number[] = []; // Timestamps of LLM calls for rate limiting
     private toolSchemas: Map<string, ZodType> = new Map();
 
@@ -240,6 +241,7 @@ export class BaseAgent implements SpecializedAgent {
         this.systemPrompt = config.systemPrompt;
         this.maxOutputTokens = config.maxOutputTokens;
         this.maxIterations = config.maxIterations;
+        this.thinkingLevel = config.thinkingLevel;
 
         // Phase 4: Use shallow clone for tools to preserve Zod schemas
         this.tools = config.tools ? [...config.tools] : [];
@@ -1200,9 +1202,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             && boardroomMaxIterations > 0
             ? Math.min(configuredMaxIterations, boardroomMaxIterations)
             : configuredMaxIterations;
-        // Judgment layer: verbosity/cost backstop applied to every generateContent(Stream) call below
+        // Judgment layer: verbosity/cost backstop & thinking level applied to every generateContent(Stream) call below
+        const thinkingPreset = this.thinkingLevel
+            ? INTELLIGENCE_CONFIG.THINKING[this.thinkingLevel]
+            : INTELLIGENCE_CONFIG.THINKING.LOW;
         const generationConfig = {
-            ...INTELLIGENCE_CONFIG.THINKING.LOW,
+            ...thinkingPreset,
             maxOutputTokens: this.maxOutputTokens ?? INTELLIGENCE_CONFIG.TEXT.MAX_OUTPUT_TOKENS_AGENT,
         };
         const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];

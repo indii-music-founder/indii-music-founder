@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SubscriptionTier } from '../../shared/subscription/types';
-import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservationCoversTextStreamCost } from './textStreamAdmission';
+import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservationCoversTextStreamCost, sanitizeTextStreamThinkingConfig } from './textStreamAdmission';
 
 describe('clampTextStreamOutputTokens', () => {
     it('gives a verified Free account a bounded product sample', () => {
@@ -50,5 +50,25 @@ describe('agent-stream cost admission', () => {
 
     it.each([undefined, NaN, Infinity, -1, '0.1'])('rejects malformed reservation amounts (%s)', amount => {
         expect(reservationCoversTextStreamCost(amount, 0.01)).toBe(false);
+    });
+});
+
+describe('sanitizeTextStreamThinkingConfig (Gemini 4 Neon alignment)', () => {
+    it.each(['LOW', 'MEDIUM', 'HIGH', 'XHIGH'])('preserves Neon %s and strips legacy thinkingBudget', level => {
+        expect(sanitizeTextStreamThinkingConfig('gemini-4-neon', {
+            thinkingLevel: level.toLowerCase(),
+            thinkingBudget: 2048,
+            includeThoughts: true,
+        })).toEqual({ thinkingLevel: level, includeThoughts: true });
+    });
+
+    it('maps MINIMAL and thinkingBudget: 0 to LOW for gemini-4-neon', () => {
+        expect(sanitizeTextStreamThinkingConfig('gemini-4-neon', { thinkingLevel: 'minimal' })).toEqual({ thinkingLevel: 'LOW' });
+        expect(sanitizeTextStreamThinkingConfig('gemini-4-neon', { thinkingBudget: 0 })).toEqual({ thinkingLevel: 'LOW' });
+    });
+
+    it('rejects unsupported thinking levels for gemini-4-neon and XHIGH for gemini-4-argon', () => {
+        expect(() => sanitizeTextStreamThinkingConfig('gemini-4-neon', { thinkingLevel: 'ULTRA' })).toThrow('Unsupported thinking level');
+        expect(() => sanitizeTextStreamThinkingConfig('gemini-4-argon', { thinkingLevel: 'XHIGH' })).toThrow('Unsupported thinking level');
     });
 });

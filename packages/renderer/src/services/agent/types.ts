@@ -447,6 +447,8 @@ export interface AgentConfig {
     maxOutputTokens?: number;
     /** Max agentic-loop iterations (tool-call rounds) per task. Defaults to 8. */
     maxIterations?: number;
+    /** Thinking depth for Gemini 4 / reasoning models (LOW | MEDIUM | HIGH | XHIGH). Defaults to LOW. */
+    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'XHIGH';
 }
 
 export interface AgentResponse {

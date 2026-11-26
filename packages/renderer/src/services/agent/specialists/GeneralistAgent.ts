@@ -69,8 +69,10 @@ export class GeneralistAgent extends BaseAgent {
             color: 'bg-green-500',
             category: 'manager',
             systemPrompt: systemPrompt,
-            // Conductor reasoning uses Argon; delegated specialists retain their tuned Vertex endpoints.
+            // Conductor & Orchestra reasoning uses Gemini 4 Neon (MEDIUM thinking by default);
+            // delegated specialists retain their tuned Vertex endpoints.
             modelId: INTELLIGENCE_MODELS.TEXT.CONDUCTOR,
+            thinkingLevel: 'MEDIUM',
             tools: []
         });
 

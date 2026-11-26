@@ -223,6 +223,7 @@ function generateFirebasePolicyFile(registry) {
 
 export const APPROVED_TEXT_STREAM_BASE_MODELS = new Set([
   'gemini-3.8-flash',
+  'gemini-4-neon',
   'gemini-4-argon',
   'gemini-3-flash-preview',
   'gemini-3.1-flash-lite',

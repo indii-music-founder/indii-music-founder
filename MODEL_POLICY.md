@@ -17,9 +17,9 @@ USE THE APPROVED ARGON / FLASH / TRAINED-SPECIALIST HIERARCHY. NEVER USE GEMINI 
 
 ## Core Directive
 
-The founder-approved text architecture is **Argon Conductor → Flash 3.8 agent intelligence → specialty-scoped trained models**.
+The founder-approved text architecture is **Neon Conductor → Flash 3.8 agent intelligence → specialty-scoped trained models**.
 
-- Conductor uses `gemini-4-argon` for direction and reasoning.
+- Conductor and Orchestra use `gemini-4-neon` for direction and reasoning (supporting thinking levels `LOW`, `MEDIUM`, `HIGH`, `XHIGH`; default Conductor level `MEDIUM`).
 - Other agents use `gemini-3.8-flash` for reasoning and coordination.
 - Preserve trained Vertex endpoints as specialist workers. Delegate only bounded tasks matching their trained domains; return their results and execution evidence to the coordinating intelligence layer.
 - Preserve the separate fast Nano Banana and Pro image paths, video, speech, and other authorized agent capabilities.
@@ -44,7 +44,8 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 | Purpose                      | Model ID                        | Notes                                  |
 | ---------------------------- | ------------------------------- | -------------------------------------- |
 | **Text/Reasoning (Workhorse / Fast)** | `gemini-3.8-flash`     | Agents, reasoning, coding, high-throughput (GA Sept 2026) |
-| **Conductor direction and reasoning** | `gemini-4-argon` | Founder-approved intelligence apex |
+| **Conductor direction and reasoning** | `gemini-4-neon` | Founder-approved intelligence apex (thinking levels: `LOW`, `MEDIUM`, `HIGH`, `XHIGH`) |
+| **Previous Conductor compatibility** | `gemini-4-argon` | Approved compatibility fallback (`LOW`, `MEDIUM`, `HIGH`) |
 | **Existing complex-model compatibility** | `gemini-3.1-pro-preview` | Existing call sites pending migration; not the Conductor target |
 | **Text/Reasoning (Legacy Fast)** | `gemini-3-flash-preview`    | Legacy preview tasks                   |
 | **Image Generation (Pro)** | `gemini-3-pro-image` | Nano Banana Pro |

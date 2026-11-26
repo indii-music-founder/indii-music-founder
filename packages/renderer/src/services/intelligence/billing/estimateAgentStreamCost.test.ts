@@ -4,6 +4,16 @@ import { estimateAgentStreamCost } from './estimateAgentStreamCost';
 import { minimumTextStreamReservationCost } from '../../../../../firebase/src/functions/creative/textStreamAdmission';
 
 describe('estimateAgentStreamCost', () => {
+    it('covers the Neon server floor at its explicit regional list-price estimate', () => {
+        const contents = [{ role: 'user', parts: [{ text: 'x'.repeat(400_000) }] }];
+        const config = { maxOutputTokens: 8_192 };
+        const client = estimateAgentStreamCost(contents, undefined, undefined, 'gemini-4-neon', config.maxOutputTokens);
+        const server = minimumTextStreamReservationCost(contents, config, 'gemini-4-neon');
+        expect(client).toBe(server);
+        const expected = (Math.ceil(JSON.stringify({ contents }).length / 4) * 3.3 + 8_192 * 16.5) / 1_000_000;
+        expect(server).toBeGreaterThanOrEqual(expected);
+        expect(server - expected).toBeLessThan(0.000011);
+    });
     it('covers the Argon server floor at its explicit list-price estimate', () => {
         const contents = [{ role: 'user', parts: [{ text: 'x'.repeat(400_000) }] }];
         const config = { maxOutputTokens: 8_192 };
