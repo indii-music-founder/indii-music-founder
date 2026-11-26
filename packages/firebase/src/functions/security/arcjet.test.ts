@@ -125,8 +125,54 @@ describe("Arcjet request protection", () => {
         });
         expect(mocks.slidingWindow).toHaveBeenNthCalledWith(3, expect.objectContaining({ max: 60 }));
         expect(mocks.slidingWindow).toHaveBeenNthCalledWith(4, expect.objectContaining({ max: 120 }));
-        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(5, expect.objectContaining({ max: 30 }));
+        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(5, expect.objectContaining({ max: 120 }));
         expect(mocks.slidingWindow).toHaveBeenNthCalledWith(6, expect.objectContaining({ max: 45 }));
+    });
+
+    it("scopes WAF body shield away when skipBodyShield is true while still enforcing per-user sliding-window rate limits (ISSUE-1711)", async () => {
+        const rateLimitOnlyProtect = vi.fn().mockResolvedValue(mockDecision({ denied: false }));
+        const rateLimitOnlyWithRule = vi.fn().mockReturnValue({ protect: rateLimitOnlyProtect });
+        mocks.arcjet
+            .mockReturnValueOnce({ withRule: mocks.withRule })
+            .mockReturnValueOnce({ withRule: rateLimitOnlyWithRule });
+
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "admin_owner",
+            policy: "admin",
+            operationId: "generate-content-stream:1",
+            skipBodyShield: true,
+        });
+
+        expect(result).toEqual({ allowed: true });
+        expect(mocks.arcjet).toHaveBeenNthCalledWith(2, {
+            key: "ajkey_test_key",
+            rules: [],
+        });
+        expect(rateLimitOnlyWithRule).toHaveBeenCalledWith(expect.objectContaining({
+            kind: "slidingWindow",
+            options: expect.objectContaining({ max: 120, characteristics: ["userId"] }),
+        }));
+        expect(rateLimitOnlyProtect).toHaveBeenCalledWith(request, {
+            userId: "admin_owner",
+            correlationId: "generate-content-stream:1",
+        });
+
+        // Verify rate-limit denials are still enforced when skipBodyShield is true.
+        rateLimitOnlyProtect.mockResolvedValueOnce(mockDecision({ denied: true, rateLimit: true, reset: 14 }));
+        const rateLimited = await protectAuthenticatedApiRequest(request as never, {
+            userId: "admin_owner",
+            policy: "admin",
+            operationId: "generate-content-stream:2",
+            skipBodyShield: true,
+        });
+        expect(rateLimited).toEqual({
+            allowed: false,
+            status: 429,
+            code: "RATE_LIMITED",
+            message: "Too many requests. Please slow down.",
+            retryAfterSeconds: 14,
+        });
     });
 
     it("allows a low-risk anonymous read when Arcjet allows it", async () => {

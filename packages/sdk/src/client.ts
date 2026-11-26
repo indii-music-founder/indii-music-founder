@@ -153,8 +153,22 @@ export class indiiClient {
     return this.request<Distribution>('POST', '/distributions', validated, opts);
   }
 
-  async submitDistribution(distributionId: string, opts?: RequestOptions): Promise<Distribution> {
-    return this.request<Distribution>('POST', `/distributions/${encodeURIComponent(distributionId)}/submit`, undefined, opts);
+  async submitDistribution(
+    distributionId: string,
+    payloadOrOpts?: { releaseId?: string } | RequestOptions,
+    opts?: RequestOptions,
+  ): Promise<Distribution> {
+    const isPayload = payloadOrOpts !== undefined
+      && typeof payloadOrOpts === 'object'
+      && 'releaseId' in payloadOrOpts;
+    const body = isPayload ? payloadOrOpts : undefined;
+    const requestOpts = isPayload ? opts : (payloadOrOpts as RequestOptions | undefined);
+    return this.request<Distribution>(
+      'POST',
+      `/distributions/${encodeURIComponent(distributionId)}/submit`,
+      body,
+      requestOpts,
+    );
   }
 
   // Analytics

@@ -1416,6 +1416,7 @@ export const generateContentStream = onRequest(
                     }),
                     operationId: `generate-content-stream:${crypto.randomUUID()}`,
                     ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(decodedToken),
+                    skipBodyShield: true,
                 });
                 if (!protection.allowed) {
                     await finalizePreSubmission('arcjet-denied');
@@ -2653,6 +2654,7 @@ import { getUsageStats } from "./subscription/getUsageStats";
 import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
+import { createFoundingOwnerCheckout } from "./subscription/foundingOwnerCheckout";
 import { createMicroTransaction } from "./subscription/createMicroTransaction";
 import { deductCredits } from "./subscription/deductCredits";
 import { updateWalletSettings } from "./subscription/updateWalletSettings";
@@ -2673,6 +2675,7 @@ export {
     trackUsage,
     stripeWebhook,
     activateFounderPass,
+    createFoundingOwnerCheckout,
     createMicroTransaction,
     deductCredits,
     updateWalletSettings

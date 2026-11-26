@@ -299,38 +299,11 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
  * so the UI can show "payment received — activation pending".
  */
 async function handleFounderSeatCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
-  const userId = session.metadata?.userId || session.client_reference_id;
-  if (!userId) {
-    logger.error('[handleFounderSeatCheckoutCompleted] Missing userId metadata — cannot fulfill', { sessionId: session.id });
-    throw new Error('Founder seat checkout is missing userId metadata');
-  }
-
-  const FOUNDER_SEAT_PRICE_CENTS = 250000; // $2,500.00
-  const paidCents = session.amount_total ?? 0;
-  if (paidCents < FOUNDER_SEAT_PRICE_CENTS) {
-    logger.error(`[handleFounderSeatCheckoutCompleted] Underpaid founder seat: ${paidCents} < ${FOUNDER_SEAT_PRICE_CENTS}`, { sessionId: session.id });
-    throw new Error('Founder seat payment amount below seat price');
-  }
-
-  const db = getFirestore();
-  // Idempotent by session id — Stripe retries must not duplicate the task.
-  await db.collection('founder_fulfillment_queue').doc(session.id).set({
-    userId,
-    stripeSessionId: session.id,
-    paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
-    amountCents: paidCents,
-    customerEmail: session.customer_details?.email || null,
-    status: 'paid_pending_activation',
-    createdAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
-
-  await db.collection('users').doc(userId).set({
-    founderPaymentStatus: 'paid_pending_activation',
-    founderPaymentSessionId: session.id,
-    founderPaidAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
-
-  logger.info(`[handleFounderSeatCheckoutCompleted] Founder payment recorded for ${maskId(userId)} — activation queued`);
+  const { fulfillFoundingOwnerCheckout } = await import('../subscription/foundingOwnerCheckout');
+  const result = await fulfillFoundingOwnerCheckout(session);
+  logger.info(
+    `[handleFounderSeatCheckoutCompleted] Founding Owner checkout ${result.alreadyFulfilled ? 'already fulfilled' : 'fulfilled'} for ${maskId(result.uid || 'unknown')}`,
+  );
 }
 
 /**
