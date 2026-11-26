@@ -4,8 +4,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-- Trigger declarations: **220** across **107** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **220**.
+- Trigger declarations: **221** across **108** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **221**.
 - Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
@@ -43,9 +43,9 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/agent/workflowExecutionCallables.ts:62` | `createWorkflowExecution` | `onCall` | Present | Present |
 | `functions/agent/workflowExecutionCallables.ts:128` | `manageWorkflowExecution` | `onCall` | Present | Present |
 | `functions/api/router.ts:213` | `sdkApi` | `onRequest` | Present | Present |
-| `functions/api/router.ts:248` | `getProfile` | `onRequest` | Present | Present |
-| `functions/api/router.ts:278` | `health` | `onRequest` | Present | Present |
-| `functions/auth/entitlements.ts:383` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
+| `functions/api/router.ts:247` | `getProfile` | `onRequest` | Present | Present |
+| `functions/api/router.ts:277` | `health` | `onRequest` | Present | Present |
+| `functions/auth/entitlements.ts:466` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
 | `functions/auth/handoff.ts:174` | `createHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/handoff.ts:245` | `redeemHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
@@ -59,11 +59,11 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/catalog/semanticProjection.ts:142` | `setCatalogVisibility` | `onCall` | Present | Present |
 | `functions/catalog/semanticProjection.ts:220` | `catalogSemanticApi` | `onRequest` | Present | Present |
 | `functions/creative/analyzeCampaignAudio.ts:125` | `analyzeCampaignAudio` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:1280` | `generateImageV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:1599` | `generateVideoV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:1840` | `cancelVideoJob` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:2066` | `generateOmniRemixV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:2425` | `generateAudioV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1281` | `generateImageV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1600` | `generateVideoV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1841` | `cancelVideoJob` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2067` | `generateOmniRemixV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2426` | `generateAudioV3` | `onCall` | Present | Present |
 | `functions/creative/getMediaDuration.ts:51` | `getMediaDuration` | `onCall` | Present | Present |
 | `functions/distribution/distributionRecords.ts:253` | `assignDistributionIdentifier` | `onCall` | Present | Present |
 | `functions/distribution/distributionRecords.ts:284` | `recordDistributionIdentifier` | `onCall` | Present | Present |
@@ -131,29 +131,29 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `index.ts:872` | `renderVideo` | `onCall` | Present | Present |
 | `index.ts:1158` | `inngestApi` | `onRequest` | Present | Present |
 | `index.ts:1245` | `generateContentStream` | `onRequest` | Present | Present |
-| `index.ts:1759` | `ragProxy` | `onRequest` | Present | Present |
-| `index.ts:1847` | `listGKEClusters` | `onCall` | Present | Present |
-| `index.ts:1918` | `getGKEClusterStatus` | `onCall` | Present | Present |
-| `index.ts:1963` | `scaleGKENodePool` | `onCall` | Present | Present |
-| `index.ts:2008` | `listGCEInstances` | `onCall` | Present | Present |
-| `index.ts:2052` | `restartGCEInstance` | `onCall` | Present | Present |
-| `index.ts:2098` | `runChaosMeshTests` | `onCall` | Present | Present |
-| `index.ts:2142` | `configureCircuitBreaker` | `onCall` | Present | Present |
-| `index.ts:2187` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
-| `index.ts:2231` | `runContentionTest` | `onCall` | Present | Present |
-| `index.ts:2275` | `configureSentryCrashReporting` | `onCall` | Present | Present |
-| `index.ts:2318` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
-| `index.ts:2362` | `configureLogicalSharding` | `onCall` | Present | Present |
-| `index.ts:2406` | `provisionQASandbox` | `onCall` | Present | Present |
-| `index.ts:2450` | `scrubOrphanedMedia` | `onCall` | Present | Present |
-| `index.ts:2503` | `executeBigQueryQuery` | `onCall` | Present | Present |
-| `index.ts:2556` | `getBigQueryTableSchema` | `onCall` | Present | Present |
-| `index.ts:2601` | `listBigQueryDatasets` | `onCall` | Present | Present |
-| `index.ts:2692` | `exportUserData` | `onCall` | Present | Present |
-| `index.ts:2784` | `requestAccountDeletion` | `onCall` | Present | Present |
-| `index.ts:3015` | `healthCheck` | `onRequest` | Present | Present |
-| `index.ts:3062` | `healthCheckWest1` | `onRequest` | Present | Present |
-| `index.ts:3107` | `enrichFanData` | `onCall` | Present | Present |
+| `index.ts:1760` | `ragProxy` | `onRequest` | Present | Present |
+| `index.ts:1848` | `listGKEClusters` | `onCall` | Present | Present |
+| `index.ts:1919` | `getGKEClusterStatus` | `onCall` | Present | Present |
+| `index.ts:1964` | `scaleGKENodePool` | `onCall` | Present | Present |
+| `index.ts:2009` | `listGCEInstances` | `onCall` | Present | Present |
+| `index.ts:2053` | `restartGCEInstance` | `onCall` | Present | Present |
+| `index.ts:2099` | `runChaosMeshTests` | `onCall` | Present | Present |
+| `index.ts:2143` | `configureCircuitBreaker` | `onCall` | Present | Present |
+| `index.ts:2188` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
+| `index.ts:2232` | `runContentionTest` | `onCall` | Present | Present |
+| `index.ts:2276` | `configureSentryCrashReporting` | `onCall` | Present | Present |
+| `index.ts:2319` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
+| `index.ts:2363` | `configureLogicalSharding` | `onCall` | Present | Present |
+| `index.ts:2407` | `provisionQASandbox` | `onCall` | Present | Present |
+| `index.ts:2451` | `scrubOrphanedMedia` | `onCall` | Present | Present |
+| `index.ts:2504` | `executeBigQueryQuery` | `onCall` | Present | Present |
+| `index.ts:2557` | `getBigQueryTableSchema` | `onCall` | Present | Present |
+| `index.ts:2602` | `listBigQueryDatasets` | `onCall` | Present | Present |
+| `index.ts:2695` | `exportUserData` | `onCall` | Present | Present |
+| `index.ts:2787` | `requestAccountDeletion` | `onCall` | Present | Present |
+| `index.ts:3018` | `healthCheck` | `onRequest` | Present | Present |
+| `index.ts:3065` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:3110` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/analyzeContract.ts:20` | `analyzeContract` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:11` | `sendForDigitalSignature` | `onCall` | Present | Present |
 | `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |
@@ -222,13 +222,14 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `stripe/splitEscrow.ts:237` | `signEscrow` | `onCall` | Present | Present |
 | `stripe/splitEscrow.ts:335` | `releaseEscrow` | `onCall` | Present | Present |
 | `stripe/taxForms.ts:14` | `requestTaxForms` | `onCall` | Present | Present |
-| `stripe/webhookHandler.ts:1284` | `stripeWebhook` | `onRequest` | Present | Present |
+| `stripe/webhookHandler.ts:1257` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |
 | `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
 | `subscription/createCheckoutSession.ts:21` | `createCheckoutSession` | `onCall` | Present | Present |
 | `subscription/createMicroTransaction.ts:13` | `createMicroTransaction` | `onCall` | Present | Present |
 | `subscription/createOneTimeCheckout.ts:42` | `createOneTimeCheckout` | `onCall` | Present | Present |
 | `subscription/deductCredits.ts:22` | `deductCredits` | `onCall` | Present | Present |
+| `subscription/foundingOwnerCheckout.ts:105` | `createFoundingOwnerCheckout` | `onCall` | Present | Present |
 | `subscription/generateInvoice.ts:43` | `generateInvoice` | `onCall` | Present | Present |
 | `subscription/getCustomerPortal.ts:17` | `getCustomerPortal` | `onCall` | Present | Present |
 | `subscription/getSubscription.ts:9` | `getSubscription` | `onCall` | Present | Present |
