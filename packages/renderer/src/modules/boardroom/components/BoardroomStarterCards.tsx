@@ -73,19 +73,28 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
         return verdict.confidence >= 0.5 ? verdict.mission : null;
     }, [commandBarInput, activeAgents, referencedAssets]);
 
+    const promptText = (commandBarInput || '').trim();
+    const hasAssets = (referencedAssets || []).length > 0;
+    const agents = useMemo(() => activeAgents || [], [activeAgents]);
+    const hasSignal = Boolean(
+        promptText || hasAssets || agents.some(id => id !== 'generalist'),
+    );
+
     useEffect(() => {
-        const promptText = (commandBarInput || '').trim();
-        const hasAssets = (referencedAssets || []).length > 0;
-        const agents = activeAgents || [];
-        if (!promptText && !hasAssets && agents.length === 0) {
-            return;
+        if (!hasSignal) {
+            return undefined;
         }
         let cancelled = false;
+        const parsed = JSON.parse(contextKey) as {
+            prompt: string;
+            activeAgents: string[];
+            hasReferencedAssets: boolean;
+        };
         const timer = setTimeout(() => {
             void judgeBoardroomExecutiveIntent({
-                prompt: promptText,
-                activeAgents: agents,
-                hasReferencedAssets: hasAssets,
+                prompt: parsed.prompt,
+                activeAgents: parsed.activeAgents,
+                hasReferencedAssets: parsed.hasReferencedAssets,
                 messageCount: 0,
             })
                 .then((verdict) => {
@@ -97,12 +106,12 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
                     }
                 })
                 .catch(() => {});
-        }, 250);
+        }, 1200);
         return () => {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [commandBarInput, activeAgents, referencedAssets, contextKey]);
+    }, [hasSignal, contextKey]);
 
     const topPickMission = judgedMission?.key === contextKey ? judgedMission.mission : baselineTopMission;
 

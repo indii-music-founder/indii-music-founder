@@ -772,17 +772,19 @@ export class BaseAgent implements SpecializedAgent {
                             logger.debug(`[BaseAgent] Streaming Jev guardrail skipped (non-fatal): ${guardrailErr}`);
                         }
 
-                        // Store in memory (Phase 2 integration)
-                        try {
-                            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
-                            await alwaysOnMemoryEngine.ingest(
-                                `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
-                                'agent_output',
-                                'context'
-                            );
-                        } catch (err) {
-                            logger.warn('[BaseAgent] Failed to store streaming response in memory', err);
-                        }
+                        // Store in memory (Phase 2 integration) — fire-and-forget so
+                        // Boardroom seats settle and hand off without waiting on network ingest.
+                        void importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'))
+                            .then(({ alwaysOnMemoryEngine }) =>
+                                alwaysOnMemoryEngine.ingest(
+                                    `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
+                                    'agent_output',
+                                    'context'
+                                )
+                            )
+                            .catch((err: unknown) => {
+                                logger.warn('[BaseAgent] Failed to store streaming response in memory', err);
+                            });
 
                         // Optionally evaluate with reflection (Phase 2 integration)
                         if (fullText.length > 0) {
