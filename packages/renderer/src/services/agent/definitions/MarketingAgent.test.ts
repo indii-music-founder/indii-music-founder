@@ -23,6 +23,10 @@ vi.mock('../tools/MarketingTools', () => ({
         generate_influencer_bounty: vi.fn(),
         generate_ad_copy: vi.fn(),
         analyze_campaign_roi: vi.fn(),
+        dispatch_multi_platform_campaign: vi.fn(),
+        record_attribution_conversion: vi.fn(),
+        generate_ad_matrix: vi.fn(),
+        assemble_release_launch_kit: vi.fn(),
     }
 }));
 
@@ -71,6 +75,8 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.authorizedTools).toContain('generate_influencer_bounty');
         expect(MarketingAgent.authorizedTools).toContain('generate_ad_copy');
         expect(MarketingAgent.authorizedTools).toContain('analyze_campaign_roi');
+        expect(MarketingAgent.authorizedTools).toContain('generate_ad_matrix');
+        expect(MarketingAgent.authorizedTools).toContain('assemble_release_launch_kit');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -91,5 +97,7 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.functions!.generate_influencer_bounty).toBeDefined();
         expect(MarketingAgent.functions!.generate_ad_copy).toBeDefined();
         expect(MarketingAgent.functions!.analyze_campaign_roi).toBeDefined();
+        expect(MarketingAgent.functions!.generate_ad_matrix).toBeDefined();
+        expect(MarketingAgent.functions!.assemble_release_launch_kit).toBeDefined();
     });
 });

@@ -17,6 +17,7 @@ export type { BoardroomIntent } from './boardroomIntentPolicy';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
 import type { MaskedTextCandidate } from '@/services/image/maskedTextEdit';
+import type { AdAspectShape, AdRefinementPatch } from '@indii/video-compiler';
 
 /** Explicit adoption policies; semantic calibration remains a separate acceptance task. */
 export const SKILL_INTENT_MIN_CONFIDENCE = 0.65;
@@ -11924,4 +11925,327 @@ export async function judgeSyncMoods(tags: string[]): Promise<Array<SyncMoodJudg
             ? [choice as SyncMoodJudgment]
             : null;
     });
+}
+
+// ---------------------------------------------------------------------------
+// Judgment: Multi-Shape Ad Matrix Pre-Flight & Improvement (Jev System One)
+// ---------------------------------------------------------------------------
+
+export type AdMatrixRefinementAction =
+    | 'none'
+    | 'tighten_headline'
+    | 'increase_safe_margin'
+    | 'scale_down_font'
+    | 'tighten_cta';
+
+export interface AdMatrixCutState {
+    variantId: string;
+    shape: AdAspectShape;
+    durationSeconds: 6 | 15 | 30;
+    channelLabel: string;
+    brandOrArtistName: string;
+    hookHeadline: string;
+    subHeadline?: string;
+    ctaText: string;
+    safeWidthPx: number;
+    headlineFontSizePx: number;
+    ctaFontSizePx: number;
+    brandVibe?: string;
+}
+
+export interface AdMatrixJevVerdict {
+    hookPunchScore: number;        // 0 to 10
+    mobileCopyClarityScore: number; // 0 to 10
+    ctaConversionScore: number;     // 0 to 10
+    compositeScore: number;         // 0 to 10
+    safeZoneOverflowRisk: number;   // 0 to 1 Noul probability
+    brandVoiceFit: number;          // 0 to 1 Noul probability
+    recommendedAction: AdMatrixRefinementAction;
+    suggestedPatch?: AdRefinementPatch;
+    passesPreFlight: boolean;
+    source: 'jev' | 'heuristic';
+    rationale: string;
+}
+
+/** 3.0 / 4.0 ("Strong") on TypeSafe's 0-4 expected-value scale; final rendered visual gate remains >= 9.0/10 in VideoAdAutorater. */
+export const AD_MATRIX_PREFLIGHT_PASS_SCORE = 7.5;
+export const AD_MATRIX_OVERFLOW_MAX_RISK = 0.45;
+export const AD_MATRIX_ACTION_CRITERIA: Record<AdMatrixRefinementAction, string> = {
+    none: 'Copy length, hook punch, safe-zone fit, and CTA are already strong for this shape and duration.',
+    tighten_headline: 'Hook headline is too wordy for the opening 0-2s window and should be shortened to a punchier phrase.',
+    increase_safe_margin: 'Copy risks crowding mobile platform UI chrome (Reels/TikTok right rail or bottom caption area); expand safe margins.',
+    scale_down_font: 'Headline or CTA font size is too large relative to safe width and risks awkward multi-line wrapping.',
+    tighten_cta: 'Call-to-action copy is too long or vague; tighten CTA for mobile tap conversion.',
+};
+
+function buildPatchForAdMatrixAction(
+    action: AdMatrixRefinementAction,
+    state: AdMatrixCutState,
+): AdRefinementPatch | undefined {
+    if (action === 'none') return undefined;
+    if (action === 'increase_safe_margin') {
+        return { extraSafeMarginPct: 0.05, fontScaleMultiplier: 0.92 };
+    }
+    if (action === 'scale_down_font') {
+        return { fontScaleMultiplier: 0.85, extraSafeMarginPct: 0.03 };
+    }
+    if (action === 'tighten_headline') {
+        const trimmed = state.hookHeadline.trim();
+        const clauses = trimmed.split(/(?<=[.!?])\s+|\s+[—|]\s+/).filter(Boolean);
+        const firstClause = clauses.length > 1 ? clauses[0]!.trim() : '';
+        const canUseClause = firstClause.length >= 12 && firstClause.length < trimmed.length;
+        if (canUseClause) {
+            return {
+                fontScaleMultiplier: 0.9,
+                extraSafeMarginPct: 0.03,
+                headlineOverride: firstClause,
+            };
+        }
+        return {
+            fontScaleMultiplier: 0.86,
+            extraSafeMarginPct: 0.04,
+        };
+    }
+    if (action === 'tighten_cta') {
+        const trimmed = state.ctaText.trim();
+        const splitIdx = trimmed.search(/\s+(?:at|—)\s+/i);
+        const leadClause = splitIdx > 0 ? trimmed.slice(0, splitIdx).trim() : '';
+        const canUseLead = leadClause.length >= 10 && leadClause.length < trimmed.length;
+        if (canUseLead) {
+            return {
+                fontScaleMultiplier: 0.92,
+                extraSafeMarginPct: 0.02,
+                ctaOverride: leadClause,
+            };
+        }
+        return {
+            fontScaleMultiplier: 0.88,
+            extraSafeMarginPct: 0.03,
+        };
+    }
+    return undefined;
+}
+
+/**
+ * Deterministic baseline for ad-matrix copy/safe-zone pre-flight scoring.
+ * Always computes before Jev so offline/cooldown runs behave deterministically.
+ */
+export function heuristicAdMatrixCutJudgment(state: AdMatrixCutState): AdMatrixJevVerdict {
+    const headlineLen = state.hookHeadline.trim().length;
+    const ctaLen = state.ctaText.trim().length;
+    // Rough character capacity per 3 lines inside the safe width at the current font size
+    const estCharsPerLine = Math.max(10, Math.floor(state.safeWidthPx / (state.headlineFontSizePx * 0.56)));
+    const estLines = headlineLen / estCharsPerLine;
+
+    const isVertical = state.shape === '9:16';
+    const overflowRisk = Math.min(
+        1,
+        Math.round(
+            (estLines > 3.2 ? 0.65 : estLines > 2.4 && isVertical ? 0.48 : 0.12) * 100,
+        ) / 100,
+    );
+
+    let recommendedAction: AdMatrixRefinementAction = 'none';
+    if (estLines > 3.2) {
+        recommendedAction = 'tighten_headline';
+    } else if (overflowRisk >= AD_MATRIX_OVERFLOW_MAX_RISK) {
+        recommendedAction = isVertical ? 'increase_safe_margin' : 'scale_down_font';
+    } else if (ctaLen > 38) {
+        recommendedAction = 'tighten_cta';
+    }
+
+    const hookPunchScore = headlineLen <= 48 ? 9.0 : headlineLen <= 72 ? 8.2 : 7.0;
+    const mobileCopyClarityScore = overflowRisk >= AD_MATRIX_OVERFLOW_MAX_RISK ? 7.0 : 8.8;
+    const ctaConversionScore = ctaLen > 0 && ctaLen <= 34 ? 8.8 : 7.4;
+    const compositeScore = Math.round(((hookPunchScore + mobileCopyClarityScore + ctaConversionScore) / 3) * 10) / 10;
+    const passesPreFlight =
+        compositeScore >= AD_MATRIX_PREFLIGHT_PASS_SCORE &&
+        overflowRisk < AD_MATRIX_OVERFLOW_MAX_RISK &&
+        recommendedAction === 'none';
+
+    return {
+        hookPunchScore,
+        mobileCopyClarityScore,
+        ctaConversionScore,
+        compositeScore,
+        safeZoneOverflowRisk: overflowRisk,
+        brandVoiceFit: 0.85,
+        recommendedAction,
+        ...(recommendedAction !== 'none'
+            ? { suggestedPatch: buildPatchForAdMatrixAction(recommendedAction, state) }
+            : {}),
+        passesPreFlight,
+        source: 'heuristic',
+        rationale: recommendedAction === 'none'
+            ? `Deterministic baseline: ${state.shape} ${state.durationSeconds}s copy fits safe bounds.`
+            : `Deterministic baseline: flagged ${recommendedAction} (estimated ${estLines.toFixed(1)} headline lines).`,
+    };
+}
+
+/**
+ * Pre-computes deterministic wrap/fit geometry in code so Jev System One evaluates
+ * concrete line counts and safe-zone fit rather than guessing pixel wrap from raw strings.
+ */
+export function computeCutLayoutGeometry(state: AdMatrixCutState) {
+    const headlineCharCount = state.hookHeadline.trim().length;
+    const ctaCharCount = state.ctaText.trim().length;
+    const estCharsPerHeadlineLine = Math.max(10, Math.floor(state.safeWidthPx / (state.headlineFontSizePx * 0.54)));
+    const estimatedHeadlineLines = Math.round((headlineCharCount / estCharsPerHeadlineLine) * 10) / 10;
+    const estCharsPerCtaLine = Math.max(12, Math.floor(state.safeWidthPx / (state.ctaFontSizePx * 0.56)));
+    const estimatedCtaLines = Math.round((ctaCharCount / estCharsPerCtaLine) * 10) / 10;
+    const maxSafeHeadlineLines = state.shape === '9:16' || state.shape === '4:5' ? 2.5 : 2.2;
+    const fitsWithinSafeZone = estimatedHeadlineLines <= maxSafeHeadlineLines && estimatedCtaLines <= 1.4;
+    return {
+        headlineCharCount,
+        ctaCharCount,
+        estCharsPerHeadlineLine,
+        estimatedHeadlineLines,
+        estCharsPerCtaLine,
+        estimatedCtaLines,
+        maxSafeHeadlineLines,
+        fitsWithinSafeZone,
+    };
+}
+
+/**
+ * TypeSafe System One (Jev) pre-flight test & improvement judgment for a
+ * Multi-Shape Ad Matrix cut. Runs parallel Score, Noul, and Choice questions
+ * over the cut's copy, dimensions, and brand vibe, returning concrete
+ * `AdRefinementPatch` instructions when improvement is needed.
+ */
+export async function judgeAdMatrixCut(
+    state: AdMatrixCutState,
+    admission?: SemanticCallAdmission,
+): Promise<AdMatrixJevVerdict> {
+    const baseline = heuristicAdMatrixCutJudgment(state);
+    if (!judgmentsAvailable('judgeAdMatrixCut')) {
+        return baseline;
+    }
+
+    const geometry = computeCutLayoutGeometry(state);
+    const scoreCriteria5 = [
+        'Very weak: unreadable, generic, or missing clear hook/CTA.',
+        'Below average: awkward phrasing or weak mobile conversion pull.',
+        'Adequate: clear message but lacks urgency or tight mobile pacing.',
+        'Strong: punchy, readable on a phone, and clear value proposition.',
+        'Exceptional: unmistakable 0-2s hook, crisp phone legibility, and compelling CTA.',
+    ];
+
+    try {
+        const answers = await invokeTypesafeJudge(
+            {
+                state: {
+                    variantId: state.variantId,
+                    shape: state.shape,
+                    durationSeconds: state.durationSeconds,
+                    channelLabel: state.channelLabel,
+                    brandOrArtistName: state.brandOrArtistName,
+                    hookHeadline: state.hookHeadline,
+                    subHeadline: state.subHeadline ?? '',
+                    ctaText: state.ctaText,
+                    safeWidthPx: state.safeWidthPx,
+                    headlineFontSizePx: state.headlineFontSizePx,
+                    ctaFontSizePx: state.ctaFontSizePx,
+                    ...geometry,
+                    brandVibe: state.brandVibe ?? '',
+                },
+                questions: {
+                    hook_punch_score: {
+                        type: 'score',
+                        instructions: 'Rate how immediately `hookHeadline` grabs attention in the 0-2s opening window for `channelLabel`.',
+                        criteria: scoreCriteria5,
+                    },
+                    mobile_copy_clarity_score: {
+                        type: 'score',
+                        instructions: 'Rate how effortlessly `hookHeadline` and `ctaText` read at phone width given `estimatedHeadlineLines`, `maxSafeHeadlineLines`, `estimatedCtaLines`, and `fitsWithinSafeZone`.',
+                        criteria: scoreCriteria5,
+                    },
+                    cta_conversion_score: {
+                        type: 'score',
+                        instructions: 'Rate how clear and conversion-oriented `ctaText` is for `durationSeconds`s.',
+                        criteria: scoreCriteria5,
+                    },
+                    safe_zone_overflow_risk: {
+                        type: 'noul',
+                        instructions: 'Given `estimatedHeadlineLines` vs `maxSafeHeadlineLines`, `estimatedCtaLines`, and `fitsWithinSafeZone`, does this cut risk overflowing or crowding mobile safe zones on `shape`?',
+                        criteria: {
+                            true: '`fitsWithinSafeZone` is false or lines risk crowding mobile safe zones.',
+                            false: '`fitsWithinSafeZone` is true and copy fits cleanly inside the safe zone.',
+                        },
+                    },
+                    brand_voice_fit: {
+                        type: 'noul',
+                        instructions: 'Does the copy tone fit `brandOrArtistName` and `brandVibe` without generic spam clichés?',
+                        criteria: {
+                            true: 'Matches brand/artist voice cleanly.',
+                            false: 'Off-brand or spammy phrasing.',
+                        },
+                    },
+                    recommended_refinement: {
+                        type: 'choice',
+                        instructions: 'Pick the single highest-leverage improvement action for this cut, or "none" if ready.',
+                        criteria: AD_MATRIX_ACTION_CRITERIA,
+                    },
+                },
+            },
+            admission,
+        );
+
+        if (!answers) return baseline;
+
+        const hookRaw = boundedJudgmentNumber(answers.hook_punch_score, 'score', 4);
+        const clarityRaw = boundedJudgmentNumber(answers.mobile_copy_clarity_score, 'score', 4);
+        const ctaRaw = boundedJudgmentNumber(answers.cta_conversion_score, 'score', 4);
+        const overflowRisk = boundedJudgmentNumber(answers.safe_zone_overflow_risk, 'noul', 1);
+        const brandFit = boundedJudgmentNumber(answers.brand_voice_fit, 'noul', 1);
+        const actionChoice = whitelistedChoice<AdMatrixRefinementAction>(
+            answers.recommended_refinement,
+            Object.keys(AD_MATRIX_ACTION_CRITERIA) as AdMatrixRefinementAction[],
+        );
+
+        if (
+            hookRaw === null ||
+            clarityRaw === null ||
+            ctaRaw === null ||
+            overflowRisk === null ||
+            brandFit === null ||
+            actionChoice === null
+        ) {
+            return baseline;
+        }
+
+        // Map 0-4 TypeSafe Score scale onto 0-10 scale
+        const toTenScale = (scoreZeroToFour: number) => Math.round(((scoreZeroToFour / 4) * 10) * 10) / 10;
+        const hookPunchScore = toTenScale(hookRaw);
+        const mobileCopyClarityScore = toTenScale(clarityRaw);
+        const ctaConversionScore = toTenScale(ctaRaw);
+        const compositeScore = Math.round(((hookPunchScore + mobileCopyClarityScore + ctaConversionScore) / 3) * 10) / 10;
+
+        const passesPreFlight =
+            compositeScore >= AD_MATRIX_PREFLIGHT_PASS_SCORE &&
+            overflowRisk < AD_MATRIX_OVERFLOW_MAX_RISK &&
+            brandFit >= 0.6 &&
+            actionChoice === 'none';
+
+        return {
+            hookPunchScore,
+            mobileCopyClarityScore,
+            ctaConversionScore,
+            compositeScore,
+            safeZoneOverflowRisk: overflowRisk,
+            brandVoiceFit: brandFit,
+            recommendedAction: actionChoice,
+            ...(actionChoice !== 'none'
+                ? { suggestedPatch: buildPatchForAdMatrixAction(actionChoice, state) }
+                : {}),
+            passesPreFlight,
+            source: 'jev',
+            rationale: actionChoice === 'none'
+                ? `Jev System One passed ${state.shape} ${state.durationSeconds}s cut (${compositeScore}/10).`
+                : `Jev System One recommended ${actionChoice} (${compositeScore}/10, overflowRisk=${overflowRisk}).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'ad matrix cut judgment', 'judgeAdMatrixCut');
+        return baseline;
+    }
 }

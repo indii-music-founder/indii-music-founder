@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, Video, Wand2, ArrowRight, CheckCircle2, Download, RefreshCw, FileAudio } from 'lucide-react';
+import { Upload, Video, Wand2, ArrowRight, CheckCircle2, Download, RefreshCw, FileAudio, Sparkles } from 'lucide-react';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
+import type { ShortFormHookCandidate } from '@/services/marketing/ShortFormReelService';
 
 export default function MarketingAssetGeneratorUI() {
     const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -14,11 +15,36 @@ export default function MarketingAssetGeneratorUI() {
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [resultJobId, setResultJobId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [generatorMode, setGeneratorMode] = useState<'reel' | 'avatar'>('reel');
+    const [generatorMode, setGeneratorMode] = useState<'reel' | 'audio-reel' | 'avatar'>('reel');
     const [avatarImage, setAvatarImage] = useState<File | null>(null);
+    const [detectedHooks, setDetectedHooks] = useState<ShortFormHookCandidate[]>([]);
+    const [selectedHookIndex, setSelectedHookIndex] = useState<number>(0);
+    const [isDetectingHooks, setIsDetectingHooks] = useState<boolean>(false);
+    const [hookHeadline, setHookHeadline] = useState<string>('');
     const audioInputRef = useRef<HTMLInputElement | null>(null);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const avatarGenerationEnabled = featureFlags.isEnabled(FEATURE_FLAG_NAMES.AVATAR_GENERATION);
+
+    const handleAudioSelected = async (file: File | null) => {
+        setAudioFile(file);
+        setDetectedHooks([]);
+        setSelectedHookIndex(0);
+        setError(null);
+        if (!file || generatorMode !== 'audio-reel') return;
+        setIsDetectingHooks(true);
+        try {
+            const { ShortFormReelService } = await import('@/services/marketing/ShortFormReelService');
+            const { hooks } = await ShortFormReelService.detectHooks(file);
+            setDetectedHooks(hooks);
+            if (hooks[0]?.lyricSnippet) {
+                setHookHeadline(hooks[0].lyricSnippet);
+            }
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Unable to detect song hooks.');
+        } finally {
+            setIsDetectingHooks(false);
+        }
+    };
 
     const readAsDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -29,6 +55,7 @@ export default function MarketingAssetGeneratorUI() {
 
     const handleGenerate = async () => {
         if (generatorMode === 'reel' && !prompt.trim()) return;
+        if (generatorMode === 'audio-reel' && (!audioFile || !prompt.trim())) return;
         if (generatorMode === 'avatar' && (!audioFile || !avatarImage)) return;
         if (generatorMode === 'avatar' && !avatarGenerationEnabled) {
             setError('Avatar generation is unavailable until the backend worker is deployed.');
@@ -45,6 +72,29 @@ export default function MarketingAssetGeneratorUI() {
                 const url = await CampaignIntelligence.generateMarketingVideo(prompt, style);
                 setVideoUrl(url);
                 setResultJobId(null);
+            } else if (generatorMode === 'audio-reel') {
+                const { ShortFormReelService } = await import('@/services/marketing/ShortFormReelService');
+                const activeHook: ShortFormHookCandidate = detectedHooks[selectedHookIndex] ?? {
+                    section: 'CHORUS',
+                    startTimeSeconds: 0,
+                    endTimeSeconds: 15,
+                    durationSeconds: 15,
+                    energyLevel: 'high',
+                    lyricSnippet: hookHeadline,
+                };
+                const { url: hookAudioUrl } = await ShortFormReelService.extractHookAudio(audioFile!, activeHook);
+                const result = await ShortFormReelService.generateHookReel({
+                    trackTitle: audioFile!.name.replace(/\.[^/.]+$/, ''),
+                    artistName: 'Artist',
+                    hook: activeHook,
+                    hookAudioUrl,
+                    visualPrompt: prompt,
+                    style,
+                    aspectRatio: '9:16',
+                    hookHeadline: hookHeadline || activeHook.lyricSnippet,
+                });
+                setVideoUrl(result.videoUrl);
+                setResultJobId(result.project.id);
             } else {
                 const { auth } = await import('@/services/firebase');
                 const userId = auth.currentUser?.uid;
@@ -123,7 +173,7 @@ export default function MarketingAssetGeneratorUI() {
                 type="file"
                 accept="audio/wav,audio/mpeg,audio/flac,audio/mp3"
                 className="hidden"
-                onChange={(event) => setAudioFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => void handleAudioSelected(event.target.files?.[0] ?? null)}
             />
             <input
                 ref={avatarInputRef}
@@ -147,12 +197,18 @@ export default function MarketingAssetGeneratorUI() {
                         <h1 className="text-base lg:text-lg font-black text-white uppercase tracking-tighter">
                             Short-Form Asset Generator
                         </h1>
-                        <div className="flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
                             <button
                                 onClick={() => setGeneratorMode('reel')}
                                 className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'reel' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
                             >
                                 Cinematic Reel
+                            </button>
+                            <button
+                                onClick={() => setGeneratorMode('audio-reel')}
+                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors flex items-center gap-1 ${generatorMode === 'audio-reel' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+                            >
+                                <Sparkles size={10} /> Audio-Synced Hook Reel
                             </button>
                             <button
                                 onClick={() => setGeneratorMode('avatar')}
@@ -173,8 +229,7 @@ export default function MarketingAssetGeneratorUI() {
                 {/* Progress Indicator */}
                 <div className="flex items-center gap-2 mb-4">
                     {[1, 2, 3, 4].map((s) => (
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        <React.Fragment {...({ key: s } as any)}>
+                        <React.Fragment key={s}>
                             <div className={`flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold transition-colors ${step === s
                                 ? 'bg-dept-marketing border-dept-marketing text-white shadow-[0_0_15px_rgba(var(--color-dept-marketing),0.5)]'
                                 : step > s
@@ -215,20 +270,50 @@ export default function MarketingAssetGeneratorUI() {
                                 {/* ISSUE-954: reel mode is text-to-video only — GenAI.generateVideo
                                     never receives or conditions on audio, so this upload step only
                                     appears for avatar mode, where the audio genuinely drives lip-sync. */}
-                                {generatorMode === 'avatar' ? (
-                                    <div
-                                        className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-6"
-                                        onClick={() => audioInputRef.current?.click()}
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
-                                            {audioFile ? <FileAudio size={20} /> : <Upload size={20} />}
+                                {generatorMode === 'avatar' || generatorMode === 'audio-reel' ? (
+                                    <div className="flex-1 flex flex-col gap-4">
+                                        <div
+                                            className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-6"
+                                            onClick={() => audioInputRef.current?.click()}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
+                                                {audioFile ? <FileAudio size={20} /> : <Upload size={20} />}
+                                            </div>
+                                            <h3 className="text-white font-semibold mb-1">
+                                                {audioFile ? audioFile.name : 'Click or drag to upload track'}
+                                            </h3>
+                                            <p className="text-gray-500 text-sm">
+                                                {isDetectingHooks
+                                                    ? 'Analyzing track with Gemini to find your best 15s hooks...'
+                                                    : audioFile
+                                                        ? 'Ready to proceed'
+                                                        : 'WAV, MP3, or FLAC'}
+                                            </p>
                                         </div>
-                                        <h3 className="text-white font-semibold mb-1">
-                                            {audioFile ? audioFile.name : 'Click or drag to upload audio'}
-                                        </h3>
-                                        <p className="text-gray-500 text-sm">
-                                            {audioFile ? 'Ready to proceed' : 'WAV, MP3, or FLAC (max 60s)'}
-                                        </p>
+                                        {generatorMode === 'audio-reel' && detectedHooks.length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Detected Hook Windows</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                                    {detectedHooks.map((hook, idx) => (
+                                                        <button
+                                                            key={`${hook.section}-${hook.startTimeSeconds}`}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedHookIndex(idx);
+                                                                if (hook.lyricSnippet) setHookHeadline(hook.lyricSnippet);
+                                                            }}
+                                                            className={`text-left p-3 rounded-xl border transition-all ${selectedHookIndex === idx ? 'bg-dept-marketing/15 border-dept-marketing text-white' : 'bg-white/[0.02] border-white/10 text-gray-400 hover:border-white/25'}`}
+                                                        >
+                                                            <div className="text-xs font-bold uppercase">{hook.section} · {hook.durationSeconds}s</div>
+                                                            <div className="text-[11px] opacity-75">{hook.startTimeSeconds.toFixed(1)}s – {hook.endTimeSeconds.toFixed(1)}s ({hook.energyLevel})</div>
+                                                            {hook.lyricSnippet && (
+                                                                <div className="text-[10px] mt-1 truncate opacity-90">&ldquo;{hook.lyricSnippet}&rdquo;</div>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex-1 border-2 border-dashed border-white/10 bg-white/[0.02] rounded-xl flex flex-col items-center justify-center p-6">
@@ -258,7 +343,10 @@ export default function MarketingAssetGeneratorUI() {
 
                                 <div className="flex justify-end mt-8">
                                     <button
-                                        disabled={generatorMode === 'avatar' && (!audioFile || !avatarImage)}
+                                        disabled={
+                                            (generatorMode === 'avatar' && (!audioFile || !avatarImage)) ||
+                                            (generatorMode === 'audio-reel' && (!audioFile || isDetectingHooks))
+                                        }
                                         onClick={() => setStep(2)}
                                         className="btn-primary bg-dept-marketing hover:bg-dept-marketing/80 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
@@ -340,11 +428,11 @@ export default function MarketingAssetGeneratorUI() {
                                         Back
                                     </button>
                                     <button
-                                        disabled={generatorMode === 'reel' ? !prompt.trim() : false}
+                                        disabled={generatorMode !== 'avatar' && !prompt.trim()}
                                         onClick={handleGenerate}
                                         className="btn-primary bg-linear-to-r from-dept-marketing to-green-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
                                     >
-                                        <Wand2 size={18} /> {generatorMode === 'reel' ? 'Generate Video' : 'Begin Lip-Sync'}
+                                        <Wand2 size={18} /> {generatorMode === 'avatar' ? 'Begin Lip-Sync' : 'Generate Video'}
                                     </button>
                                 </div>
                             </motion.div>
@@ -386,10 +474,10 @@ export default function MarketingAssetGeneratorUI() {
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
                                         <h2 className="text-xl font-bold text-white mb-1">
-                                            {resultJobId ? 'Generation Job Queued' : 'Generation Complete'}
+                                            {videoUrl ? 'Generation Complete' : resultJobId ? 'Generation Job Queued' : 'Generation Complete'}
                                         </h2>
                                         <p className="text-sm text-green-400 flex items-center gap-1">
-                                            <CheckCircle2 size={14} /> {resultJobId ? `Backend job: ${resultJobId}` : 'Video asset returned by generator'}
+                                            <CheckCircle2 size={14} /> {videoUrl ? 'Video asset returned by generator' : resultJobId ? `Backend job: ${resultJobId}` : 'Video asset returned by generator'}
                                         </p>
                                     </div>
                                     <div className="flex gap-2">

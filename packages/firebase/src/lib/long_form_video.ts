@@ -63,6 +63,7 @@ export const LongFormVideoJobSchema = z.object({
         (val) => (val === '' || val === null || val === undefined ? undefined : val),
         z.coerce.number().optional(),
     ),
+    bpm: z.number().finite().positive().min(40).max(260).optional(),
     startImage: z.string().optional(),
     /** Server-created reservation; browser input is overwritten at admission. */
     costReservationId: z.string().min(1).max(256).optional(),
@@ -75,6 +76,7 @@ export const LongFormVideoJobSchema = z.object({
         generateAudio: z.boolean().optional(),
         thinking: z.boolean().optional(),
         model: z.enum(["lite", "fast", "pro"]).optional(),
+        bpm: z.number().finite().positive().min(40).max(260).optional(),
     }).optional().default({})
 });
 
@@ -154,6 +156,52 @@ const STITCH_MAX_POLL_ATTEMPTS = 60;
 
 // Video segment defaults
 const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
+const LEGAL_VEO_SEGMENT_DURATIONS = [4, 6, 8] as const;
+
+/**
+ * Resolves a legal Veo segment duration ({4, 6, 8}s) quantized to musical
+ * bar phrases (4, 2, or 1 bar in 4/4 time) when `bpm` is supplied, falling back
+ * to the legacy `totalDuration / promptCount` or 5s default when `bpm` is absent.
+ */
+export function resolveLongFormSegmentDuration(input: {
+    bpm?: number;
+    totalDuration?: number;
+    promptCount: number;
+    hasFrameInput?: boolean;
+}): number {
+    if (typeof input.bpm === 'number' && Number.isFinite(input.bpm) && input.bpm >= 40 && input.bpm <= 260) {
+        if (input.hasFrameInput) {
+            return 8;
+        }
+        const barSeconds = 4 * (60 / input.bpm);
+        let phraseSeconds = barSeconds;
+        for (const bars of [4, 2, 1] as const) {
+            const candidate = bars * barSeconds;
+            if (candidate <= 8.5) {
+                phraseSeconds = candidate;
+                break;
+            }
+        }
+        let bestDuration: 4 | 6 | 8 = 8;
+        let smallestDelta = Number.POSITIVE_INFINITY;
+        for (const legal of LEGAL_VEO_SEGMENT_DURATIONS) {
+            const delta = Math.abs(legal - phraseSeconds);
+            if (delta < smallestDelta || (delta === smallestDelta && legal > bestDuration)) {
+                smallestDelta = delta;
+                bestDuration = legal;
+            }
+        }
+        return bestDuration;
+    }
+
+    if (input.totalDuration && input.promptCount > 0) {
+        const calculated = Math.ceil(input.totalDuration / input.promptCount);
+        if (calculated <= 4) return 4;
+        if (calculated <= 6) return 6;
+        return 8;
+    }
+    return DEFAULT_SEGMENT_DURATION_SECONDS;
+}
 
 // Frame extraction defaults
 const _DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
@@ -275,14 +323,13 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         imagePayload = { image: { bytesBase64Encoded: base64 } };
                     }
 
-                    // Calculate segment duration dynamically based on totalDuration or fallback
-                    let segmentDuration = DEFAULT_SEGMENT_DURATION_SECONDS;
-                    if (data.totalDuration && prompts.length > 0) {
-                        const calculated = Math.ceil(data.totalDuration / prompts.length);
-                        if (calculated <= 4) segmentDuration = 4;
-                        else if (calculated <= 6) segmentDuration = 6;
-                        else segmentDuration = 8;
-                    }
+                    // Calculate segment duration quantized to BPM bars when available, or legacy totalDuration/default fallback
+                    const segmentDuration = resolveLongFormSegmentDuration({
+                        bpm: data.bpm ?? options?.bpm,
+                        totalDuration: data.totalDuration,
+                        promptCount: prompts.length,
+                        hasFrameInput: Boolean(imagePayload),
+                    });
 
                     const requestBody = {
                         instances: [

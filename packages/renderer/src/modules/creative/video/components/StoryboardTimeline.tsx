@@ -20,6 +20,11 @@ import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
+import {
+    loadStoryboardProject,
+    renderPendingStoryboardSlots,
+    saveStoryboardProject,
+} from '../services/StoryboardOrchestratorService';
 import { StoryboardVideoIdentityService } from '../services/StoryboardVideoIdentityService';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
@@ -166,10 +171,32 @@ export function StoryboardTimeline() {
     const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
 
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
+    const [isBatchRendering, setIsBatchRendering] = useState<boolean>(false);
     const [renderReceipt, setRenderReceipt] = useState<VideoRenderReceipt | null>(null);
     const [intakeReviewMetadata, setIntakeReviewMetadata] = useState<ExtendedGoldenMetadata | null>(null);
     const [activeTrackMetadata, setActiveTrackMetadata] = useState<ExtendedGoldenMetadata | null>(null);
     const videoIdentityServiceRef = useRef(new StoryboardVideoIdentityService());
+
+    // Rehydrate saved storyboard on mount when store is empty
+    useEffect(() => {
+        if (storyboardProject || !currentProjectId) return;
+        let cancelled = false;
+        void loadStoryboardProject(currentProjectId).then(saved => {
+            if (!cancelled && saved) {
+                setStoryboardProject(saved);
+            }
+        });
+        return () => { cancelled = true; };
+    }, [currentProjectId, setStoryboardProject, storyboardProject]);
+
+    // Persist storyboard changes across refreshes (debounced)
+    useEffect(() => {
+        if (!storyboardProject || !currentProjectId) return;
+        const timer = window.setTimeout(() => {
+            void saveStoryboardProject(currentProjectId, storyboardProject);
+        }, 400);
+        return () => window.clearTimeout(timer);
+    }, [currentProjectId, storyboardProject]);
 
     // ISSUE-1395 (audit): job subscriptions must not leak past unmount —
     // a slot still rendering while the timeline unmounts used to keep
@@ -441,6 +468,49 @@ export function StoryboardTimeline() {
         }
     };
 
+    // Sequential daisy-chain render for all pending prompted slots
+    const handleRenderAllPending = async () => {
+        if (!storyboardProject || isBatchRendering) return;
+        const pendingCount = storyboardProject.slots.filter(s => !s.videoUrl && s.prompt.trim().length > 0).length;
+        if (pendingCount === 0) {
+            toast.info('All prompted storyboard slots already have rendered clips.');
+            return;
+        }
+
+        setIsBatchRendering(true);
+        toast.info(`Rendering ${pendingCount} pending storyboard segment(s) in sequence...`);
+        try {
+            const summary = await renderPendingStoryboardSlots({
+                storyboard: storyboardProject,
+                onSlotUpdate: (slotId, patch) => {
+                    updateStoryboardSlot(slotId, {
+                        ...patch,
+                        ...(patch.videoUrl
+                            ? {
+                                driftScore: calculateDriftScore(
+                                    storyboardProject.slots.find(s => s.id === slotId)?.prompt ?? '',
+                                ),
+                            }
+                            : {}),
+                    });
+                },
+                extractLastFrame: extractLastVideoFrame,
+            });
+            if (summary.failedSlots.length > 0) {
+                toast.warning(
+                    `Rendered ${summary.renderedSlotIds.length} slot(s); ${summary.failedSlots.length} failed (${summary.failedSlots[0]?.error}).`,
+                );
+            } else {
+                toast.success(`Rendered ${summary.renderedSlotIds.length} storyboard segment(s) ready for Showreel compile.`);
+            }
+        } catch (err: unknown) {
+            logger.error('[StoryboardTimeline] Batch slot render failed:', err);
+            toast.error(err instanceof Error ? err.message : 'Batch storyboard render failed.');
+        } finally {
+            setIsBatchRendering(false);
+        }
+    };
+
     // Compile entire showreel video
     const handleCompileVideo = async () => {
         if (!storyboardProject) return;
@@ -514,8 +584,8 @@ export function StoryboardTimeline() {
                             {storyboardProject
                                 ? storyboardProject.source === 'screenwriter'
                                     ? `Active: ${storyboardProject.name} · ${storyboardProject.slots.length} planned scenes · ${storyboardProject.durationSeconds}s total`
-                                    : `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
-                                : "Load audio to create an editable 120 BPM timing scaffold"
+                                    : `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ''}`
+                                : "Load a canonical WAV/FLAC master to measure BPM and lock the beat grid"
                             }
                         </p>
                         {storyboardProject?.source === 'screenwriter' && (
@@ -577,8 +647,21 @@ export function StoryboardTimeline() {
                     )}
                     {storyboardProject && (
                         <button
+                            onClick={handleRenderAllPending}
+                            disabled={
+                                isBatchRendering ||
+                                !storyboardProject.slots.some(s => !s.videoUrl && s.prompt.trim().length > 0)
+                            }
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 disabled:opacity-40 text-white border border-white/15 text-xs font-bold uppercase tracking-wider transition-all"
+                        >
+                            <CloudLightning size={14} className={isBatchRendering ? 'animate-spin text-green-400' : 'text-green-400'} />
+                            {isBatchRendering ? 'Rendering Slots...' : 'Render All Pending'}
+                        </button>
+                    )}
+                    {storyboardProject && (
+                        <button
                             onClick={handleCompileVideo}
-                            disabled={renderReceipt?.status === 'queued' || renderReceipt?.status === 'running'}
+                            disabled={isBatchRendering || renderReceipt?.status === 'queued' || renderReceipt?.status === 'running'}
                             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FFE135] hover:bg-[#FFD700] text-black text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-yellow-500/10"
                         >
                             <Sparkles size={14} />
@@ -603,7 +686,7 @@ export function StoryboardTimeline() {
                                 Import master audio to begin storyboarding
                             </p>
                             <p className="text-[10px] text-neutral-600 leading-normal max-w-sm mx-auto uppercase">
-                                Load a track to create editable four-bar timing cards on a 120 BPM scaffold. Beat, key, and stem analysis are not configured yet.
+                                Upload your canonical WAV or FLAC master to analyze tempo, key, and bar-locked storyboard slots ready for Veo 3.1 daisy-chain rendering.
                             </p>
                         </div>
                         <button

@@ -716,7 +716,140 @@ export const MarketingTools = {
                 'ATTRIBUTION_DISPATCH_FAILED',
             );
         }
-    })
+    }),
+
+    /**
+     * Level 5 Multi-Shape Ad Matrix generator: compiles 9:16, 1:1, 4:5, and 16:9
+     * HyperFrames ad projects from one brief + canonical hook assets.
+     */
+    generate_ad_matrix: wrapTool('generate_ad_matrix', async (args: {
+        campaignId?: string;
+        title: string;
+        brandOrArtistName: string;
+        hookHeadline: string;
+        subHeadline?: string;
+        ctaText: string;
+        verticalFootageUrl: string;
+        landscapeFootageUrl?: string;
+        audioHookUrl?: string;
+        shapes?: Array<'9:16' | '1:1' | '4:5' | '16:9'>;
+        durations?: Array<6 | 15 | 30>;
+    }) => {
+        try {
+            const { MultiShapeAdMatrixService } = await importWithRetry(
+                () => import('@/services/marketing/MultiShapeAdMatrixService'),
+            );
+            const report = await MultiShapeAdMatrixService.generateAndScoreMatrix({
+                campaignId: args.campaignId || `admatrix_${Date.now()}`,
+                title: args.title,
+                brandOrArtistName: args.brandOrArtistName,
+                hookHeadline: args.hookHeadline,
+                subHeadline: args.subHeadline,
+                ctaText: args.ctaText,
+                verticalFootageUrl: args.verticalFootageUrl,
+                landscapeFootageUrl: args.landscapeFootageUrl,
+                audioHookUrl: args.audioHookUrl,
+                shapes: args.shapes,
+                durations: args.durations,
+            });
+            return toolSuccess(
+                report,
+                `Compiled ${report.totalVariants} multi-shape ad variant(s) (${report.approvedVariants.length} approved >= 9.0/10, ${report.heldBackVariants.length} awaiting visual inspection or refinement).`,
+            );
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Failed to generate multi-shape ad matrix: ${msg}`, 'AD_MATRIX_FAILED');
+        }
+    }),
+
+    /**
+     * Level 6 Release Launch Kit assembler: bundles canonical master/hook metadata,
+     * multi-shape ad variants, and coordinated IG/TikTok/Shorts/X posts.
+     */
+    assemble_release_launch_kit: wrapTool('assemble_release_launch_kit', async (args: {
+        title: string;
+        artistOrBrandName: string;
+        hookHeadline: string;
+        ctaText: string;
+        smartLinkUrl?: string;
+        measuredBpm?: number;
+        canonicalMasterStoragePath?: string;
+    }) => {
+        try {
+            const { ReleaseLaunchKitSchema } = await import('@indii/shared');
+            const kitId = `kit_${Date.now()}`;
+            const linkSuffix = args.smartLinkUrl ? ` ${args.smartLinkUrl}` : '';
+            const kit = ReleaseLaunchKitSchema.parse({
+                kitId,
+                title: args.title,
+                artistOrBrandName: args.artistOrBrandName,
+                ...(args.canonicalMasterStoragePath ? { canonicalMasterStoragePath: args.canonicalMasterStoragePath } : {}),
+                ...(args.measuredBpm ? { measuredBpm: args.measuredBpm } : {}),
+                ...(args.smartLinkUrl ? { smartLinkUrl: args.smartLinkUrl } : {}),
+                hookWindows: [],
+                lockedReferenceImageUris: [],
+                adVariants: [],
+                socialPosts: [
+                    {
+                        id: `${kitId}_ig_reel`,
+                        platform: 'Instagram',
+                        copy: `${args.hookHeadline}\n\n"${args.title}" by ${args.artistOrBrandName} is live. ${args.ctaText}.${linkSuffix}`,
+                        hashtags: ['#newmusic', '#indieartist', '#musicvideo'],
+                        scheduledDayOffset: 0,
+                        status: 'draft',
+                    },
+                    {
+                        id: `${kitId}_ig_story`,
+                        platform: 'InstagramStory',
+                        copy: `${args.hookHeadline} — Tap to ${args.ctaText}.${linkSuffix}`,
+                        hashtags: [],
+                        scheduledDayOffset: 0,
+                        status: 'draft',
+                    },
+                    {
+                        id: `${kitId}_tiktok`,
+                        platform: 'TikTok',
+                        copy: `${args.hookHeadline} 🎵 "${args.title}" out now.${linkSuffix}`,
+                        hashtags: ['#newmusic', '#indiemusic', '#musicpromo'],
+                        scheduledDayOffset: 0,
+                        status: 'draft',
+                    },
+                    {
+                        id: `${kitId}_shorts`,
+                        platform: 'YouTubeShorts',
+                        copy: `${args.artistOrBrandName} — ${args.title} | ${args.ctaText}${linkSuffix}`,
+                        hashtags: ['#shorts', '#musicvideo'],
+                        scheduledDayOffset: 1,
+                        status: 'draft',
+                    },
+                    {
+                        id: `${kitId}_x_post`,
+                        platform: 'X',
+                        copy: `${args.hookHeadline} — "${args.title}" is out now. ${args.ctaText}${linkSuffix}`.slice(0, 280),
+                        hashtags: ['#newmusic'],
+                        scheduledDayOffset: 0,
+                        status: 'draft',
+                    },
+                    {
+                        id: `${kitId}_x_header`,
+                        platform: 'XHeader',
+                        copy: `${args.artistOrBrandName.toUpperCase()} · ${args.title.toUpperCase()} · OUT NOW`,
+                        hashtags: [],
+                        scheduledDayOffset: 0,
+                        status: 'draft',
+                    },
+                ],
+                createdAtIso: new Date().toISOString(),
+            });
+            return toolSuccess(
+                kit,
+                `Assembled coordinated Release Launch Kit (${kit.kitId}) with ${kit.socialPosts.length} platform-native launch posts.`,
+            );
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return toolError(`Failed to assemble release launch kit: ${msg}`, 'LAUNCH_KIT_FAILED');
+        }
+    }),
 } satisfies Record<string, AnyToolFunction>;
 
 // Aliases
@@ -733,5 +866,7 @@ export const {
     generate_ad_copy,
     analyze_campaign_roi,
     dispatch_multi_platform_campaign,
-    record_attribution_conversion
+    record_attribution_conversion,
+    generate_ad_matrix,
+    assemble_release_launch_kit,
 } = MarketingTools;
