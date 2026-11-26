@@ -417,6 +417,38 @@ export function isElectronRuntime(): boolean {
 
 // Initialize App Check
 let appCheck: any = null;
+let electronIdTokenListenerAttached = false;
+
+/**
+ * Synchronously reads a cached, un-expired Firebase Auth ID token from `user.stsTokenManager`.
+ * Never invokes `auth.authStateReady()` or `user.getIdToken()`, preventing the circular
+ * Auth <-> AppCheck <-> httpsCallable deadlock in Electron's CustomProvider.
+ */
+export function getCachedFreshIdToken(user: User | null): string | null {
+    if (!user) return null;
+    const sts = (user as unknown as {
+        stsTokenManager?: { accessToken?: unknown; expirationTime?: unknown };
+    }).stsTokenManager;
+    if (!sts || typeof sts.accessToken !== 'string' || sts.accessToken.length === 0) {
+        return null;
+    }
+    if (typeof sts.expirationTime !== 'number' || sts.expirationTime <= Date.now() + 30_000) {
+        return null;
+    }
+    return sts.accessToken;
+}
+
+function resolveElectronAppCheckMintUrl(): string {
+    if (env.VITE_FUNCTIONS_URL) {
+        return `${env.VITE_FUNCTIONS_URL.replace(/\/$/, '')}/mintElectronAppCheckToken`;
+    }
+    const projectId = firebaseConfig.projectId || 'indii-music-founder';
+    const region = env.functionsRegion || 'us-central1';
+    if (env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true') {
+        return `http://127.0.0.1:5001/${projectId}/${region}/mintElectronAppCheckToken`;
+    }
+    return `https://${region}-${projectId}.cloudfunctions.net/mintElectronAppCheckToken`;
+}
 
 export function getAppCheck(): any {
     if (appCheck) return appCheck;
@@ -451,21 +483,48 @@ export function getAppCheck(): any {
             const provider = isElectron
               ? new CustomProvider({
                   getToken: async () => {
-                      if (!auth.currentUser && typeof auth.authStateReady === 'function') {
-                          await auth.authStateReady();
+                      const idToken = getCachedFreshIdToken(auth.currentUser);
+                      if (!idToken) {
+                          logger.warn('[App Check] Deferring token mint until fresh Firebase Auth ID token is ready.');
+                          throw new Error('Waiting for fresh Firebase Auth ID token');
                       }
-                      if (!auth.currentUser) {
-                          logger.warn('[App Check] Cannot mint token: User not authenticated yet.');
-                          throw new Error('User not authenticated');
-                      }
+                      const controller = new AbortController();
+                      const timeoutId = setTimeout(() => controller.abort(), 15_000);
                       try {
-                          const mintFn = httpsCallable<{appId: string}, {token: string, expireTimeMillis: number}>(functions, 'mintElectronAppCheckToken');
                           const targetAppId = firebaseConfig.appId || '1:148015878263:web:febc76c0bd56f28cdbb672';
-                          const result = await mintFn({ appId: targetAppId });
-                          return result.data;
+                          const response = await fetch(resolveElectronAppCheckMintUrl(), {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${idToken}`,
+                              },
+                              body: JSON.stringify({ data: { appId: targetAppId } }),
+                              signal: controller.signal,
+                          });
+                          if (!response.ok) {
+                              throw new Error(`mintElectronAppCheckToken failed (${response.status})`);
+                          }
+                          const payload = await response.json() as {
+                              result?: { token?: unknown; expireTimeMillis?: unknown };
+                              data?: { token?: unknown; expireTimeMillis?: unknown };
+                          };
+                          const tokenData = payload.result ?? payload.data;
+                          if (
+                              typeof tokenData?.token !== 'string' ||
+                              tokenData.token.length === 0 ||
+                              typeof tokenData?.expireTimeMillis !== 'number'
+                          ) {
+                              throw new Error('Invalid App Check token payload from mintElectronAppCheckToken');
+                          }
+                          return {
+                              token: tokenData.token,
+                              expireTimeMillis: tokenData.expireTimeMillis,
+                          };
                       } catch (err) {
                           logger.error('[App Check] Failed to mint custom token:', err);
                           throw err;
+                      } finally {
+                          clearTimeout(timeoutId);
                       }
                   }
               })
@@ -475,6 +534,25 @@ export function getAppCheck(): any {
                 provider,
                 isTokenAutoRefreshEnabled: true
             });
+            if (isElectron && appCheck && !electronIdTokenListenerAttached) {
+                const authWithIdTokenListener = rawAuth as unknown as {
+                    onIdTokenChanged?: (cb: (user: User | null) => void) => unknown;
+                };
+                if (typeof authWithIdTokenListener?.onIdTokenChanged === 'function') {
+                    electronIdTokenListenerAttached = true;
+                    authWithIdTokenListener.onIdTokenChanged((user) => {
+                        if (!appCheck || !getCachedFreshIdToken(user)) return;
+                        void import('firebase/app-check')
+                            .then((mod) => {
+                                if (typeof mod.getToken === 'function' && appCheck) {
+                                    return mod.getToken(appCheck, true);
+                                }
+                                return undefined;
+                            })
+                            .catch(() => undefined);
+                    });
+                }
+            }
             logger.info(isElectron ? '[App Check] Initialized custom provider for Electron' : '[App Check] Initialized successfully');
         } catch (e: unknown) {
             logger.error('[App Check] Initialization failed — app running without App Check:', e);
