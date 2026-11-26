@@ -34,7 +34,19 @@ export const FoundationalTools = {
             if (!user) return toolError('Sign in before saving local agent knowledge.', 'AUTH_REQUIRED');
             const idToken = await user.getIdToken();
             if (auth.currentUser?.uid !== user.uid) return toolError('Account changed before saving local agent knowledge.', 'AUTH_CHANGED');
-            const result = await window.electronAPI!.agent.updateKnowledge(filePath, args.action, args.knowledge, idToken);
+            const firebaseMod = await import('@/services/firebase');
+            const activeAppCheck = firebaseMod.appCheck ?? (typeof firebaseMod.getAppCheck === 'function' ? firebaseMod.getAppCheck() : null);
+            let appCheckToken: string | undefined;
+            if (activeAppCheck) {
+                const { getToken } = await import('firebase/app-check').catch(() => ({ getToken: undefined }));
+                if (typeof getToken === 'function') {
+                    const tokenResult = await getToken(activeAppCheck, false).catch(() => null);
+                    if (typeof tokenResult?.token === 'string' && tokenResult.token.length > 0) {
+                        appCheckToken = tokenResult.token;
+                    }
+                }
+            }
+            const result = await window.electronAPI!.agent.updateKnowledge(filePath, args.action, args.knowledge, idToken, appCheckToken);
             
             if (result.success) {
                 return toolSuccess(result, `Local knowledge saved for ${args.agentId}; it will be read when the next desktop agent execution builds its prompt.`);

@@ -194,8 +194,8 @@ export interface ElectronAPI {
         createArtifact: (filename: string, content: string, options?: { artifactType?: string, requestFeedback?: boolean }) => Promise<{ success: boolean; error?: string }>;
         multiReplaceFileContent: (args: unknown) => Promise<{ success: boolean; error?: string }>;
         scanDirectory: () => Promise<{ success: boolean; data?: unknown; error?: string }>;
-        readKnowledge: (agentId: string, idToken: string) => Promise<string[]>;
-        updateKnowledge: (filePath: string, action: string, knowledge: unknown, idToken: string) => Promise<{ success: boolean; error?: string }>;
+        readKnowledge: (agentId: string, idToken: string, appCheckToken?: string) => Promise<string[]>;
+        updateKnowledge: (filePath: string, action: string, knowledge: unknown, idToken: string, appCheckToken?: string) => Promise<{ success: boolean; error?: string }>;
     };
 
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
