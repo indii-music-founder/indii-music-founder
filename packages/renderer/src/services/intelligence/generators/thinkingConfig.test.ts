@@ -63,11 +63,15 @@ describe('model thinking compatibility', () => {
 
 
 describe('Gemini 4 candidate thinking compatibility (pure request normalization)', () => {
+    it.each(['LOW', 'MEDIUM', 'HIGH', 'XHIGH'])('preserves Neon %s with legacy budget removed', thinkingLevel => {
+        expect(resolveModelThinkingConfig('gemini-4-neon', { thinkingLevel: thinkingLevel.toLowerCase(), thinkingBudget: 2048, includeThoughts: true }))
+            .toEqual({ thinkingLevel, includeThoughts: true });
+    });
     it.each(['LOW', 'MEDIUM', 'HIGH', 'XHIGH'])('preserves Hydrogen %s with legacy budget removed', thinkingLevel => {
         expect(resolveModelThinkingConfig('gemini-4-hydrogen', { thinkingLevel: thinkingLevel.toLowerCase(), thinkingBudget: 2048, includeThoughts: true }))
             .toEqual({ thinkingLevel, includeThoughts: true });
     });
-    it.each(['gemini-4-hydrogen', 'gemini-4-carbon'])('maps disabled legacy thinking to LOW for %s', model => {
+    it.each(['gemini-4-neon', 'gemini-4-hydrogen', 'gemini-4-carbon'])('maps disabled legacy thinking to LOW for %s', model => {
         expect(resolveModelThinkingConfig(model, { thinkingBudget: 0 })).toEqual({ thinkingLevel: 'LOW' });
         expect(resolveModelThinkingConfig(model, { thinkingLevel: 'MINIMAL' })).toEqual({ thinkingLevel: 'LOW' });
     });

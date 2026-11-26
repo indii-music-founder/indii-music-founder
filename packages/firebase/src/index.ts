@@ -88,7 +88,7 @@ import {
 } from './functions/billing/enforceOperationCost';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from './functions/security/arcjet';
 import { requireVerifiedCreativeAdmission } from './functions/creative/legacyAdmission';
-import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservationCoversTextStreamCost } from './functions/creative/textStreamAdmission';
+import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservationCoversTextStreamCost, sanitizeTextStreamThinkingConfig } from './functions/creative/textStreamAdmission';
 import { resolveVertexEndpointResource } from './lib/vertexRouting';
 import {
     classifySpecialistFailure,
@@ -1577,6 +1577,24 @@ export const generateContentStream = onRequest(
                     client = getVertexAIClient();
                 }
 
+                // Align Gemini 4 thinkingConfig server-side (strip legacy thinkingBudget,
+                // validate LOW/MEDIUM/HIGH/XHIGH for gemini-4-neon) before provider call.
+                const providerConfig = config && typeof config === 'object' ? { ...config } : {};
+                if ('thinkingConfig' in providerConfig) {
+                    try {
+                        const sanitizedThinking = sanitizeTextStreamThinkingConfig(finalModelId, providerConfig.thinkingConfig);
+                        if (sanitizedThinking === undefined) {
+                            delete providerConfig.thinkingConfig;
+                        } else {
+                            providerConfig.thinkingConfig = sanitizedThinking;
+                        }
+                    } catch (thinkingErr) {
+                        await finalizePreSubmission('invalid-thinking-config');
+                        res.status(400).send(thinkingErr instanceof Error ? thinkingErr.message : 'Unsupported thinking level.');
+                        return;
+                    }
+                }
+
                 // Generate Content Stream.
                 // Pull the first chunk before sending headers. For a specialized
                 // request, every provider failure returns a typed unavailable
@@ -1585,7 +1603,7 @@ export const generateContentStream = onRequest(
                     clientToUse.models.generateContentStream({
                         model: modelToUse,
                         contents: contents, // SDK accepts standard Content format
-                        config: config
+                        config: providerConfig
                     });
 
                 if (clientDisconnected) throw new Error('Client disconnected before provider submission.');

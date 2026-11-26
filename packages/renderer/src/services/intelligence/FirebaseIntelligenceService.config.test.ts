@@ -119,8 +119,8 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
         vi.mocked(fetch).mockResolvedValue(new Response(`${JSON.stringify({ text: 'Mock Response' })}\n${JSON.stringify({ complete: true })}\n`));
     });
 
-    it('resolves the explicit Conductor capability to Gemini 4 Argon', () => {
-        expect(service.getModelName('text-conductor')).toBe('gemini-4-argon');
+    it('resolves the explicit Conductor capability to Gemini 4 Neon', () => {
+        expect(service.getModelName('text-conductor')).toBe('gemini-4-neon');
     });
 
     it('should map thinkingBudget and set includeThoughts in generateText', async () => {

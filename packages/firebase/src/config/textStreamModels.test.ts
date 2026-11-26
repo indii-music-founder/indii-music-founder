@@ -8,6 +8,8 @@ import {
 
 describe('text stream model policy', () => {
     it('accepts reviewed base models and the reviewed endpoint registry only', () => {
+        expect(isApprovedTextStreamModel('gemini-4-neon')).toBe(true);
+        expect(isApprovedTextStreamModel('gemini-4-argon')).toBe(true);
         expect(isApprovedTextStreamModel('gemini-3.8-flash')).toBe(true);
         expect(isApprovedTextStreamModel('gemini-3-flash-preview')).toBe(true);
         const reviewedEndpoint = [...APPROVED_TEXT_STREAM_FINE_TUNED_ENDPOINTS][0]!;

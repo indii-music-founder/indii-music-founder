@@ -376,7 +376,7 @@ function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | un
 
 function normalizeThinkingLevel(thinkingLevel?: string): 'minimal' | 'high' | undefined {
   if (!thinkingLevel || thinkingLevel === 'none') return undefined;
-  if (thinkingLevel === 'high' || thinkingLevel === 'medium') return 'high';
+  if (thinkingLevel === 'xhigh' || thinkingLevel === 'high' || thinkingLevel === 'medium') return 'high';
   return 'minimal';
 }
 

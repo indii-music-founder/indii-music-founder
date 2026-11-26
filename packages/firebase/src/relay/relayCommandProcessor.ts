@@ -19,6 +19,7 @@
  * Memory: 2GB
  * Region: us-central1 (default — Firestore triggers don't support multi-region)
  */
+import { ThinkingLevel } from "@google/genai";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
@@ -263,7 +264,8 @@ export const processRelayCommand = onDocumentCreated(
                     systemInstruction: prompt,
                     temperature: 1.0,
                     maxOutputTokens: 4096,
-                    thinkingConfig: { thinkingBudget: 2048 },
+                    // Gemini 4 Neon requires thinkingLevel (LOW|MEDIUM|HIGH|XHIGH), never legacy thinkingBudget.
+                    thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
                 },
             });
 

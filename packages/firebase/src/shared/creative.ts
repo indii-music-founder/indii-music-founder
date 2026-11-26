@@ -17,7 +17,7 @@ export const GenerateImageSchema = BaseMediaRequestSchema.extend({
     model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),
     imageSize: z.enum(['512', '0.5K', '1K', '2K', '4K', '1k', '2k', '4k']).optional(),
     count: z.number().int().min(1).max(4).default(1),
-    thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
+    thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']).optional(),
     includeThoughts: z.boolean().optional(),
     responseFormat: z.enum(['image_only', 'image_and_text']).default('image_only'),
     useGoogleSearch: z.boolean().optional(),
