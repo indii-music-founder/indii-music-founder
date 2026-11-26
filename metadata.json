@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M8C6JJ4PYNZTQG9N9TSEF4W5",
+  "strategy": "manual-commit",
+  "branch": "fix/boardroom-mcp-sse-e2e",
+  "checkpoints_count": 14,
+  "files_touched": [
+    ".agent/capabilities/catalog.json",
+    ".agent/capabilities/catalog.md",
+    ".agent/capabilities/registry.json",
+    ".agent/workflows/pp.md",
+    "AGENTS.md",
+    "e2e/fixtures/auth.ts",
+    "e2e/mcp-a2a-routing.spec.ts",
+    "e2e/mcp-boardroom-collaboration.spec.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1631038,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 122579328,
+    "output_tokens": 112677,
+    "api_call_count": 478,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 23141,
+    "layers": {
+      "betterleaks": 11,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 5,
+      "credentialed_uri": 0,
+      "entropy": 25405,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
