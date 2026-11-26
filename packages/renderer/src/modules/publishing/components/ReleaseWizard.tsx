@@ -1076,7 +1076,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       aria-labelledby="release-wizard-title"
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[700] p-4 lg:pr-[calc(var(--right-panel-width,0px)+1rem)]"
     >
-      <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl w-full min-w-0 max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <h2 id="release-wizard-title" className="text-lg font-black text-white uppercase tracking-tighter italic">Create Release</h2>

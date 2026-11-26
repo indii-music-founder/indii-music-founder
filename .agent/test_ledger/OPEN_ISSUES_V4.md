@@ -3906,6 +3906,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Evidence:** `e2e/boardroom-debug.spec.ts` has no expects; `e2e/boardroom_test.spec.ts` only checks body visible; no Stop/timeout/lease/session-switch specs. (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Change (branch `antigravity/boardroom-wp0-wp6-wp9`, 2026-11-24):** removed assertion-free `e2e/boardroom-debug.spec.ts` and updated `e2e/boardroom_test.spec.ts` to assert Boardroom entry, prompt submission, non-error model reply rendering, settled processing state, and zero uncaught page errors (structural mock-auth test; live run not executed here).
+- **Lifecycle E2E specs added (2026-11-26, branch `fix/v4-batch3-direct-timeout-e2e-modal`):** Added `e2e/boardroom-controls-lifecycle.spec.ts` covering Stop mid-turn abort settlement without false error messages, mid-run session switching isolation, and post-reload processing-lock recovery with zero uncaught page errors. Structural Playwright specs only; live CI/signed-in acceptance remains pending.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
 
 ---
@@ -3932,6 +3933,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Impact:** The uploaded image may be unavailable to the edit tool. A failed tool or later text turn can trigger an unrelated visual correction.
 - **Fix:** Resolve upload indices against the turn's captured upload references. Derive agent scope from the same organization resolver as media storage. Require a successful image tool result and accessible image pixels for visual evaluation, and restrict correction to the originating turn.
 - **Acceptance:** Upload an image through Direct chat and batch-edit it through index 0. Preview the saved result and verify workspace consistency. Draft social copy and ask where the result is saved. Confirm the follow-up finishes without a timeout and text or failed turns produce no visual corrections.
+- **Stream completion & idle watchdog repair (2026-11-26, branch `fix/v4-batch3-direct-timeout-e2e-modal`):** `FirebaseIntelligenceService.callBackendGenerateContentStream` previously continued calling `reader.read()` after receiving `{ complete: true }`, which allowed lingering HTTP/2 keep-alive sockets to stall finished turns until the 120s timeout aborted them. It now breaks immediately on `{ complete: true }`, cancels the underlying reader, propagates `AbortSignal` directly to `reader.cancel()`, and applies a 45s per-chunk idle watchdog so half-open TCP streams fail fast as retryable timeouts. Structural regressions pass (`FirebaseIntelligenceService.streamCompletion.test.ts`); live signed-in follow-up acceptance remains pending.
 
 ### ISSUE-1689: Prompt PII redaction alters timestamp-based creative and brand history IDs
 
@@ -4261,7 +4263,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1712: Right-hand panel covers part of the Create Release dialog
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — `--right-panel-width` clearance landed on `main` and `min-w-0` narrow-desktop flex-shrink guard added on branch `fix/v4-batch3-direct-timeout-e2e-modal`; awaiting live 1280–1920 px production verification
 - **Severity:** 🟡 MEDIUM (Next is hidden; the user can't see the right side of the form)
 - **Module:** Publishing / `ReleaseWizard` dialog; layout of the right-hand Messages / Project Assets panel
 - **Evidence:** production 2026-11-23 04:30 UTC, build `c4a2d1df2`, 1920 px wide window. With the Messages panel open, the dialog's right part (Artist Name field edge and the Next button) sits under the panel; with Project Assets open the panel covers the Assets step's right half. Seen in screenshots only; which element sits on top was not confirmed (`elementFromPoint` at Next's centre returned a `space-y-6` element, not the button).
