@@ -224,12 +224,11 @@ export const sdkApi = onRequest(arcjetProtectedRequestOptions, async (req: Reque
     const query = req.query as Record<string, unknown>;
     const operation = route.operation;
     let data: unknown;
-    if (operation === 'submitDistribution') {
-      throw new HttpsError('failed-precondition', 'Submission needs a verified release, media, clearance and distributor delivery binding.');
-    } else if (operation === 'listTracks' || operation === 'createTrack' || operation === 'getTrack' ||
+    if (operation === 'listTracks' || operation === 'createTrack' || operation === 'getTrack' ||
       operation === 'updateTrack' || operation === 'deleteTrack') {
       data = await executeSdkTrack(principal.uid, operation, route.id, req.body, query);
-    } else if (operation === 'listDistributions' || operation === 'createDistribution' || operation === 'getDistribution') {
+    } else if (operation === 'listDistributions' || operation === 'createDistribution' ||
+      operation === 'getDistribution' || operation === 'submitDistribution') {
       data = await executeSdkDistribution(principal.uid, operation, route.id, req.body, query);
     } else {
       data = await executeSdkAccount(principal.uid, operation, req.body, query);

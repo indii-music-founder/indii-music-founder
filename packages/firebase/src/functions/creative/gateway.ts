@@ -173,6 +173,7 @@ async function requireCreativeGatewayAdmission(
       isAdmin: request.auth?.token.admin === true,
     }),
     operationId: `${operation}:${crypto.randomUUID()}`,
+    skipBodyShield: true,
   });
   if (!protection.allowed) {
     const code = protection.status === 429

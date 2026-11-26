@@ -553,11 +553,49 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             };
         };
 
+        const STREAM_CHUNK_IDLE_TIMEOUT_MS = 45_000;
+        const readNextWithWatchdog = async (): Promise<ReadableStreamReadResult<Uint8Array>> => {
+            if (signal?.aborted) {
+                throw new DOMException(
+                    typeof signal.reason === 'string' ? signal.reason : 'Aborted',
+                    'AbortError',
+                );
+            }
+            let idleTimer: ReturnType<typeof setTimeout> | undefined;
+            try {
+                return await Promise.race([
+                    reader.read(),
+                    new Promise<never>((_resolve, reject) => {
+                        idleTimer = setTimeout(() => {
+                            void reader.cancel('IDLE_TIMEOUT').catch(() => {});
+                            reject(new AppException(
+                                AppErrorCode.TIMEOUT,
+                                `AI response stream stalled with no data for ${STREAM_CHUNK_IDLE_TIMEOUT_MS}ms`,
+                                { retryable: true },
+                            ));
+                        }, STREAM_CHUNK_IDLE_TIMEOUT_MS);
+                    }),
+                ]);
+            } finally {
+                if (idleTimer !== undefined) clearTimeout(idleTimer);
+            }
+        };
+
         const transformedStream = new ReadableStream<StreamChunk>({
             async start(controller) {
+                const onAbort = () => {
+                    void reader.cancel(signal?.reason ?? 'ABORTED').catch(() => {});
+                };
+                if (signal) {
+                    if (signal.aborted) {
+                        onAbort();
+                    } else {
+                        signal.addEventListener('abort', onAbort, { once: true });
+                    }
+                }
                 try {
-                    while (true) {
-                        const { done, value } = await reader.read();
+                    while (!receivedComplete) {
+                        const { done, value } = await readNextWithWatchdog();
                         if (done) break;
                         buffer += decoder.decode(value, { stream: true });
                         const lines = buffer.split('\n');
@@ -569,7 +607,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!jsonLine) continue;
                             const parsed = safeJsonParse(jsonLine) as BackendStreamPayload | null;
                             if (!parsed) continue;
-                            if (parsed.complete === true) { receivedComplete = true; continue; }
+                            // ISSUE-1688: stop reading immediately once the server signals
+                            // stream completion so lingering HTTP/2 keep-alive sockets cannot
+                            // stall reader.read() until the 120s request timeout fires.
+                            if (parsed.complete === true) {
+                                receivedComplete = true;
+                                break;
+                            }
                             const specialistUnavailable = specialistUnavailableFromPayload(parsed);
                             if (specialistUnavailable) throw specialistUnavailable;
                             if (parsed.grounding) {
@@ -586,7 +630,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             controller.enqueue(chunk);
                         }
                     }
-                    if (buffer.trim()) {
+                    if (receivedComplete) {
+                        void reader.cancel().catch(() => {});
+                    }
+                    if (!receivedComplete && buffer.trim()) {
                         const jsonLine = stripSseDataPrefix(buffer);
                         const parsed = jsonLine ? safeJsonParse(jsonLine) as BackendStreamPayload | null : null;
                         if (parsed) {
@@ -625,6 +672,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     const normalized = normalizeStreamInterruption(error, signal);
                     try { controller.error(normalized); } catch { /* cancellation already closed controller */ }
                     rejectWrappedResponse(normalized);
+                } finally {
+                    if (signal) {
+                        signal.removeEventListener('abort', onAbort);
+                    }
                 }
             },
             async cancel(reason) {

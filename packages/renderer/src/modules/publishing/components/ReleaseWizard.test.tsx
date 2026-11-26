@@ -157,6 +157,7 @@ describe('ReleaseWizard Integration', () => {
         const dialog = screen.getByRole('dialog');
         expect(dialog.className).toContain('z-[700]');
         expect(dialog.className).toContain('lg:pr-[calc(var(--right-panel-width,0px)+1rem)]');
+        expect(dialog.firstElementChild?.className).toContain('min-w-0');
     });
 
 });

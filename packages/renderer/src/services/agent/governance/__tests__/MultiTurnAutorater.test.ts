@@ -74,4 +74,32 @@ describe('MultiTurnAutorater', () => {
 
         expect(result).toBeNull();
     });
+
+    it('bounds oversized tool outputs and strips control characters before evaluation (ISSUE-1711)', async () => {
+        const mockResult = {
+            goalCompletion: 8,
+            adherence: 9,
+            coherence: 8,
+            toolEfficiency: 8,
+            reasoning: 'Good',
+            overallPass: true,
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResult);
+
+        const hugeToolDump = `{"ok":true,"blob":"${'A'.repeat(12_000)}\u0000\u0007"}`;
+        const messages: TraceMessage[] = [
+            { role: 'user', content: 'Pitch my release.' },
+            { role: 'tool', content: hugeToolDump },
+            { role: 'model', content: 'Done.' },
+        ];
+
+        const result = await MultiTurnAutorater.evaluateTrace('trace-bounded', messages, 'Pitch release');
+        expect(result).toEqual(mockResult);
+
+        const promptSent = vi.mocked(AutonomousIntelligence.generateStructuredData).mock.calls[0]?.[0] as string;
+        expect(promptSent).toContain('...[truncated');
+        expect(promptSent).not.toContain('\u0000');
+        expect(promptSent).not.toContain('\u0007');
+        expect(promptSent.length).toBeLessThan(10_000);
+    });
 });

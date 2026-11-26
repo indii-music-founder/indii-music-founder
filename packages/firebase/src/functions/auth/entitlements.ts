@@ -24,8 +24,12 @@ export function tierRank(tier: SubscriptionTier): number {
     switch (tier) {
         case SubscriptionTier.FOUNDER:
             return 3;
+        case SubscriptionTier.SCALE:
+            return 2.5;
+        case SubscriptionTier.BUILD:
         case SubscriptionTier.STUDIO:
             return 2;
+        case SubscriptionTier.START:
         case SubscriptionTier.PRO_MONTHLY:
         case SubscriptionTier.PRO_YEARLY:
             return 1;
@@ -60,6 +64,18 @@ export function resolveServerProvenTier(options: {
     return SubscriptionTier.FREE;
 }
 
+export interface ProviderCapacityBoundary {
+    firstYearIncludedUntil: string;
+    meteredAfterFirstYear: boolean;
+}
+
+export interface FoundingOwnerRecognition {
+    permanent: true;
+    seatNumber?: number;
+    displayName?: string;
+    grantedAt?: string;
+}
+
 export interface AccountEntitlement {
     schemaVersion: typeof ACCOUNT_ENTITLEMENT_SCHEMA_VERSION;
     uid: string;
@@ -69,6 +85,15 @@ export interface AccountEntitlement {
     grantId: string;
     /** Monotonic per-account grant revision, used to preserve distinct audit identities across revocation/reactivation. */
     revision?: number;
+    /**
+     * Separates permanent software license access (Founding Owner) from
+     * recurring subscriptions and metered provider usage (ISSUE-1424).
+     */
+    softwareAccess?: 'permanent' | 'subscription' | 'free';
+    providerCapacityBoundary?: ProviderCapacityBoundary;
+    recognition?: FoundingOwnerRecognition;
+    /** Preserves Founding Owner software access and recognition across post-beta tier renames. */
+    postBetaMigrationProtected?: true;
 }
 
 export interface VerifiedAccountIdentity {
@@ -113,6 +138,30 @@ function entitlementFromUnknown(value: unknown): AccountEntitlement | undefined 
     if (!['verified_email', 'founder_registry_migration', 'founder_activation', 'subscription_migration'].includes(data.source)) {
         return undefined;
     }
+    const softwareAccess = data.softwareAccess === 'permanent'
+        || data.softwareAccess === 'subscription'
+        || data.softwareAccess === 'free'
+        ? data.softwareAccess
+        : undefined;
+    const rawBoundary = data.providerCapacityBoundary as Record<string, unknown> | undefined;
+    const providerCapacityBoundary = rawBoundary
+        && typeof rawBoundary.firstYearIncludedUntil === 'string'
+        && typeof rawBoundary.meteredAfterFirstYear === 'boolean'
+        ? {
+            firstYearIncludedUntil: rawBoundary.firstYearIncludedUntil,
+            meteredAfterFirstYear: rawBoundary.meteredAfterFirstYear,
+        }
+        : undefined;
+    const rawRecognition = data.recognition as Record<string, unknown> | undefined;
+    const recognition = rawRecognition && rawRecognition.permanent === true
+        ? {
+            permanent: true as const,
+            ...(typeof rawRecognition.seatNumber === 'number' ? { seatNumber: rawRecognition.seatNumber } : {}),
+            ...(typeof rawRecognition.displayName === 'string' ? { displayName: rawRecognition.displayName } : {}),
+            ...(typeof rawRecognition.grantedAt === 'string' ? { grantedAt: rawRecognition.grantedAt } : {}),
+        }
+        : undefined;
+
     return {
         schemaVersion: ACCOUNT_ENTITLEMENT_SCHEMA_VERSION,
         uid: data.uid,
@@ -121,6 +170,10 @@ function entitlementFromUnknown(value: unknown): AccountEntitlement | undefined 
         source: data.source as EntitlementSource,
         grantId: data.grantId,
         ...(typeof data.revision === 'number' ? { revision: data.revision } : {}),
+        ...(softwareAccess ? { softwareAccess } : {}),
+        ...(providerCapacityBoundary ? { providerCapacityBoundary } : {}),
+        ...(recognition ? { recognition } : {}),
+        ...(data.postBetaMigrationProtected === true ? { postBetaMigrationProtected: true as const } : {}),
     };
 }
 
@@ -268,9 +321,12 @@ export function entitlementTierToBudgetTier(tier: SubscriptionTier): BudgetTier 
     switch (tier) {
         case SubscriptionTier.FOUNDER:
             return 'founder';
+        case SubscriptionTier.START:
+        case SubscriptionTier.BUILD:
         case SubscriptionTier.PRO_MONTHLY:
         case SubscriptionTier.PRO_YEARLY:
             return 'pro';
+        case SubscriptionTier.SCALE:
         case SubscriptionTier.STUDIO:
             return 'enterprise';
         case SubscriptionTier.FREE:
@@ -279,18 +335,31 @@ export function entitlementTierToBudgetTier(tier: SubscriptionTier): BudgetTier 
     }
 }
 
+export interface FounderEntitlementGrantOptions {
+    firstYearIncludedUntil?: string;
+    seatNumber?: number;
+    displayName?: string;
+    grantedAt?: string;
+}
+
 /**
- * Used by the existing founder activation transaction so paid Founder access
- * is materialized in the same server-owned entitlement model as Free access.
+ * Used by the founder activation and paid Founding Owner checkout transactions
+ * so permanent software access, first-year included provider usage boundaries,
+ * and permanent recognition are materialized in the server-owned entitlement
+ * model independently of recurring subscription status or post-beta renames.
  */
 export function writeFounderEntitlementGrant(
     transaction: Transaction,
     firestore: Firestore,
     rawUid: string,
     founderReference: string,
+    options: FounderEntitlementGrantOptions = {},
 ): AccountEntitlement {
     const uid = requireUid(rawUid);
     const source: EntitlementSource = 'founder_activation';
+    const grantedAt = options.grantedAt ?? new Date().toISOString();
+    const firstYearIncludedUntil = options.firstYearIncludedUntil
+        ?? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     const record: AccountEntitlement = {
         schemaVersion: ACCOUNT_ENTITLEMENT_SCHEMA_VERSION,
         uid,
@@ -298,6 +367,20 @@ export function writeFounderEntitlementGrant(
         status: 'active',
         source,
         grantId: grantId(uid, SubscriptionTier.FOUNDER, source, founderReference),
+        softwareAccess: 'permanent',
+        providerCapacityBoundary: {
+            firstYearIncludedUntil,
+            meteredAfterFirstYear: true,
+        },
+        recognition: {
+            permanent: true,
+            ...(typeof options.seatNumber === 'number' ? { seatNumber: options.seatNumber } : {}),
+            ...(typeof options.displayName === 'string' && options.displayName.trim()
+                ? { displayName: options.displayName.trim() }
+                : {}),
+            grantedAt,
+        },
+        postBetaMigrationProtected: true,
     };
     const refs = entitlementRefs(firestore, uid);
     transaction.set(refs.current, {

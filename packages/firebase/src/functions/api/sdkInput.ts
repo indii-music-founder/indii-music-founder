@@ -9,7 +9,12 @@ export const SdkCreateTrack = CreateTrackSchema.extend({
   bpm: z.number().finite().positive().optional(),
 }).strict();
 export const SdkUpdateTrack = SdkCreateTrack.partial().refine(value => Object.keys(value).length > 0, 'Provide at least one editable field.');
-export const SdkCreateDistribution = CreateDistributionSchema.strict();
+export const SdkCreateDistribution = CreateDistributionSchema.extend({
+  releaseId: z.string().trim().min(1).max(128).optional(),
+}).strict();
+export const SdkSubmitDistribution = z.object({
+  releaseId: z.string().trim().min(1).max(128).optional(),
+}).strict();
 export const SdkUpdateProfile = z.object({ name: z.string().trim().min(1).max(255) }).strict();
 
 export function sdkPagination(query: Record<string, unknown>): { limit: number; offset: number } {

@@ -44,6 +44,14 @@ export interface AuthenticatedArcjetRequestContext {
      */
     mode?: "arcjet" | "local-rate-limit";
     rateLimit?: LocalRateLimitConfig;
+    /**
+     * ISSUE-1711: Scope Arcjet WAF body `shield` away from authenticated LLM
+     * generation endpoints whose JSON bodies legitimately contain raw tool
+     * outputs, multi-turn conversation traces, code, and markup that cause
+     * false-positive 403 SHIELD denials. Per-user Arcjet sliding-window rate
+     * limiting remains fully enforced.
+     */
+    skipBodyShield?: boolean;
 }
 
 export interface AnonymousArcjetRequestOptions {
@@ -113,7 +121,7 @@ const adminArcjet = baseArcjet?.withRule(
         mode: "LIVE",
         characteristics: ["userId"],
         interval: "1m",
-        max: 30,
+        max: 120,
     }),
 );
 
@@ -126,7 +134,40 @@ const byoApiArcjet = baseArcjet?.withRule(
     }),
 );
 
-function authenticatedClient(policy: AuthenticatedArcjetPolicyClass) {
+// Lazily initialized rate-limit-only Arcjet clients (no WAF body shield) for
+// authenticated LLM generation bodies (ISSUE-1711).
+type ArcjetProtectClient = NonNullable<typeof verifiedFreeArcjet>;
+let rateLimitOnlyBaseArcjet: ReturnType<typeof arcjet> | undefined;
+const rateLimitOnlyClients = new Map<AuthenticatedArcjetPolicyClass, ArcjetProtectClient>();
+
+const AUTHENTICATED_POLICY_LIMITS: Record<AuthenticatedArcjetPolicyClass, number> = {
+    "verified-free": 20,
+    paid: 60,
+    founder: 120,
+    admin: 120,
+    "byo-api": 45,
+};
+
+function authenticatedClient(policy: AuthenticatedArcjetPolicyClass, skipBodyShield = false) {
+    if (skipBodyShield) {
+        if (!configuredArcjetKey) return undefined;
+        let cached = rateLimitOnlyClients.get(policy);
+        if (!cached) {
+            if (!rateLimitOnlyBaseArcjet) {
+                rateLimitOnlyBaseArcjet = arcjet({ key: configuredArcjetKey, rules: [] });
+            }
+            cached = rateLimitOnlyBaseArcjet.withRule(
+                slidingWindow({
+                    mode: "LIVE",
+                    characteristics: ["userId"],
+                    interval: "1m",
+                    max: AUTHENTICATED_POLICY_LIMITS[policy],
+                }),
+            ) as unknown as ArcjetProtectClient;
+            rateLimitOnlyClients.set(policy, cached);
+        }
+        return cached;
+    }
     switch (policy) {
         case "verified-free":
             return verifiedFreeArcjet;
@@ -271,8 +312,9 @@ function defaultLocalRateLimit(policy: AuthenticatedArcjetPolicyClass): LocalRat
     switch (policy) {
         case "paid":
         case "byo-api":
-        case "admin":
             return { bucket: `local:${policy}`, maxRequests: 60, windowMs: 60_000 };
+        case "admin":
+            return { bucket: "local:admin", maxRequests: 120, windowMs: 60_000 };
         case "founder":
             return { bucket: "local:founder", maxRequests: 120, windowMs: 60_000 };
         case "verified-free":
@@ -354,7 +396,7 @@ export async function protectAuthenticatedApiRequest(
             limiterLabel: "Local rate limiter",
         });
     }
-    const client = authenticatedClient(context.policy);
+    const client = authenticatedClient(context.policy, context.skipBodyShield === true);
     if (!client) {
         return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "missing_configuration");
     }

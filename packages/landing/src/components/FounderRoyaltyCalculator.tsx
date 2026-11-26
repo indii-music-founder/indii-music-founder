@@ -1,80 +1,207 @@
-import React, { useState } from 'react';
-import { DollarSign, ShieldAlert, ShieldCheck, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Calculator, ExternalLink, Info, ShieldCheck } from 'lucide-react';
 
-interface DistributorConfig {
+export type DistributorDealType = 'subscription' | 'commission' | 'per-release';
+
+export interface DistributorRateRecord {
   id: string;
   name: string;
+  dealType: DistributorDealType;
   badge: string;
-  commissionPct: number; // Royalty commission %
-  perReleaseFee: number; // Base fee per release
-  yearlyAddonPerRelease: number; // Hidden annual add-ons (Leave a legacy, store maximizers, etc.)
-  tosRiskText: string;
-  summary: string;
+  /** Published annual account subscription in USD (0 if none). */
+  annualSubscriptionUsd: number;
+  /** Published one-time or per-release fee in USD (0 if none). */
+  perReleaseFeeUsd: number;
+  /** Published recurring annual fee per release in USD (0 if none). */
+  annualPerReleaseFeeUsd: number;
+  /** Published royalty commission fraction (0.0 to 1.0). */
+  commissionRate: number;
+  /** Authoritative provider pricing URL. */
+  sourceUrl: string;
+  /** ISO date (YYYY-MM-DD) when the published values were verified. */
+  verifiedAt: string;
+  /** Maximum days a pricing record may remain rendered before failing closed. */
+  maxAgeDays: number;
+  /** Factual, verifiable summary of the published fee model. */
+  publishedTermsSummary: string;
 }
 
-const DISTRIBUTORS: DistributorConfig[] = [
+export interface ComparisonInputs {
+  releaseCount: number;
+  annualStreams: number;
+  assumedRatePerStreamUsd: number;
+}
+
+export interface ComparisonResult {
+  grossEstimatedRoyaltyUsd: number;
+  commissionFeeUsd: number;
+  fixedAndReleaseFeesUsd: number;
+  totalDistributorCostUsd: number;
+  estimatedNetAfterDistributorUsd: number;
+}
+
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Published distributor fee models with authoritative source URLs and
+ * verification dates (ISSUE-1430). Rows older than `maxAgeDays` or missing
+ * source metadata are automatically hidden by `isDistributorRecordFresh`.
+ */
+export const DISTRIBUTOR_RATE_RECORDS: readonly DistributorRateRecord[] = [
   {
-    id: 'distrokid',
-    name: 'DistroKid',
-    badge: 'Micro-Fee Aggregator',
-    commissionPct: 0,
-    perReleaseFee: 22.99,
-    yearlyAddonPerRelease: 49.00, // "Leave a Legacy" $49 + Store Maximizer $7.95/yr + Shazam $0.99/yr
-    tosRiskText: 'TOS updates allow third-party data processing & uncompensated model training on uploaded catalog tracks.',
-    summary: 'Cheap upfront, but charges mandatory annual add-ons per song ("Leave a Legacy" tax) or deletes your music if subscription lapses.',
+    id: 'distrokid-musician',
+    name: 'DistroKid (Musician Plan)',
+    dealType: 'subscription',
+    badge: 'Annual Subscription',
+    annualSubscriptionUsd: 24.99,
+    perReleaseFeeUsd: 0,
+    annualPerReleaseFeeUsd: 0,
+    commissionRate: 0,
+    sourceUrl: 'https://distrokid.com/plan/',
+    verifiedAt: '2026-11-26',
+    maxAgeDays: 180,
+    publishedTermsSummary:
+      'Published entry plan uses a flat annual subscription with 0% royalty commission; optional add-ons are priced separately and excluded from base-plan math.',
   },
   {
-    id: 'symphonic',
-    name: 'Symphonic',
-    badge: 'Commission Aggregator',
-    commissionPct: 0.15, // 15% royalty cut
-    perReleaseFee: 19.99,
-    yearlyAddonPerRelease: 15.00,
-    tosRiskText: 'Commission agreement claims 15-20% gross royalty cut & manual approval gates before distribution dispatch.',
-    summary: 'Takes a 15% royalty commission cut off all DSP streams while enforcing manual gatekeeper approval queues.',
+    id: 'cdbaby-standard',
+    name: 'CD Baby (Standard)',
+    dealType: 'commission',
+    badge: 'Per-Release + Commission',
+    annualSubscriptionUsd: 0,
+    perReleaseFeeUsd: 9.99,
+    annualPerReleaseFeeUsd: 0,
+    commissionRate: 0.09,
+    sourceUrl: 'https://cdbaby.com/music-distribution-pricing/',
+    verifiedAt: '2026-11-26',
+    maxAgeDays: 180,
+    publishedTermsSummary:
+      'Published standard model charges a one-time fee per release plus a 9% commission on digital distribution royalties, with no recurring annual renewal fee.',
   },
   {
-    id: 'tunecore',
-    name: 'TuneCore / CD Baby',
-    badge: 'Legacy Annual Tax',
-    commissionPct: 0.09, // 9% revenue cut (CD Baby) or recurring annual per-album fee
-    perReleaseFee: 29.99,
-    yearlyAddonPerRelease: 29.99, // $29.99/album/year forever
-    tosRiskText: 'Enforces perpetual annual renewal fees per album; failure to pay results in DSP takedown & loss of stream momentum.',
-    summary: 'Requires perpetual yearly maintenance fees for every single album in your catalog or threatens DSP takedown.',
+    id: 'tunecore-rising',
+    name: 'TuneCore (Rising Artist)',
+    dealType: 'subscription',
+    badge: 'Unlimited Annual Plan',
+    annualSubscriptionUsd: 22.99,
+    perReleaseFeeUsd: 0,
+    annualPerReleaseFeeUsd: 0,
+    commissionRate: 0,
+    sourceUrl: 'https://www.tunecore.com/pricing',
+    verifiedAt: '2026-11-26',
+    maxAgeDays: 180,
+    publishedTermsSummary:
+      'Published Rising Artist plan uses an annual subscription covering unlimited releases with 0% digital store royalty commission while the plan remains active.',
   },
 ];
 
-export const FounderRoyaltyCalculator: React.FC = () => {
-  const [selectedDistributor, setSelectedDistributor] = useState<DistributorConfig>(DISTRIBUTORS[0]);
-  const [releaseCount, setReleaseCount] = useState<number>(5); // Default 5 releases in catalog
-  const [annualStreams, setAnnualStreams] = useState<number>(5000000); // Default 5M streams
-  const [averageCpm] = useState<number>(0.0038); // $0.0038 per stream avg DSP rate
+/**
+ * Fail-closed staleness guard (ISSUE-1430): a distributor record may only
+ * render when it carries a valid HTTPS source URL, a parseable verification
+ * date, non-negative finite numbers, and is within its freshness window.
+ */
+export function isDistributorRecordFresh(
+  record: DistributorRateRecord,
+  now: Date = new Date(),
+): boolean {
+  if (!record.sourceUrl.startsWith('https://')) return false;
+  const verifiedMs = Date.parse(`${record.verifiedAt}T00:00:00.000Z`);
+  if (!Number.isFinite(verifiedMs)) return false;
+  if (!Number.isFinite(record.maxAgeDays) || record.maxAgeDays <= 0) return false;
+  const ageDays = (now.getTime() - verifiedMs) / MS_PER_DAY;
+  if (ageDays > record.maxAgeDays || ageDays < -2) return false;
 
-  // Financial Calculations
-  const grossRoyalty = annualStreams * averageCpm;
-  
-  // Legacy Distributor Cost = Commission Cut + Annual Catalog Fees
-  const legacyCommissionFee = grossRoyalty * selectedDistributor.commissionPct;
-  const legacyCatalogFees = releaseCount * (selectedDistributor.perReleaseFee + selectedDistributor.yearlyAddonPerRelease);
-  const totalLegacyCost = legacyCommissionFee + legacyCatalogFees;
-  const legacyNetPayout = Math.max(0, grossRoyalty - totalLegacyCost);
+  return (
+    Number.isFinite(record.annualSubscriptionUsd) && record.annualSubscriptionUsd >= 0 &&
+    Number.isFinite(record.perReleaseFeeUsd) && record.perReleaseFeeUsd >= 0 &&
+    Number.isFinite(record.annualPerReleaseFeeUsd) && record.annualPerReleaseFeeUsd >= 0 &&
+    Number.isFinite(record.commissionRate) && record.commissionRate >= 0 && record.commissionRate <= 1
+  );
+}
 
-  // indii.music Cost = 0% Royalty Cut, $0 Hidden Catalog Fees
-  const indiiNetPayout = grossRoyalty;
-  const retainedSavings = grossRoyalty - legacyNetPayout;
+/** Deterministic, reproducible fee calculation separating published fees from stream-rate estimates. */
+export function calculateDistributorComparison(
+  record: DistributorRateRecord,
+  inputs: ComparisonInputs,
+): ComparisonResult {
+  const releases = Math.max(0, Math.floor(inputs.releaseCount));
+  const streams = Math.max(0, inputs.annualStreams);
+  const streamRate = Math.max(0, inputs.assumedRatePerStreamUsd);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const grossEstimatedRoyaltyUsd = streams * streamRate;
+  const commissionFeeUsd = grossEstimatedRoyaltyUsd * record.commissionRate;
+  const fixedAndReleaseFeesUsd =
+    record.annualSubscriptionUsd +
+    releases * (record.perReleaseFeeUsd + record.annualPerReleaseFeeUsd);
+  const totalDistributorCostUsd = commissionFeeUsd + fixedAndReleaseFeesUsd;
+  const estimatedNetAfterDistributorUsd = Math.max(0, grossEstimatedRoyaltyUsd - totalDistributorCostUsd);
+
+  return {
+    grossEstimatedRoyaltyUsd,
+    commissionFeeUsd,
+    fixedAndReleaseFeesUsd,
+    totalDistributorCostUsd,
+    estimatedNetAfterDistributorUsd,
+  };
+}
+
+export interface FounderRoyaltyCalculatorProps {
+  records?: readonly DistributorRateRecord[];
+  now?: Date;
+}
+
+export const FounderRoyaltyCalculator: React.FC<FounderRoyaltyCalculatorProps> = ({
+  records = DISTRIBUTOR_RATE_RECORDS,
+  now,
+}) => {
+  const referenceDate = useMemo(() => now ?? new Date(), [now]);
+  const freshRecords = useMemo(
+    () => records.filter((record) => isDistributorRecordFresh(record, referenceDate)),
+    [records, referenceDate],
+  );
+
+  const [selectedId, setSelectedId] = useState<string>(freshRecords[0]?.id ?? '');
+  const [releaseCount, setReleaseCount] = useState<number>(5);
+  const [annualStreams, setAnnualStreams] = useState<number>(1_000_000);
+  const [assumedRatePerStreamUsd, setAssumedRatePerStreamUsd] = useState<number>(0.0035);
+
+  const selectedDistributor = freshRecords.find((r) => r.id === selectedId) ?? freshRecords[0];
+
+  const comparison = useMemo(() => {
+    if (!selectedDistributor) return null;
+    return calculateDistributorComparison(selectedDistributor, {
+      releaseCount,
+      annualStreams,
+      assumedRatePerStreamUsd,
+    });
+  }, [selectedDistributor, releaseCount, annualStreams, assumedRatePerStreamUsd]);
+
+  if (!selectedDistributor || !comparison) {
+    return (
+      <section className="relative z-10 mx-auto my-20 w-full max-w-[1600px] px-5 md:px-10">
+        <div className="rounded-3xl border border-white/15 bg-black/80 p-8 text-sm text-white/70">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-amber-300">
+            <Info size={14} />
+            <span>Distributor Rate Data Pending Refresh</span>
+          </div>
+          <p className="mt-2">
+            Published distributor fee comparisons are hidden until current, source-verified pricing records are refreshed.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 2,
     }).format(val);
-  };
 
   const formatStreams = (val: number) => {
-    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
-    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+    if (val >= 1_000) return `${(val / 1_000).toFixed(0)}K`;
     return val.toString();
   };
 
@@ -82,55 +209,56 @@ export const FounderRoyaltyCalculator: React.FC = () => {
     <section className="relative z-10 mx-auto my-20 w-full max-w-[1600px] px-5 md:px-10">
       <div className="lacquer-card-gold relative overflow-hidden rounded-3xl p-8 md:p-12 shadow-[0_30px_90px_rgba(0,0,0,0.95)]">
         <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-        {/* Background Ambient Radial Glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-[100px]" />
 
         <div className="grid gap-10 lg:grid-cols-12">
-          {/* Left Column: Distributor Selectors & Inputs */}
+          {/* Left Column: Deal-Type Selector, Inputs & Assumptions */}
           <div className="flex flex-col justify-between lg:col-span-6">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">
-                <DollarSign size={12} />
-                Distributor Cost & Terms Audit
+                <Calculator size={12} />
+                Published Distributor Fee Estimator
               </div>
 
               <h2 className="mt-4 text-3xl font-black text-white md:text-4xl">
-                The True Cost of <span className="foil-sheen-text">Legacy Distributors</span>
+                Compare Published <span className="foil-sheen-text">Distribution Models</span>
               </h2>
 
               <p className="mt-3 text-sm leading-relaxed text-white/70">
-                Distribution is the last gatekeeper standing. Legacy aggregators lock artists into hidden per-track add-on taxes, 15% royalty cuts, and constantly changing Terms of Service.
+                Compare flat annual subscriptions against per-release commission deals using published base rates and your own stream-rate assumptions.
               </p>
 
-              {/* Distributor Selector Buttons */}
+              {/* Verified Distributor Selector Buttons */}
               <div className="mt-6">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-white/50">Compare Legacy Aggregator</span>
-                <div className="mt-2.5 grid grid-cols-3 gap-2.5">
-                  {DISTRIBUTORS.map((dist) => (
+                <span className="font-mono text-[10px] uppercase tracking-wider text-white/50">
+                  Published Provider Deal Models
+                </span>
+                <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {freshRecords.map((dist) => (
                     <button
                       key={dist.id}
                       type="button"
-                      onClick={() => setSelectedDistributor(dist)}
+                      onClick={() => setSelectedId(dist.id)}
                       className={`rounded-2xl border p-3.5 text-left font-mono transition-all ${
                         selectedDistributor.id === dist.id
-                          ? 'border-amber-400 bg-amber-400/20 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+                          ? 'border-amber-400 bg-amber-400/20 text-amber-300'
                           : 'border-white/10 bg-black/50 text-white/60 hover:border-white/30'
                       }`}
                     >
                       <div className="text-xs font-black">{dist.name}</div>
-                      <div className="mt-1 text-[9px] text-white/40">{dist.badge}</div>
+                      <div className="mt-1 text-[10px] text-white/50">{dist.badge}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Controls: Catalog Size & Annual Streams */}
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {/* Catalog Size Slider */}
-                <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+              {/* Editable Illustrative Assumptions */}
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="catalog-releases" className="font-mono text-[10px] uppercase tracking-wider text-white/60">Catalog Releases</label>
-                    <span className="font-mono text-base font-black text-amber-400">{releaseCount} Releases</span>
+                    <label htmlFor="catalog-releases" className="font-mono text-[10px] uppercase tracking-wider text-white/60">
+                      New Releases / Yr
+                    </label>
+                    <span className="font-mono text-sm font-black text-amber-400">{releaseCount}</span>
                   </div>
                   <input
                     id="catalog-releases"
@@ -143,151 +271,127 @@ export const FounderRoyaltyCalculator: React.FC = () => {
                     onChange={(e) => setReleaseCount(Number(e.target.value))}
                     className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-amber-400"
                   />
-                  <div className="mt-1 flex justify-between font-mono text-[9px] text-white/40">
-                    <span>1 Single</span>
-                    <span>10 Releases</span>
-                    <span>25+ Releases</span>
-                  </div>
                 </div>
 
-                {/* Annual Streams Slider */}
-                <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
+                <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="annual-streams" className="font-mono text-[10px] uppercase tracking-wider text-white/60">Annual DSP Streams</label>
-                    <span className="font-mono text-base font-black text-amber-400">{formatStreams(annualStreams)}</span>
+                    <label htmlFor="annual-streams" className="font-mono text-[10px] uppercase tracking-wider text-white/60">
+                      Est. Annual Streams
+                    </label>
+                    <span className="font-mono text-sm font-black text-amber-400">{formatStreams(annualStreams)}</span>
                   </div>
                   <input
                     id="annual-streams"
                     type="range"
-                    min="500000"
-                    max="50000000"
-                    step="500000"
+                    min="100000"
+                    max="25000000"
+                    step="100000"
                     value={annualStreams}
-                    aria-valuetext={`${formatStreams(annualStreams)} streams per year`}
+                    aria-valuetext={`${formatStreams(annualStreams)} estimated annual streams`}
                     onChange={(e) => setAnnualStreams(Number(e.target.value))}
                     className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-amber-400"
                   />
-                  <div className="mt-1 flex justify-between font-mono text-[9px] text-white/40">
-                    <span>500K</span>
-                    <span>10M</span>
-                    <span>50M+</span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="stream-rate" className="font-mono text-[10px] uppercase tracking-wider text-white/60">
+                      Est. $/Stream
+                    </label>
+                    <span className="font-mono text-sm font-black text-amber-400">
+                      ${assumedRatePerStreamUsd.toFixed(4)}
+                    </span>
                   </div>
+                  <input
+                    id="stream-rate"
+                    type="range"
+                    min="0.002"
+                    max="0.006"
+                    step="0.0005"
+                    value={assumedRatePerStreamUsd}
+                    aria-valuetext={`$${assumedRatePerStreamUsd.toFixed(4)} assumed per stream`}
+                    onChange={(e) => setAssumedRatePerStreamUsd(Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-amber-400"
+                  />
                 </div>
               </div>
 
-              {/* TOS Fine Print Warning Box */}
-              <div className="mt-5 rounded-2xl border border-red-500/30 bg-red-950/20 p-5 text-xs">
-                <div className="flex items-center gap-2 font-mono font-bold text-red-400">
-                  <ShieldAlert size={16} />
-                  <span>{selectedDistributor.name} Terms of Service Risk</span>
+              {/* Published Source Verification Card */}
+              <div className="mt-5 rounded-2xl border border-white/15 bg-black/50 p-5 text-xs">
+                <div className="flex items-center justify-between gap-2 font-mono font-bold text-white/90">
+                  <span>Published Provider Facts</span>
+                  <span className="text-[10px] text-white/50">Verified {selectedDistributor.verifiedAt}</span>
                 </div>
                 <p className="mt-2 leading-relaxed text-white/70">
-                  {selectedDistributor.tosRiskText}
+                  {selectedDistributor.publishedTermsSummary}
                 </p>
+                <a
+                  href={selectedDistributor.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-amber-300 hover:underline"
+                >
+                  View provider pricing page
+                  <ExternalLink size={12} />
+                </a>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-3 text-xs text-white/50">
-              <ShieldCheck size={16} className="text-amber-400" />
-              <span>indii Direct Pipeline • 100% Data Sovereignty • Zero Unauthorized Training</span>
+            <div className="mt-6 flex items-center gap-3 text-xs text-white/60">
+              <ShieldCheck size={16} className="shrink-0 text-amber-400" />
+              <span>
+                Estimates are illustrative only. Actual DSP payouts vary by territory, listener tier, and distributor terms.
+              </span>
             </div>
           </div>
 
-          {/* Right Column: Comparative Financial Matrix */}
-          <div className="flex flex-col justify-between rounded-2xl border border-white/12 bg-black/80 p-6 md:p-8 lg:col-span-6 shadow-[0_15px_50px_rgba(0,0,0,0.9)]">
+          {/* Right Column: Transparent Breakdown */}
+          <div className="flex flex-col justify-between rounded-2xl border border-white/12 bg-black/80 p-6 md:p-8 lg:col-span-6">
             <div>
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <span className="font-mono text-xs uppercase tracking-widest text-white/50">Audit Comparison</span>
-                <span className="rounded bg-amber-400/20 px-3 py-1 font-mono text-xs font-bold text-amber-300 border border-amber-400/40">
-                  Gross DSP Royalties: {formatCurrency(grossRoyalty)}
+                <span className="font-mono text-xs uppercase tracking-widest text-white/50">
+                  Illustrative Annual Breakdown
+                </span>
+                <span className="rounded border border-amber-400/40 bg-amber-400/15 px-3 py-1 font-mono text-xs font-bold text-amber-300">
+                  Est. Gross: {formatCurrency(comparison.grossEstimatedRoyaltyUsd)}
                 </span>
               </div>
 
-              {/* Comparison Matrix Bars */}
-              <div className="mt-6 space-y-6">
-                {/* Selected Legacy Distributor Bar */}
-                <div className="rounded-xl border border-red-500/30 bg-red-950/15 p-5">
+              <div className="mt-6 space-y-4">
+                <div className="rounded-xl border border-white/15 bg-white/[0.03] p-5">
                   <div className="flex justify-between font-mono text-xs">
-                    <span className="font-bold text-white/80">{selectedDistributor.name} ({releaseCount} Releases)</span>
-                    <span className="font-bold text-red-400">{formatCurrency(legacyNetPayout)}</span>
-                  </div>
-
-                  <div className="mt-3 h-3.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-red-500 transition-all duration-500"
-                      style={{ width: `${Math.max(5, (legacyNetPayout / grossRoyalty) * 100)}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[10px] text-white/50 border-t border-white/10 pt-2">
-                    <div>
-                      <span className="text-white/40">Commission Cut:</span>{' '}
-                      <strong className="text-red-400">-{formatCurrency(legacyCommissionFee)}</strong>
-                    </div>
-                    <div>
-                      <span className="text-white/40">Hidden Catalog Fees:</span>{' '}
-                      <strong className="text-red-400">-{formatCurrency(legacyCatalogFees)}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* indii.music Direct Pipeline Bar */}
-                <div className="rounded-xl border border-amber-400/50 bg-amber-950/20 p-5 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
-                  <div className="flex justify-between font-mono text-xs">
-                    <span className="font-bold text-white">indii Direct Pipeline (100% Artist Retained)</span>
-                    <span className="font-black text-amber-400 text-sm">{formatCurrency(indiiNetPayout)}</span>
-                  </div>
-
-                  <div className="mt-3 h-3.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 transition-all duration-500 shadow-[0_0_15px_rgba(245,158,11,0.8)]"
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[10px] text-amber-300 border-t border-amber-400/20 pt-2">
-                    <div>
-                      <span className="text-white/50">Royalty Cut:</span> <strong>$0 (0%)</strong>
-                    </div>
-                    <div>
-                      <span className="text-white/50">Hidden Catalog Tax:</span> <strong>$0</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Retained Money Callout */}
-              <div className="mt-6 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-950/40 to-black p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400">
-                      Total Money Retained vs {selectedDistributor.name}
+                    <span className="font-bold text-white">{selectedDistributor.name}</span>
+                    <span className="font-bold text-amber-300">
+                      Est. Net: {formatCurrency(comparison.estimatedNetAfterDistributorUsd)}
                     </span>
-                    <div className="mt-1 text-3xl font-black text-white md:text-4xl">
-                      +{formatCurrency(retainedSavings)}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 font-mono text-[11px] text-white/70">
+                    <div>
+                      <span className="block text-white/40">Published Commission ({Math.round(selectedDistributor.commissionRate * 100)}%)</span>
+                      <strong>-{formatCurrency(comparison.commissionFeeUsd)}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-white/40">Published Base & Release Fees</span>
+                      <strong>-{formatCurrency(comparison.fixedAndReleaseFeesUsd)}</strong>
                     </div>
                   </div>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-400/20 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
-                    <CheckCircle2 size={28} />
-                  </div>
                 </div>
-                <p className="mt-2 text-xs text-white/70">
-                  By connecting directly to the distribution pipeline with indii, you keep <strong className="text-amber-300">{formatCurrency(retainedSavings)}</strong> in your pocket instead of paying aggregator taxes and commission cuts.
-                </p>
+
+                {/* Proven indii Workspace Capabilities (no unproven direct-pipeline claims) */}
+                <div className="rounded-xl border border-amber-400/30 bg-amber-950/15 p-5">
+                  <div className="font-mono text-xs font-bold text-amber-300">
+                    How indii Supports Your Release Business
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-white/75">
+                    indii prepares release metadata, DDEX ERN packages, split sheets, and royalty statement audits in one workspace so your catalog stays organized regardless of which distributor you choose.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-4">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
-                100% Catalog Sovereignty Included
-              </span>
-              <a
-                href="#founder-access"
-                className="group inline-flex items-center gap-2 font-mono text-xs font-bold text-amber-400 hover:text-amber-300"
-              >
-                Bypass Aggregators
-                <ArrowUpRight size={14} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </a>
+            <div className="mt-8 border-t border-white/10 pt-4 font-mono text-[10px] leading-relaxed text-white/50">
+              Assumptions used: {releaseCount} releases/yr, {formatStreams(annualStreams)} streams/yr at ${assumedRatePerStreamUsd.toFixed(4)}/stream. Base plan fees only; optional distributor add-ons and taxes excluded.
             </div>
           </div>
         </div>

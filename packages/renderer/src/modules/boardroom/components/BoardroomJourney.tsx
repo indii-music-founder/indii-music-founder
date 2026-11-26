@@ -82,21 +82,23 @@ export function BoardroomJourney() {
             : deterministicBoardroomExecutiveFallback(context);
 
     useEffect(() => {
+        if (!hasSignal) return undefined;
         let current = true;
+        const parsedContext = JSON.parse(contextKey) as BoardroomExecutiveContext;
         const timer = window.setTimeout(() => {
-            void judgeBoardroomExecutiveIntent(context)
+            void judgeBoardroomExecutiveIntent(parsedContext)
                 .then(result => {
                     if (current) {
                         setJudgedContext({ key: contextKey, verdict: result });
                     }
                 })
                 .catch(() => {});
-        }, 350);
+        }, 1200);
         return () => {
             current = false;
             window.clearTimeout(timer);
         };
-    }, [context, contextKey]);
+    }, [hasSignal, contextKey]);
 
     // Close popovers on outside click
     useEffect(() => {

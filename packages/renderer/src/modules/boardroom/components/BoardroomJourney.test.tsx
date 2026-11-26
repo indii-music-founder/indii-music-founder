@@ -126,4 +126,45 @@ describe('BoardroomJourney', () => {
         expect(screen.queryByTestId('boardroom-governance-popover')).not.toBeInTheDocument();
         expect(govToggle).toHaveFocus();
     });
+
+    it('skips judgeBoardroomExecutiveIntent when the Boardroom is idle with no prompt, assets, or specialists', async () => {
+        vi.useFakeTimers();
+        try {
+            mocks.store.commandBarInput = '   ';
+            mocks.store.activeAgents = ['generalist'];
+            mocks.store.referencedAssets = [];
+
+            render(<BoardroomJourney />);
+            await vi.advanceTimersByTimeAsync(2000);
+
+            expect(mocks.judgeBoardroomExecutiveIntent).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('debounces rapid prompt edits for 1200ms before calling judgeBoardroomExecutiveIntent once', async () => {
+        vi.useFakeTimers();
+        try {
+            mocks.store.commandBarInput = 'Draft';
+            const { rerender } = render(<BoardroomJourney />);
+
+            await vi.advanceTimersByTimeAsync(600);
+            expect(mocks.judgeBoardroomExecutiveIntent).not.toHaveBeenCalled();
+
+            mocks.store.commandBarInput = 'Draft a 50/50 split sheet';
+            rerender(<BoardroomJourney />);
+
+            await vi.advanceTimersByTimeAsync(1199);
+            expect(mocks.judgeBoardroomExecutiveIntent).not.toHaveBeenCalled();
+
+            await vi.advanceTimersByTimeAsync(1);
+            expect(mocks.judgeBoardroomExecutiveIntent).toHaveBeenCalledTimes(1);
+            expect(mocks.judgeBoardroomExecutiveIntent).toHaveBeenCalledWith(
+                expect.objectContaining({ prompt: 'Draft a 50/50 split sheet' }),
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });
