@@ -59,17 +59,20 @@ export class ContextPipeline {
         // 1. Fetch State (The "Working Context")
         const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext());
 
-        // 2. Fetch History (The "Session")
-        const { view: chatHistoryString, historicalSummary, historyWarning } = await preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal));
+        // Derive recent user/model context synchronously from in-memory store history
+        // so memory recall, active plans, product skill, and history compilation all
+        // run in parallel instead of adding their timeouts sequentially.
+        const storeAgentHistory = useStore.getState().agentHistory;
+        const earlyRecentContext = this.extractRecentContextFromMessages(storeAgentHistory);
 
-        // Plans and product skill are independent of memory recall; start them
-        // together so their budgets overlap instead of adding up.
+        // 2. Start History, Plans, Product Skill, and Memory Recall in parallel
+        const historyPending = preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal));
+
         const plansReadPending = stateContext.projectId
-            ? readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 3_000, signal)
+            ? readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 2_500, signal)
             : undefined;
-        const recentContextForSkill = this.extractRecentContext(chatHistoryString);
-        const skillReadPending = recentContextForSkill
-            ? readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContextForSkill), 3_000, signal)
+        let skillReadPending = earlyRecentContext
+            ? readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(earlyRecentContext), 2_500, signal)
             : undefined;
         // Rejects only on Stop; awaited inside try/catch below. Avoids an unhandled
         // rejection if Stop lands before either is awaited.
@@ -77,6 +80,33 @@ export class ContextPipeline {
         skillReadPending?.catch(() => undefined);
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
+        const agentId = stateContext.activeModule || 'generalist';
+        let recallPending = (userId && isKnowledgeBaseEnabled && earlyRecentContext)
+            ? readOptionalContext('memory recall', () => bigBrainEngine.assembleContext(
+                userId,
+                agentId,
+                earlyRecentContext,
+                stateContext.projectId
+            ), 3_500, signal)
+            : undefined;
+        recallPending?.catch(() => undefined);
+
+        const { view: chatHistoryString, historicalSummary, historyWarning } = await historyPending;
+
+        const recentContext = earlyRecentContext || this.extractRecentContext(chatHistoryString);
+        if (!skillReadPending && recentContext) {
+            skillReadPending = readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext), 2_500, signal);
+            skillReadPending.catch(() => undefined);
+        }
+        if (!recallPending && userId && isKnowledgeBaseEnabled) {
+            recallPending = readOptionalContext('memory recall', () => bigBrainEngine.assembleContext(
+                userId,
+                agentId,
+                recentContext,
+                stateContext.projectId
+            ), 3_500, signal);
+            recallPending.catch(() => undefined);
+        }
 
         let autoRecallBlock = '';
         let relevantMemories: string[] = [];
@@ -89,7 +119,7 @@ export class ContextPipeline {
         let memoriesUnavailable = false;
         const fallbackMemories = async (): Promise<string[]> => {
             const fallback = await readOptionalContext('fallback memories',
-                () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString), 3_000, signal);
+                () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString), 2_000, signal);
             if (fallback.unavailable !== undefined) {
                 logger.warn('[ContextPipeline] Fallback memories unavailable (non-blocking):', fallback.unavailable);
                 memoriesUnavailable = true;
@@ -98,25 +128,15 @@ export class ContextPipeline {
             return fallback.value;
         };
 
-        if (userId && isKnowledgeBaseEnabled) {
-            // Extract the user's latest message for intent matching
-            const recentContext = this.extractRecentContext(chatHistoryString);
-
-            // Determine active agent ID
-            const agentId = stateContext.activeModule || 'generalist';
-
-            // Assemble context from all 4 layers in parallel
-            const recall = await readOptionalContext('memory recall', () => bigBrainEngine.assembleContext(
-                userId,
-                agentId,
-                recentContext,
-                stateContext.projectId
-            ), 8_000, signal);
+        if (recallPending) {
+            const recall = await recallPending;
 
             if (recall.unavailable !== undefined) {
                 logger.warn('[ContextPipeline] BigBrain assembly unavailable (non-blocking):', recall.unavailable);
-                // Fallback: still try to get basic memories
-                relevantMemories = await fallbackMemories();
+                // Do not chain a second semantic-memory network timeout when recall already timed out.
+                if (!recall.unavailable.startsWith('timed out during')) {
+                    relevantMemories = await fallbackMemories();
+                }
                 memoriesUnavailable = true;
             } else {
                 const bigBrainContext = recall.value;
@@ -295,6 +315,23 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             logger.warn('[ContextPipeline] Fallback memory retrieval failed:', error);
             return [];
         }
+    }
+
+    /**
+     * Extract recent context directly from in-memory store messages so memory recall
+     * and skill search can start concurrently with history summarization.
+     */
+    private extractRecentContextFromMessages(
+        messages?: Array<{ role?: string; text?: string }> | null
+    ): string {
+        if (!Array.isArray(messages) || messages.length === 0) return '';
+
+        const recentTexts = messages
+            .filter(m => (m.role === 'user' || m.role === 'model') && typeof m.text === 'string' && m.text.trim().length > 0)
+            .slice(-5)
+            .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text!.trim()}`);
+
+        return recentTexts.join(' ').slice(-500);
     }
 
     /**

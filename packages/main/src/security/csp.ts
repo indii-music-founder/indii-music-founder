@@ -213,7 +213,7 @@ export function applyCSP(): void {
             details as { id?: number; url?: string; method?: string; initiator?: string },
             responseHeaders,
         );
-        if (corsResult.applied) {
+        if (isDev && corsResult.applied) {
             log.info(`[CORS Applied] ${details.method} ${details.url || ''} origin=${corsResult.allowedOrigin} initiator=${(details as { initiator?: string }).initiator}`);
         }
 

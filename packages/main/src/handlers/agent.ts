@@ -19,9 +19,10 @@ const ArtifactOptions = z.object({ artifactType: z.string().optional(), requestF
 
 export function registerAgentHandlers() {
     const stores = new Map<string, AgentKnowledgeStore>();
-    const knowledgeFor = async (idToken: unknown) => {
+    const knowledgeFor = async (idToken: unknown, appCheckToken?: unknown) => {
         const token = z.string().min(1).max(16000).parse(idToken);
-        const uid = await verifiedAgentKnowledgeUid(token);
+        const parsedAppCheck = z.string().min(1).max(16000).optional().parse(appCheckToken);
+        const uid = await verifiedAgentKnowledgeUid(token, parsedAppCheck);
         if (!uid) throw new Error('Sign in before using local agent knowledge');
         const key = createHash('sha256').update(uid).digest('hex');
         let store = stores.get(key);
@@ -32,9 +33,9 @@ export function registerAgentHandlers() {
         return store;
     };
     const knowledgeId = (value: string) => value === 'generalist' ? 'conductor' : value;
-    ipcMain.handle('agent:read-knowledge', async (event: IpcMainInvokeEvent, agentId: string, idToken: string) => {
+    ipcMain.handle('agent:read-knowledge', async (event: IpcMainInvokeEvent, agentId: string, idToken: string, appCheckToken?: string) => {
         validateSender(event);
-        return (await knowledgeFor(idToken)).read(knowledgeId(agentId));
+        return (await knowledgeFor(idToken, appCheckToken)).read(knowledgeId(agentId));
     });
     // Agent History Persistence (Production Ready)
     ipcMain.handle('agent:save-history', async (event: IpcMainInvokeEvent, id: string, data: unknown) => {
@@ -139,7 +140,7 @@ export function registerAgentHandlers() {
         }
     });
 
-    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string, idToken: string) => {
+    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string, idToken: string, appCheckToken?: string) => {
         try {
             validateSender(event);
             if (!filePath || typeof filePath !== 'string') {
@@ -147,7 +148,7 @@ export function registerAgentHandlers() {
             }
             const match = /^agents\/([a-z][a-z0-9_-]{0,63})\/(?:instructions|prompt)\.md$/.exec(filePath);
             if (!match) throw new Error('Invalid agent knowledge target');
-            const result = await (await knowledgeFor(idToken)).update(knowledgeId(match[1]), action, content);
+            const result = await (await knowledgeFor(idToken, appCheckToken)).update(knowledgeId(match[1]), action, content);
             return { success: true, ...result };
 
         } catch (error) {
