@@ -1246,6 +1246,56 @@ export class CanvasOperationsService {
     }
 
     /**
+     * ISSUE-1708: Export the flattened native-resolution canvas directly via
+     * HTMLCanvasElement.toBlob() to avoid synchronous 3000x3000 base64 encode
+     * and decode stalls on the main thread. Falls back to getBlob(saveCanvas())
+     * when toCanvasElement/toBlob is unavailable (e.g. JSDOM/mock environments).
+     */
+    async saveCanvasBlob(): Promise<Blob | null> {
+        if (!this.canvas) return null;
+        const region = this.nativeExportRegion();
+        const canvasWithElementExport = this.canvas as fabric.Canvas & {
+            toCanvasElement?: (multiplier?: number, cropping?: { left?: number; top?: number; width?: number; height?: number }) => HTMLCanvasElement;
+        };
+        if (typeof canvasWithElementExport.toCanvasElement !== 'function') {
+            return this.getBlob(this.saveCanvas());
+        }
+
+        const annotationObjects = this.canvas.getObjects().filter(obj => {
+            const objData = (obj as fabric.Object & { data?: { isAnnotation?: boolean } }).data;
+            return objData?.isAnnotation;
+        });
+        const visibilitySnapshot = annotationObjects.map(obj => obj.visible);
+
+        try {
+            annotationObjects.forEach(obj => (obj.visible = false));
+            this.canvas.renderAll();
+
+            const cropping = region.width && region.height
+                ? { left: region.left, top: region.top, width: region.width, height: region.height }
+                : undefined;
+            const exportedEl = canvasWithElementExport.toCanvasElement(region.multiplier, cropping);
+            if (!exportedEl || typeof exportedEl.toBlob !== 'function') {
+                return this.getBlob(this.saveCanvas());
+            }
+            const blob = await new Promise<Blob | null>((resolve) => {
+                try {
+                    exportedEl.toBlob((value) => resolve(value), 'image/png', 1);
+                } catch {
+                    resolve(null);
+                }
+            });
+            return blob ?? this.getBlob(this.saveCanvas());
+        } catch (e: unknown) {
+            logger.error('[CanvasOps] Direct blob export failed — falling back to data URL:', e);
+            return this.getBlob(this.saveCanvas());
+        } finally {
+            annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
+            this.canvas.renderAll();
+        }
+    }
+
+    /**
      * ISSUE-1708: export the base image's area at its native resolution, not
      * 2x the on-screen artboard (which also carried the fitting padding).
      */

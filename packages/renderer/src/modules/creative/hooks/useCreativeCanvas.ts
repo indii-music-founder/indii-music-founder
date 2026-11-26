@@ -1108,17 +1108,26 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // Capture the editable objects before uploads or gallery updates can
             // replace this canvas while the save is in flight.
             const json = await canvasOps.toJSON();
-            // 1. Get the data URL (inside try: throws/returns '' if canvas is tainted — ISSUE-482)
-            const dataUrl = canvasOps.saveCanvas();
-            if (!dataUrl) {
-                toast.error('Could not export the canvas. Reopen the image and try again.');
-                return null;
+            // 1. Export flattened artwork directly to Blob when available to avoid
+            // synchronous 3000x3000 base64 dataURL encode/decode on the main thread (ISSUE-1708).
+            let dataUrl = '';
+            let blob: Blob | null = null;
+            if (typeof canvasOps.saveCanvasBlob === 'function') {
+                blob = await canvasOps.saveCanvasBlob();
+                markPhase('exportedPng');
+                markPhase('blobReady');
             }
-
-            // 2. Upload blob to Firebase Storage as a persistent asset
-            markPhase('exportedPng');
-            const blob = await canvasOps.getBlob(dataUrl);
-            markPhase('blobReady');
+            if (!blob) {
+                // Fallback for environments/mocks without toCanvasElement/toBlob (ISSUE-482)
+                dataUrl = canvasOps.saveCanvas();
+                if (!dataUrl) {
+                    toast.error('Could not export the canvas. Reopen the image and try again.');
+                    return null;
+                }
+                markPhase('exportedPng');
+                blob = await canvasOps.getBlob(dataUrl);
+                markPhase('blobReady');
+            }
             let storageUri: string | undefined;
             let exportedAssetId: string | undefined;
             let exportedUrl: string | undefined;
@@ -1157,33 +1166,43 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 }
             }
 
-            // 4. Persist canvas state (annotations / layers) for reload
-            let draftSynced = true;
-            if (json) {
-                const snapshot = JSON.stringify(json);
-                const draftIds = new Set([item.id, ...(exportedAssetId ? [exportedAssetId] : [])]);
-                const saves = await Promise.allSettled([...draftIds].map(id => saveCanvasStateToStorage(id, snapshot)));
-                draftSynced = saves.every(save => save.status === 'fulfilled');
-            }
-            const sessionSynced = await persistSession(editManifest, {
+            // 4. Persist canvas state (annotations / layers) and session records in parallel (ISSUE-1708)
+            const draftSavesPromise: Promise<boolean> = json
+                ? (async () => {
+                    const snapshot = JSON.stringify(json);
+                    const draftIds = new Set([item.id, ...(exportedAssetId ? [exportedAssetId] : [])]);
+                    const saves = await Promise.allSettled([...draftIds].map(id => saveCanvasStateToStorage(id, snapshot)));
+                    return saves.every(save => save.status === 'fulfilled');
+                })()
+                : Promise.resolve(true);
+
+            const sessionSyncPromise = persistSession(editManifest, {
                 lastAction: 'save_canvas',
                 status: 'completed',
                 selectedCandidateUri: candidatePersistenceUri(generatedCandidates[0]),
                 outputUri: storageUri ?? item.url,
             });
-            let exportSessionSynced = true;
-            if (exportedAssetId && exportedAssetId !== item.id) {
-                exportSessionSynced = await persistSession({
+
+            const exportSessionPromise = (exportedAssetId && exportedAssetId !== item.id)
+                ? persistSession({
                     ...editManifest,
                     sessionId: getCreativeSessionId(exportedAssetId, currentProjectId),
                     source: { ...editManifest.source, selectedItemId: exportedAssetId },
-                }, { lastAction: 'save_canvas', status: 'completed', outputUri: storageUri });
-            }
-            draftSynced = draftSynced && sessionSynced && exportSessionSynced;
+                }, { lastAction: 'save_canvas', status: 'completed', outputUri: storageUri })
+                : Promise.resolve(true);
+
+            const [layersSynced, sessionSynced, exportSessionSynced] = await Promise.all([
+                draftSavesPromise,
+                sessionSyncPromise,
+                exportSessionPromise,
+            ]);
+            const draftSynced = layersSynced && sessionSynced && exportSessionSynced;
             markPhase('sessionsPersisted');
             logger.info('[CreativeStudio] Canvas save timings (ms since start)', { ...phaseMs, bytes: blob ? blob.size : 0 });
-            // ISSUE-917: Only show success if storage actually succeeded
+            // ISSUE-917 / ISSUE-1708: Only show success & clear dirty baseline if persistence succeeded
             if (storageUri && draftSynced) {
+                baselineJsonRef.current = serializeCanvasObjects(json);
+                dirtyRef.current = false;
                 toast.success('Saved to gallery & cloud!');
             } else if (storageUri) {
                 toast.warning('Image saved to gallery. Editable layers are saved on this device, but cloud sync failed.');
