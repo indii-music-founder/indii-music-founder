@@ -65,6 +65,7 @@ test_results*.txt
 eslint_output.json
 # Loose QA smoke/verify screenshots (regenerated every test run)
 artifacts/*.png
+deep-test-*.png
 artifacts/live-agent-daisy-chain/
 artifacts/dtf-logos/
 
