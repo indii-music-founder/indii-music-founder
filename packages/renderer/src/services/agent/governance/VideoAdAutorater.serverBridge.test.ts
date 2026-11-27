@@ -14,7 +14,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     },
 }));
 
-vi.mock('./BrandVisionQC', () => ({
+vi.mock('@/services/agent/governance/BrandVisionQC', () => ({
     runCreativeVisionCheck: (...args: unknown[]) => mocks.runCreativeVisionCheck(...args),
 }));
 
@@ -23,7 +23,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: (...args: unknown[]) => mocks.httpsCallable(...args),
 }));
 
-import { VideoAdAutorater } from './VideoAdAutorater';
+import { VideoAdAutorater } from '@/services/agent/governance/VideoAdAutorater';
 
 const BASE_INPUT = {
     variantId: 'cut_9x16_15s',
