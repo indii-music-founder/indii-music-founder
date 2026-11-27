@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DevOpsTools } from '../DevOpsTools';
+import { DevOpsTools } from '@/services/agent/tools/DevOpsTools';
 
 // Mock Firebase Functions
 const mockHttpsCallable = vi.fn();
@@ -22,10 +22,11 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Mock useStore for requestApproval
+const mockRequestApproval = vi.fn();
 vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
-            requestApproval: vi.fn().mockResolvedValue(true)
+            requestApproval: mockRequestApproval
         })
     }
 }));
@@ -41,6 +42,7 @@ global.console = { ...global.console, ...consoleMock };
 describe('DevOpsTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockRequestApproval.mockResolvedValue(true);
     });
 
     describe('list_clusters', () => {
@@ -88,6 +90,54 @@ describe('DevOpsTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.success).toBe(true);
             expect(result.message).toContain('Successfully scaled default-pool');
+        });
+
+        it('should fail if nodeCount is negative', async () => {
+            const result = await DevOpsTools.scale_deployment({
+                cluster_id: 'prod-cluster',
+                nodePoolName: 'default-pool',
+                nodeCount: -1,
+                projectId: 'my-project',
+                location: 'us-central1'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Node count cannot be negative.');
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(mockRequestApproval).not.toHaveBeenCalled();
+            expect(mockHttpsCallable).not.toHaveBeenCalled();
+        });
+
+        it('should fail if nodeCount is not an integer', async () => {
+            const result = await DevOpsTools.scale_deployment({
+                cluster_id: 'prod-cluster',
+                nodePoolName: 'default-pool',
+                nodeCount: 5.5,
+                projectId: 'my-project',
+                location: 'us-central1'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('Node count must be an integer.');
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(mockRequestApproval).not.toHaveBeenCalled();
+            expect(mockHttpsCallable).not.toHaveBeenCalled();
+        });
+
+        it('should fail if nodeCount exceeds safety limit', async () => {
+            const result = await DevOpsTools.scale_deployment({
+                cluster_id: 'prod-cluster',
+                nodePoolName: 'default-pool',
+                nodeCount: 101,
+                projectId: 'my-project',
+                location: 'us-central1'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('safety limit');
+            expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+            expect(mockRequestApproval).not.toHaveBeenCalled();
+            expect(mockHttpsCallable).not.toHaveBeenCalled();
         });
     });
 
