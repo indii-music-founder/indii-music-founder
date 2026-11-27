@@ -23,6 +23,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     download_boardroom_font: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Request a download of an indii bundled font' },
     credential_vault: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Retrieve, store, or delete credentials in the secure vault' },
     multi_platform_autopost: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Queue posts for delivery to selected social platforms' },
+    schedule_launch_kit_rollout: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Schedule and queue a validated ReleaseLaunchKit rollout across social platforms' },
     dispatch_community_webhook: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Send a message to an external community webhook' },
     set_asset_rights: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Change the recorded usage rights for a stored asset' },
     scale_deployment: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Change the node count of a cloud deployment' },

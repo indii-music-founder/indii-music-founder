@@ -4,8 +4,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-- Trigger declarations: **221** across **108** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **221**.
+- Trigger declarations: **222** across **109** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **222**.
 - Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
@@ -59,6 +59,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/catalog/semanticProjection.ts:142` | `setCatalogVisibility` | `onCall` | Present | Present |
 | `functions/catalog/semanticProjection.ts:220` | `catalogSemanticApi` | `onRequest` | Present | Present |
 | `functions/creative/analyzeCampaignAudio.ts:125` | `analyzeCampaignAudio` | `onCall` | Present | Present |
+| `functions/creative/evaluateVideoAdCut.ts:270` | `evaluateVideoAdCut` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1281` | `generateImageV3` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1600` | `generateVideoV3` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1841` | `cancelVideoJob` | `onCall` | Present | Present |
@@ -126,34 +127,34 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/relayVideoRenderJob.ts:70` | `completeVideoRenderJob` | `onCall` | Present | Present |
 | `functions/video/retrySessionProxyJob.ts:144` | `retrySessionProxyJob` | `onCall` | Present | Present |
 | `functions/webhooks/dispatcher.ts:443` | `createWebhook` | `onRequest` | Present | Present |
-| `index.ts:475` | `triggerVideoJob` | `onCall` | Present | Present |
-| `index.ts:699` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
-| `index.ts:872` | `renderVideo` | `onCall` | Present | Present |
-| `index.ts:1158` | `inngestApi` | `onRequest` | Present | Present |
-| `index.ts:1245` | `generateContentStream` | `onRequest` | Present | Present |
-| `index.ts:1778` | `ragProxy` | `onRequest` | Present | Present |
-| `index.ts:1866` | `listGKEClusters` | `onCall` | Present | Present |
-| `index.ts:1937` | `getGKEClusterStatus` | `onCall` | Present | Present |
-| `index.ts:1982` | `scaleGKENodePool` | `onCall` | Present | Present |
-| `index.ts:2027` | `listGCEInstances` | `onCall` | Present | Present |
-| `index.ts:2071` | `restartGCEInstance` | `onCall` | Present | Present |
-| `index.ts:2117` | `runChaosMeshTests` | `onCall` | Present | Present |
-| `index.ts:2161` | `configureCircuitBreaker` | `onCall` | Present | Present |
-| `index.ts:2206` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
-| `index.ts:2250` | `runContentionTest` | `onCall` | Present | Present |
-| `index.ts:2294` | `configureSentryCrashReporting` | `onCall` | Present | Present |
-| `index.ts:2337` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
-| `index.ts:2381` | `configureLogicalSharding` | `onCall` | Present | Present |
-| `index.ts:2425` | `provisionQASandbox` | `onCall` | Present | Present |
-| `index.ts:2469` | `scrubOrphanedMedia` | `onCall` | Present | Present |
-| `index.ts:2522` | `executeBigQueryQuery` | `onCall` | Present | Present |
-| `index.ts:2575` | `getBigQueryTableSchema` | `onCall` | Present | Present |
-| `index.ts:2620` | `listBigQueryDatasets` | `onCall` | Present | Present |
-| `index.ts:2713` | `exportUserData` | `onCall` | Present | Present |
-| `index.ts:2805` | `requestAccountDeletion` | `onCall` | Present | Present |
-| `index.ts:3036` | `healthCheck` | `onRequest` | Present | Present |
-| `index.ts:3083` | `healthCheckWest1` | `onRequest` | Present | Present |
-| `index.ts:3128` | `enrichFanData` | `onCall` | Present | Present |
+| `index.ts:476` | `triggerVideoJob` | `onCall` | Present | Present |
+| `index.ts:700` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
+| `index.ts:873` | `renderVideo` | `onCall` | Present | Present |
+| `index.ts:1159` | `inngestApi` | `onRequest` | Present | Present |
+| `index.ts:1246` | `generateContentStream` | `onRequest` | Present | Present |
+| `index.ts:1779` | `ragProxy` | `onRequest` | Present | Present |
+| `index.ts:1867` | `listGKEClusters` | `onCall` | Present | Present |
+| `index.ts:1938` | `getGKEClusterStatus` | `onCall` | Present | Present |
+| `index.ts:1983` | `scaleGKENodePool` | `onCall` | Present | Present |
+| `index.ts:2028` | `listGCEInstances` | `onCall` | Present | Present |
+| `index.ts:2072` | `restartGCEInstance` | `onCall` | Present | Present |
+| `index.ts:2118` | `runChaosMeshTests` | `onCall` | Present | Present |
+| `index.ts:2162` | `configureCircuitBreaker` | `onCall` | Present | Present |
+| `index.ts:2207` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
+| `index.ts:2251` | `runContentionTest` | `onCall` | Present | Present |
+| `index.ts:2295` | `configureSentryCrashReporting` | `onCall` | Present | Present |
+| `index.ts:2338` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
+| `index.ts:2382` | `configureLogicalSharding` | `onCall` | Present | Present |
+| `index.ts:2426` | `provisionQASandbox` | `onCall` | Present | Present |
+| `index.ts:2470` | `scrubOrphanedMedia` | `onCall` | Present | Present |
+| `index.ts:2523` | `executeBigQueryQuery` | `onCall` | Present | Present |
+| `index.ts:2576` | `getBigQueryTableSchema` | `onCall` | Present | Present |
+| `index.ts:2621` | `listBigQueryDatasets` | `onCall` | Present | Present |
+| `index.ts:2714` | `exportUserData` | `onCall` | Present | Present |
+| `index.ts:2806` | `requestAccountDeletion` | `onCall` | Present | Present |
+| `index.ts:3037` | `healthCheck` | `onRequest` | Present | Present |
+| `index.ts:3084` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:3129` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/analyzeContract.ts:20` | `analyzeContract` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:11` | `sendForDigitalSignature` | `onCall` | Present | Present |
 | `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |

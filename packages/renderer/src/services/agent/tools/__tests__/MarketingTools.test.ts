@@ -326,5 +326,94 @@ describe('MarketingTools', () => {
                 'XHeader',
             ]);
         });
+
+        it('attaches channel-specific UTM attribution and only approved highest-scoring adVariants per shape', async () => {
+            const longHeadline =
+                'Midnight Avenue drops everywhere tonight with analog modular synths, Detroit drums, and the official beat-synced video premiere across every screen right now!';
+            const result = await MarketingTools.assemble_release_launch_kit({
+                title: 'Midnight Avenue',
+                artistOrBrandName: 'Nova',
+                hookHeadline: longHeadline,
+                ctaText: 'Stream everywhere now',
+                smartLinkUrl: 'https://indii.link/midnight?ref=bio',
+                measuredBpm: 122,
+                adVariants: [
+                    {
+                        variantId: 'cut_9x16_rejected_highest',
+                        shape: '9:16',
+                        durationSeconds: 15,
+                        channelLabel: 'Reels / TikTok',
+                        overallScore: 9.8,
+                        brandQcApproved: false,
+                        approved: true,
+                        discardedForRegression: false,
+                        attemptsUsed: 1,
+                        gapsFound: 'Brand check failed',
+                    },
+                    {
+                        variantId: 'cut_9x16_regressed',
+                        shape: '9:16',
+                        durationSeconds: 15,
+                        channelLabel: 'Reels / TikTok',
+                        overallScore: 9.6,
+                        brandQcApproved: true,
+                        approved: true,
+                        discardedForRegression: true,
+                        attemptsUsed: 2,
+                        gapsFound: 'Regressed on retry',
+                    },
+                    {
+                        variantId: 'cut_9x16_winner',
+                        shape: '9:16',
+                        durationSeconds: 15,
+                        channelLabel: 'Reels / TikTok',
+                        overallScore: 9.4,
+                        brandQcApproved: true,
+                        approved: true,
+                        discardedForRegression: false,
+                        attemptsUsed: 1,
+                        gapsFound: 'None',
+                    },
+                    {
+                        variantId: 'cut_1x1_approved',
+                        shape: '1:1',
+                        durationSeconds: 15,
+                        channelLabel: 'Square Feed',
+                        overallScore: 9.1,
+                        brandQcApproved: true,
+                        approved: true,
+                        discardedForRegression: false,
+                        attemptsUsed: 1,
+                        gapsFound: 'None',
+                    },
+                ],
+            } as unknown as Parameters<typeof MarketingTools.assemble_release_launch_kit>[0]);
+
+            expect(result.success).toBe(true);
+            const postsByPlatform = new Map<string, { copy: string; attachedVariantId?: string; status: string }>(
+                result.data.socialPosts.map((p: { platform: string; copy: string; attachedVariantId?: string; status: string }) => [p.platform, p]),
+            );
+
+            for (const platform of ['Instagram', 'InstagramStory', 'TikTok', 'YouTubeShorts']) {
+                const post = postsByPlatform.get(platform)!;
+                expect(post.attachedVariantId).toBe('cut_9x16_winner');
+                expect(post.copy).toContain('ref=bio');
+                expect(post.copy).toContain('utm_source=');
+                expect(post.copy).toContain('utm_medium=social');
+                expect(post.copy).toContain('utm_campaign=midnight-avenue');
+                expect(post.status).toBe('approved');
+            }
+
+            const xPost = postsByPlatform.get('X')!;
+            expect(xPost.attachedVariantId).toBe('cut_1x1_approved');
+            expect(xPost.copy.length).toBeLessThanOrEqual(280);
+            expect(xPost.copy).toContain('utm_source=x');
+            expect(xPost.copy).toContain('utm_campaign=midnight-avenue');
+            expect(xPost.status).toBe('approved');
+
+            const xHeader = postsByPlatform.get('XHeader')!;
+            expect(xHeader.attachedVariantId).toBeUndefined();
+            expect(xHeader.copy).not.toContain('utm_source=');
+        });
     });
 });

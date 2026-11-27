@@ -20,4 +20,7 @@ This workspace dogfoods `indii`'s own `@indii/video-compiler` (HyperFrames) Mult
 ```bash
 node marketing-factory/run-ad-factory.mjs marketing-factory/campaigns/indii-launch-01.json
 node marketing-factory/jev-evaluate-ads.mjs indii-launch-01
+node marketing-factory/score-ads-gemini.mjs indii-launch-01 --capture-only
+# Live Gemini 4 Neon /10 multimodal scorecard (requires GEMINI_API_KEY or GOOGLE_API_KEY):
+GEMINI_API_KEY=... node marketing-factory/score-ads-gemini.mjs indii-launch-01
 ```

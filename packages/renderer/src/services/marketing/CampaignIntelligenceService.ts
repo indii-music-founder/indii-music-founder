@@ -17,6 +17,79 @@ import {
     EnhancementType,
     Platform
 } from '@/modules/marketing/types';
+import {
+    ReleaseLaunchKitSchema,
+    type ReleaseLaunchKit,
+    type LaunchSocialPost,
+    type ScoredAdVariantRecord,
+    type LaunchHookWindow,
+} from '@indii/shared';
+
+export interface ReleaseLaunchKitBrief {
+    kitId?: string;
+    title: string;
+    artistOrBrandName: string;
+    topic: string;
+    objective?: string;
+    tone?: string;
+    canonicalRecordingEntityId?: string;
+    canonicalMasterStoragePath?: string;
+    measuredBpm?: number;
+    hookWindows?: LaunchHookWindow[];
+    lockedReferenceImageUris?: string[];
+    lockedSeed?: number;
+    smartLinkUrl?: string;
+    fullMusicVideoProjectId?: string;
+    adVariants?: ScoredAdVariantRecord[];
+    campaignSlug?: string;
+}
+
+const UTM_SOURCE_MAP: Record<LaunchSocialPost['platform'], string> = {
+    Instagram: 'instagram',
+    InstagramStory: 'instagram_story',
+    TikTok: 'tiktok',
+    YouTubeShorts: 'youtube_shorts',
+    X: 'x',
+    XHeader: 'x_header',
+};
+
+const PLATFORM_PREFERRED_SHAPES: Record<LaunchSocialPost['platform'], Array<ScoredAdVariantRecord['shape']>> = {
+    Instagram: ['9:16', '4:5', '1:1'],
+    InstagramStory: ['9:16', '4:5'],
+    TikTok: ['9:16'],
+    YouTubeShorts: ['9:16', '16:9'],
+    X: ['1:1', '4:5', '16:9'],
+    XHeader: [],
+};
+
+/**
+ * Append channel-specific UTM attribution parameters to a SmartLink URL while
+ * preserving existing query parameters and failing soft on invalid URLs.
+ */
+export function attachSmartLinkAttribution(
+    smartLinkUrl: string,
+    platform: LaunchSocialPost['platform'],
+    campaignSlug: string,
+): string {
+    if (!smartLinkUrl || !smartLinkUrl.trim()) {
+        return smartLinkUrl;
+    }
+    try {
+        const parsed = new URL(smartLinkUrl);
+        const normalizedSlug =
+            campaignSlug
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'indii-launch';
+        parsed.searchParams.set('utm_source', UTM_SOURCE_MAP[platform]);
+        parsed.searchParams.set('utm_medium', 'social');
+        parsed.searchParams.set('utm_campaign', normalizedSlug);
+        return parsed.toString();
+    } catch {
+        return smartLinkUrl;
+    }
+}
 
 /**
  * CampaignIntelligenceService - Intelligence-driven campaign features
@@ -39,7 +112,7 @@ export class CampaignIntelligenceService {
 
     /**
      * Generate a complete campaign plan from a brief
-     * Uses gemini-3-pro-preview for complex reasoning
+     * Uses Gemini 4 Neon for complex reasoning
      */
     async generateCampaign(brief: CampaignBrief): Promise<GeneratedCampaignPlan> {
         const brandContext = await this.getBrandContext();
@@ -112,6 +185,164 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         } catch (_error: unknown) {
             throw new Error('Failed to generate campaign. Please try again.');
         }
+    }
+
+    /**
+     * Generate a schema-validated ReleaseLaunchKit binding canonical audio/visual
+     * assets, approved multi-shape ad cuts, and UTM-attributed social posts.
+     */
+    async generateReleaseLaunchKit(brief: ReleaseLaunchKitBrief): Promise<ReleaseLaunchKit> {
+        const brandContext = await this.getBrandContext();
+        const campaignSlug = brief.campaignSlug || brief.title || brief.topic;
+        const hookSummary = (brief.hookWindows ?? [])
+            .map((h) => `${h.section} (${h.startTimeSeconds}s-${h.endTimeSeconds}s, ${h.energyLevel})${h.lyricSnippet ? `: "${h.lyricSnippet}"` : ''}`)
+            .join('\n');
+
+        const prompt = `
+You are an expert omnichannel release strategist for music artists and creative brands.
+
+BRAND CONTEXT:
+${brandContext}
+
+RELEASE LAUNCH KIT BRIEF:
+- Title: ${brief.title}
+- Artist / Brand: ${brief.artistOrBrandName}
+- Topic: ${brief.topic}
+- Objective: ${brief.objective || 'Maximize release-week discovery, pre-saves, and video views'}
+- Tone: ${brief.tone || 'High-impact, authentic, fan-first'}
+${brief.measuredBpm ? `- Tempo: ${brief.measuredBpm} BPM` : ''}
+${brief.smartLinkUrl ? `- SmartLink URL: ${brief.smartLinkUrl}` : ''}
+${hookSummary ? `- Audio Hooks:\n${hookSummary}` : ''}
+
+TASK:
+Generate coordinated launch posts across Instagram, InstagramStory, TikTok, YouTubeShorts, X, and XHeader.
+Keep X copy punchy (under 240 chars so attribution links fit cleanly). Include relevant hashtags for Reels/TikTok/Shorts/X.
+`;
+
+        const schema = {
+            nullable: false,
+            type: 'object',
+            properties: {
+                posts: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            platform: {
+                                type: 'string',
+                                enum: ['Instagram', 'InstagramStory', 'TikTok', 'YouTubeShorts', 'X', 'XHeader'],
+                            },
+                            copy: { type: 'string' },
+                            hashtags: { type: 'array', items: { type: 'string' } },
+                            scheduledDayOffset: { type: 'number' },
+                        },
+                        required: ['platform', 'copy', 'hashtags', 'scheduledDayOffset'],
+                    },
+                },
+            },
+            required: ['posts'],
+        };
+
+        interface RawLaunchPostDraft {
+            platform: LaunchSocialPost['platform'];
+            copy: string;
+            hashtags?: string[];
+            scheduledDayOffset?: number;
+        }
+
+        const aiResult = await GenAI.generateStructuredData<{ posts: RawLaunchPostDraft[] }>(prompt, schema);
+        const rawPosts = Array.isArray(aiResult?.posts) ? aiResult.posts : [];
+
+        const approvedVariants = (brief.adVariants ?? []).filter(
+            (v) => v.approved && v.brandQcApproved && !v.discardedForRegression,
+        );
+
+        const socialPosts: LaunchSocialPost[] = rawPosts.map((draft, index) => {
+            const attachedVariant = this.selectApprovedVariantForPlatform(draft.platform, approvedVariants);
+            const copy = this.formatLaunchPostCopy(draft.platform, draft.copy || brief.title, brief.smartLinkUrl, campaignSlug);
+            const dayOffset = Number.isFinite(draft.scheduledDayOffset)
+                ? Math.min(90, Math.max(0, Math.round(draft.scheduledDayOffset as number)))
+                : 0;
+            const hashtags = Array.isArray(draft.hashtags)
+                ? draft.hashtags.map((h) => String(h).slice(0, 64)).slice(0, 30)
+                : [];
+
+            return {
+                id: `${brief.kitId || 'kit'}-post-${index + 1}`,
+                platform: draft.platform,
+                copy,
+                hashtags,
+                ...(attachedVariant ? { attachedVariantId: attachedVariant.variantId } : {}),
+                scheduledDayOffset: dayOffset,
+                status: attachedVariant || draft.platform === 'XHeader' ? 'approved' : 'draft',
+            };
+        });
+
+        return ReleaseLaunchKitSchema.parse({
+            kitId: brief.kitId || `kit-${Date.now().toString(36)}`,
+            title: brief.title,
+            artistOrBrandName: brief.artistOrBrandName,
+            ...(brief.canonicalRecordingEntityId ? { canonicalRecordingEntityId: brief.canonicalRecordingEntityId } : {}),
+            ...(brief.canonicalMasterStoragePath ? { canonicalMasterStoragePath: brief.canonicalMasterStoragePath } : {}),
+            ...(brief.measuredBpm ? { measuredBpm: brief.measuredBpm } : {}),
+            hookWindows: brief.hookWindows ?? [],
+            lockedReferenceImageUris: brief.lockedReferenceImageUris ?? [],
+            ...(brief.lockedSeed !== undefined ? { lockedSeed: brief.lockedSeed } : {}),
+            ...(brief.smartLinkUrl ? { smartLinkUrl: brief.smartLinkUrl } : {}),
+            ...(brief.fullMusicVideoProjectId ? { fullMusicVideoProjectId: brief.fullMusicVideoProjectId } : {}),
+            adVariants: brief.adVariants ?? [],
+            socialPosts,
+            createdAtIso: new Date().toISOString(),
+        });
+    }
+
+    private selectApprovedVariantForPlatform(
+        platform: LaunchSocialPost['platform'],
+        approvedVariants: ScoredAdVariantRecord[],
+    ): ScoredAdVariantRecord | undefined {
+        const preferredShapes = PLATFORM_PREFERRED_SHAPES[platform];
+        for (const shape of preferredShapes) {
+            const candidates = approvedVariants
+                .filter((v) => v.shape === shape)
+                .sort((a, b) => b.overallScore - a.overallScore);
+            if (candidates.length > 0) {
+                return candidates[0];
+            }
+        }
+        return undefined;
+    }
+
+    private formatLaunchPostCopy(
+        platform: LaunchSocialPost['platform'],
+        rawCopy: string,
+        smartLinkUrl: string | undefined,
+        campaignSlug: string,
+    ): string {
+        const trimmed = rawCopy.trim();
+        if (platform === 'XHeader' || !smartLinkUrl) {
+            return platform === 'X' ? trimmed.slice(0, 280) : trimmed.slice(0, 2200);
+        }
+
+        const utmUrl = attachSmartLinkAttribution(smartLinkUrl, platform, campaignSlug);
+        const alreadyIncluded = trimmed.includes('utm_source=');
+        const combined = alreadyIncluded ? trimmed : `${trimmed} ${utmUrl}`.trim();
+
+        if (platform !== 'X') {
+            return combined.slice(0, 2200);
+        }
+        if (combined.length <= 280) {
+            return combined;
+        }
+        if (alreadyIncluded) {
+            return combined.slice(0, 280);
+        }
+        const suffix = ` ${utmUrl}`;
+        const maxCopyLen = 280 - suffix.length;
+        if (maxCopyLen <= 4) {
+            return utmUrl.slice(0, 280);
+        }
+        const shortened = `${trimmed.slice(0, maxCopyLen - 3).trimEnd()}...${suffix}`;
+        return shortened.slice(0, 280);
     }
 
     /**

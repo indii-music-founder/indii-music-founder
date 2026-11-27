@@ -1,5 +1,6 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { MarketingService } from '@/services/marketing/MarketingService';
+import { attachSmartLinkAttribution } from '@/services/marketing/CampaignIntelligenceService';
 import { CampaignStatus, type ScheduledPost } from '@/modules/marketing/types';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 // useStore removed
@@ -774,11 +775,119 @@ export const MarketingTools = {
         smartLinkUrl?: string;
         measuredBpm?: number;
         canonicalMasterStoragePath?: string;
+        adVariants?: import('@indii/shared').ScoredAdVariantRecord[];
     }) => {
         try {
             const { ReleaseLaunchKitSchema } = await import('@indii/shared');
+            type LaunchPost = import('@indii/shared').LaunchSocialPost;
+            type ScoredVariant = import('@indii/shared').ScoredAdVariantRecord;
+
             const kitId = `kit_${Date.now()}`;
-            const linkSuffix = args.smartLinkUrl ? ` ${args.smartLinkUrl}` : '';
+            const approvedVariants = (args.adVariants ?? []).filter(
+                (v) => v.approved && v.brandQcApproved && !v.discardedForRegression,
+            );
+            const preferredShapes: Record<LaunchPost['platform'], Array<ScoredVariant['shape']>> = {
+                Instagram: ['9:16', '4:5', '1:1'],
+                InstagramStory: ['9:16', '4:5'],
+                TikTok: ['9:16'],
+                YouTubeShorts: ['9:16', '16:9'],
+                X: ['1:1', '4:5', '16:9'],
+                XHeader: [],
+            };
+            const pickVariant = (platform: LaunchPost['platform']): ScoredVariant | undefined => {
+                for (const shape of preferredShapes[platform]) {
+                    const top = approvedVariants
+                        .filter((v) => v.shape === shape)
+                        .sort((a, b) => b.overallScore - a.overallScore)[0];
+                    if (top) return top;
+                }
+                return undefined;
+            };
+            const buildPostCopy = (platform: LaunchPost['platform'], baseCopy: string): string => {
+                const trimmed = baseCopy.trim();
+                if (platform === 'XHeader' || !args.smartLinkUrl) {
+                    return platform === 'X' ? trimmed.slice(0, 280) : trimmed.slice(0, 2200);
+                }
+                const utmUrl = attachSmartLinkAttribution(args.smartLinkUrl, platform, args.title);
+                const full = `${trimmed} ${utmUrl}`;
+                if (platform !== 'X') {
+                    return full.slice(0, 2200);
+                }
+                if (full.length <= 280) {
+                    return full;
+                }
+                const suffix = ` ${utmUrl}`;
+                const budget = 280 - suffix.length;
+                if (budget <= 4) {
+                    return utmUrl.slice(0, 280);
+                }
+                return `${trimmed.slice(0, budget - 3).trimEnd()}...${suffix}`.slice(0, 280);
+            };
+
+            const templates: Array<{
+                idSuffix: string;
+                platform: LaunchPost['platform'];
+                baseCopy: string;
+                hashtags: string[];
+                scheduledDayOffset: number;
+            }> = [
+                {
+                    idSuffix: 'ig_reel',
+                    platform: 'Instagram',
+                    baseCopy: `${args.hookHeadline}\n\n"${args.title}" by ${args.artistOrBrandName} is live. ${args.ctaText}.`,
+                    hashtags: ['#newmusic', '#indieartist', '#musicvideo'],
+                    scheduledDayOffset: 0,
+                },
+                {
+                    idSuffix: 'ig_story',
+                    platform: 'InstagramStory',
+                    baseCopy: `${args.hookHeadline} — Tap to ${args.ctaText}.`,
+                    hashtags: [],
+                    scheduledDayOffset: 0,
+                },
+                {
+                    idSuffix: 'tiktok',
+                    platform: 'TikTok',
+                    baseCopy: `${args.hookHeadline} 🎵 "${args.title}" out now.`,
+                    hashtags: ['#newmusic', '#indiemusic', '#musicpromo'],
+                    scheduledDayOffset: 0,
+                },
+                {
+                    idSuffix: 'shorts',
+                    platform: 'YouTubeShorts',
+                    baseCopy: `${args.artistOrBrandName} — ${args.title} | ${args.ctaText}`,
+                    hashtags: ['#shorts', '#musicvideo'],
+                    scheduledDayOffset: 1,
+                },
+                {
+                    idSuffix: 'x_post',
+                    platform: 'X',
+                    baseCopy: `${args.hookHeadline} — "${args.title}" is out now. ${args.ctaText}`,
+                    hashtags: ['#newmusic'],
+                    scheduledDayOffset: 0,
+                },
+                {
+                    idSuffix: 'x_header',
+                    platform: 'XHeader',
+                    baseCopy: `${args.artistOrBrandName.toUpperCase()} · ${args.title.toUpperCase()} · OUT NOW`,
+                    hashtags: [],
+                    scheduledDayOffset: 0,
+                },
+            ];
+
+            const socialPosts = templates.map((tpl) => {
+                const variant = pickVariant(tpl.platform);
+                return {
+                    id: `${kitId}_${tpl.idSuffix}`,
+                    platform: tpl.platform,
+                    copy: buildPostCopy(tpl.platform, tpl.baseCopy),
+                    hashtags: tpl.hashtags,
+                    ...(variant ? { attachedVariantId: variant.variantId } : {}),
+                    scheduledDayOffset: tpl.scheduledDayOffset,
+                    status: variant || tpl.platform === 'XHeader' ? ('approved' as const) : ('draft' as const),
+                };
+            });
+
             const kit = ReleaseLaunchKitSchema.parse({
                 kitId,
                 title: args.title,
@@ -788,57 +897,8 @@ export const MarketingTools = {
                 ...(args.smartLinkUrl ? { smartLinkUrl: args.smartLinkUrl } : {}),
                 hookWindows: [],
                 lockedReferenceImageUris: [],
-                adVariants: [],
-                socialPosts: [
-                    {
-                        id: `${kitId}_ig_reel`,
-                        platform: 'Instagram',
-                        copy: `${args.hookHeadline}\n\n"${args.title}" by ${args.artistOrBrandName} is live. ${args.ctaText}.${linkSuffix}`,
-                        hashtags: ['#newmusic', '#indieartist', '#musicvideo'],
-                        scheduledDayOffset: 0,
-                        status: 'draft',
-                    },
-                    {
-                        id: `${kitId}_ig_story`,
-                        platform: 'InstagramStory',
-                        copy: `${args.hookHeadline} — Tap to ${args.ctaText}.${linkSuffix}`,
-                        hashtags: [],
-                        scheduledDayOffset: 0,
-                        status: 'draft',
-                    },
-                    {
-                        id: `${kitId}_tiktok`,
-                        platform: 'TikTok',
-                        copy: `${args.hookHeadline} 🎵 "${args.title}" out now.${linkSuffix}`,
-                        hashtags: ['#newmusic', '#indiemusic', '#musicpromo'],
-                        scheduledDayOffset: 0,
-                        status: 'draft',
-                    },
-                    {
-                        id: `${kitId}_shorts`,
-                        platform: 'YouTubeShorts',
-                        copy: `${args.artistOrBrandName} — ${args.title} | ${args.ctaText}${linkSuffix}`,
-                        hashtags: ['#shorts', '#musicvideo'],
-                        scheduledDayOffset: 1,
-                        status: 'draft',
-                    },
-                    {
-                        id: `${kitId}_x_post`,
-                        platform: 'X',
-                        copy: `${args.hookHeadline} — "${args.title}" is out now. ${args.ctaText}${linkSuffix}`.slice(0, 280),
-                        hashtags: ['#newmusic'],
-                        scheduledDayOffset: 0,
-                        status: 'draft',
-                    },
-                    {
-                        id: `${kitId}_x_header`,
-                        platform: 'XHeader',
-                        copy: `${args.artistOrBrandName.toUpperCase()} · ${args.title.toUpperCase()} · OUT NOW`,
-                        hashtags: [],
-                        scheduledDayOffset: 0,
-                        status: 'draft',
-                    },
-                ],
+                adVariants: args.adVariants ?? [],
+                socialPosts,
                 createdAtIso: new Date().toISOString(),
             });
             return toolSuccess(

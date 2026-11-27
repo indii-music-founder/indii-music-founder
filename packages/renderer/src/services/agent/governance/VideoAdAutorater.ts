@@ -13,8 +13,10 @@ import {
  * VideoAdAutorater — Level 5 Multimodal Ad Cut Judge (Score /10 + BrandVisionQC)
  *
  * Evaluates rendered short-form video / multi-shape ad cuts across 5 criteria
- * (0–10 each) using Gemini complex reasoning (`INTELLIGENCE_MODELS.TEXT.AGENT`)
- * and enforces the `BrandVisionQC` hard gate before any creative reaches paid spend.
+ * (0–10 each) via the server-enforced `evaluateVideoAdCut` Cloud Function
+ * (`gemini-4-neon`), falling back to `INTELLIGENCE_MODELS.TEXT.CONDUCTOR`
+ * only when Firebase Functions is unavailable/uninitialized (never on auth,
+ * Arcjet, or budget denials), and enforces the `BrandVisionQC` hard gate.
  *
  * Rules:
  * - Pass threshold: `overallScore >= 9.0` AND `brandQc.approved === true` (when brandKit provided).
@@ -25,6 +27,22 @@ import {
 
 export const VIDEO_AD_PASS_THRESHOLD = 9.0;
 export const VIDEO_AD_MAX_CORRECTION_ATTEMPTS = 2;
+
+const SERVER_DENIAL_CODES = new Set([
+    'unauthenticated',
+    'permission-denied',
+    'resource-exhausted',
+    'invalid-argument',
+    'failed-precondition',
+    'internal',
+    'aborted',
+    'data-loss',
+]);
+
+type ServerEvaluationAttempt =
+    | { status: 'ok'; score: VideoAdEvaluationScore }
+    | { status: 'denied'; reason: string }
+    | { status: 'fallback' };
 
 export interface VideoAdEvaluationScore {
     firstTwoSecondHook: number;
@@ -100,6 +118,28 @@ function clampScore(value: unknown): number {
     return Math.round(Math.max(0, Math.min(10, num)) * 10) / 10;
 }
 
+function sanitizeRefinementPatch(rawPatch: AdRefinementPatch | undefined): AdRefinementPatch | undefined {
+    if (!rawPatch || typeof rawPatch !== 'object') {
+        return undefined;
+    }
+    const patch: AdRefinementPatch = {};
+    if (typeof rawPatch.fontScaleMultiplier === 'number' && Number.isFinite(rawPatch.fontScaleMultiplier)) {
+        patch.fontScaleMultiplier =
+            Math.round(Math.max(0.75, Math.min(1.25, rawPatch.fontScaleMultiplier)) * 100) / 100;
+    }
+    if (typeof rawPatch.extraSafeMarginPct === 'number' && Number.isFinite(rawPatch.extraSafeMarginPct)) {
+        patch.extraSafeMarginPct =
+            Math.round(Math.max(0, Math.min(0.1, rawPatch.extraSafeMarginPct)) * 1000) / 1000;
+    }
+    if (typeof rawPatch.headlineOverride === 'string' && rawPatch.headlineOverride.trim()) {
+        patch.headlineOverride = rawPatch.headlineOverride.trim().slice(0, 160);
+    }
+    if (typeof rawPatch.ctaOverride === 'string' && rawPatch.ctaOverride.trim()) {
+        patch.ctaOverride = rawPatch.ctaOverride.trim().slice(0, 80);
+    }
+    return Object.keys(patch).length > 0 ? patch : undefined;
+}
+
 export class VideoAdAutorater {
     static readonly PASS_THRESHOLD = VIDEO_AD_PASS_THRESHOLD;
     static readonly MAX_CORRECTION_ATTEMPTS = VIDEO_AD_MAX_CORRECTION_ATTEMPTS;
@@ -109,6 +149,51 @@ export class VideoAdAutorater {
         if (!score.overallPass || score.overallScore < this.PASS_THRESHOLD) return false;
         if (brandQc && !brandQc.approved) return false;
         return true;
+    }
+
+    private static async evaluateViaServerCallable(
+        input: VideoAdEvaluationInput,
+        mimeType: string,
+    ): Promise<ServerEvaluationAttempt> {
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const fn = httpsCallable<
+                {
+                    variantId: string;
+                    shape: AdAspectShape;
+                    durationSeconds: number;
+                    briefSummary: string;
+                    keyframeBase64List: string[];
+                    mimeType: string;
+                },
+                VideoAdEvaluationScore
+            >(getFunctions(), 'evaluateVideoAdCut');
+
+            const response = await fn({
+                variantId: input.variantId,
+                shape: input.shape,
+                durationSeconds: input.durationSeconds,
+                briefSummary: input.briefSummary,
+                keyframeBase64List: input.keyframeBase64List.slice(0, 4),
+                mimeType,
+            });
+
+            if (response?.data && typeof response.data.overallScore === 'number') {
+                return { status: 'ok', score: response.data };
+            }
+            return { status: 'fallback' };
+        } catch (err: unknown) {
+            const rawCode =
+                typeof (err as { code?: unknown })?.code === 'string'
+                    ? (err as { code: string }).code.replace(/^functions\//, '')
+                    : '';
+            if (SERVER_DENIAL_CODES.has(rawCode)) {
+                const reason = err instanceof Error ? err.message : rawCode;
+                logger.warn(`[VideoAdAutorater] Server evaluation denied (${rawCode}): ${reason}`);
+                return { status: 'denied', reason };
+            }
+            return { status: 'fallback' };
+        }
     }
 
     static async evaluateCut(input: VideoAdEvaluationInput): Promise<{
@@ -125,47 +210,69 @@ export class VideoAdAutorater {
         }
 
         const mimeType = input.mimeType ?? 'image/jpeg';
-        const prompt = [
-            `You are a strict Performance Creative Director evaluating a ${input.durationSeconds}s ${input.shape} video ad cut.`,
-            `CAMPAIGN BRIEF: ${input.briefSummary}`,
-            'You are viewing ordered keyframes captured from this cut (opening 0-2s hook, mid-body, and CTA end-card).',
-            'Score each dimension strictly from 0 to 10 (decimals allowed, e.g. 8.8 or 9.5):',
-            '1. firstTwoSecondHook: Is the subject/product/hook unmistakable in the first 2 seconds?',
-            '2. mobileLegibility: Can every word be read effortlessly on a phone screen?',
-            '3. safeZoneIntegrity: Is anything cut off or likely covered by Reels/TikTok/Shorts UI chrome?',
-            '4. audioVisualPacing: Does visual pacing match a high-converting ad for this duration?',
-            '5. brandAlignment: Does color, typography, and mood match the brief?',
-            'Only set overallPass=true if overallScore >= 9.0 and there are zero clipping or legibility defects.',
-            'If overallScore < 9.0, supply a concrete refinementPatch (e.g. fontScaleMultiplier, extraSafeMarginPct, headlineOverride).',
-        ].join('\n');
 
-        const parts: Array<Record<string, unknown>> = [{ text: prompt }];
-        for (const frame of input.keyframeBase64List.slice(0, 4)) {
-            const base64Data = frame.includes('base64,') ? frame.split('base64,')[1] : frame;
-            parts.push({ inlineData: { data: base64Data, mimeType } });
+        // Invoke server callable BEFORE starting BrandVisionQC so auth/Arcjet/budget
+        // denials fail closed without triggering unbilled client vision checks.
+        let rawScore: VideoAdEvaluationScore | null = null;
+        const serverResult = await this.evaluateViaServerCallable(input, mimeType);
+        if (serverResult.status === 'ok') {
+            rawScore = serverResult.score;
+        } else if (serverResult.status === 'denied') {
+            return {
+                score: null,
+                brandQc: input.brandKit
+                    ? { approved: false, reason: `Server evaluation denied: ${serverResult.reason}` }
+                    : null,
+            };
         }
 
-        // Run multimodal video-cut judge and BrandVisionQC (on hero keyframe) in parallel
-        const [rawScore, brandQc] = await Promise.all([
-            AutonomousIntelligence.generateStructuredData<VideoAdEvaluationScore>(
+        const brandQcPromise = input.brandKit
+            ? runCreativeVisionCheck(input.keyframeBase64List[0]!, input.brandKit, mimeType).catch((err) => ({
+                  approved: false,
+                  reason: err instanceof Error ? err.message : String(err),
+              }))
+            : Promise.resolve(null);
+
+        if (!rawScore) {
+            const prompt = [
+                `You are a strict Performance Creative Director evaluating a ${input.durationSeconds}s ${input.shape} video ad cut.`,
+                `CAMPAIGN BRIEF: ${input.briefSummary}`,
+                'You are viewing ordered keyframes captured from this cut (opening 0-2s hook, mid-body, and CTA end-card).',
+                'Score each dimension strictly from 0 to 10 (decimals allowed, e.g. 8.8 or 9.5):',
+                '1. firstTwoSecondHook: Is the subject/product/hook unmistakable in the first 2 seconds?',
+                '2. mobileLegibility: Can every word be read effortlessly on a phone screen?',
+                '3. safeZoneIntegrity: Is anything cut off or likely covered by Reels/TikTok/Shorts UI chrome?',
+                '4. audioVisualPacing: Does visual pacing match a high-converting ad for this duration?',
+                '5. brandAlignment: Does color, typography, and mood match the brief?',
+                'Only set overallPass=true if overallScore >= 9.0 and there are zero clipping or legibility defects.',
+                'If overallScore < 9.0, supply a concrete refinementPatch (e.g. fontScaleMultiplier, extraSafeMarginPct, headlineOverride).',
+            ].join('\n');
+
+            const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+            for (const frame of input.keyframeBase64List.slice(0, 4)) {
+                const base64Data = frame.includes('base64,') ? frame.split('base64,')[1] : frame;
+                parts.push({ inlineData: { data: base64Data, mimeType } });
+            }
+
+            rawScore = await AutonomousIntelligence.generateStructuredData<VideoAdEvaluationScore>(
                 parts,
                 SCORE_SCHEMA as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                INTELLIGENCE_MODELS.TEXT.AGENT,
+                INTELLIGENCE_MODELS.TEXT.CONDUCTOR,
             ).catch(err => {
                 logger.error('[VideoAdAutorater] Multimodal evaluation failed:', err);
                 return null;
-            }),
-            input.brandKit
-                ? runCreativeVisionCheck(input.keyframeBase64List[0]!, input.brandKit, mimeType)
-                : Promise.resolve(null),
-        ]);
+            });
+        }
+
+        const brandQc = await brandQcPromise;
 
         if (!rawScore) {
             return { score: null, brandQc };
         }
 
+        const sanitizedPatch = sanitizeRefinementPatch(rawScore.refinementPatch);
         const normalized: VideoAdEvaluationScore = {
             firstTwoSecondHook: clampScore(rawScore.firstTwoSecondHook),
             mobileLegibility: clampScore(rawScore.mobileLegibility),
@@ -175,7 +282,7 @@ export class VideoAdAutorater {
             overallScore: clampScore(rawScore.overallScore),
             overallPass: Boolean(rawScore.overallPass) && clampScore(rawScore.overallScore) >= this.PASS_THRESHOLD,
             gapsFound: rawScore.gapsFound?.trim() || 'None',
-            ...(rawScore.refinementPatch ? { refinementPatch: rawScore.refinementPatch } : {}),
+            ...(sanitizedPatch ? { refinementPatch: sanitizedPatch } : {}),
         };
 
         return { score: normalized, brandQc };

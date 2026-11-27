@@ -15,6 +15,7 @@ vi.mock('../tools/SocialTools', () => ({
         analyze_sentiment: vi.fn(),
         multi_platform_autopost: vi.fn(),
         dispatch_community_webhook: vi.fn(),
+        schedule_launch_kit_rollout: vi.fn(),
     }
 }));
 
@@ -51,6 +52,7 @@ describe('SocialAgent', () => {
         expect(SocialAgent.authorizedTools).toContain('analyze_sentiment');
         expect(SocialAgent.authorizedTools).toContain('multi_platform_autopost');
         expect(SocialAgent.authorizedTools).toContain('dispatch_community_webhook');
+        expect(SocialAgent.authorizedTools).toContain('schedule_launch_kit_rollout');
         expect(SocialAgent.authorizedTools).toContain('analyze_engagement_rate');
     });
 
@@ -66,6 +68,7 @@ describe('SocialAgent', () => {
         expect(SocialAgent.functions!.analyze_sentiment).toBeDefined();
         expect(SocialAgent.functions!.multi_platform_autopost).toBeDefined();
         expect(SocialAgent.functions!.dispatch_community_webhook).toBeDefined();
+        expect(SocialAgent.functions!.schedule_launch_kit_rollout).toBeDefined();
         expect(SocialAgent.functions!.analyze_engagement_rate).toBeDefined();
     });
 });
