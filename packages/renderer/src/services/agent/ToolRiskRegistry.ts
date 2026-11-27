@@ -185,6 +185,8 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     create_campaign_brief: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     dispatch_multi_platform_campaign: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Reserves recoupment ledger budget and provisions programmatic ad campaigns across Meta, TikTok, and Google Ads' },
     record_attribution_conversion: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Dispatches deduplicated server-side attribution conversion event across CAPI / Events API / Enhanced Conversions' },
+    generate_ad_matrix: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Compiles multi-shape (9:16, 1:1, 4:5, 16:9) HyperFrames ad projects and runs >=9/10 multimodal scoring' },
+    assemble_release_launch_kit: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Assembles a validated ReleaseLaunchKit bundling canonical track metadata and coordinated IG/TikTok/Shorts/X launch drafts' },
     compile_release_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Compile and optionally save a release strategy draft' },
     generate_release_identifiers: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate ISRC, UPC, catalog identifiers, and ISWC work drafts without store delivery' },
     create_timeline_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft timeline from harness output' },

@@ -286,4 +286,45 @@ describe('MarketingTools', () => {
             expect(result.error).toContain('Check the execution record and ad accounts');
         });
     });
+
+    describe('generate_ad_matrix & assemble_release_launch_kit', () => {
+        it('compiles a 4-shape ad matrix and holds back uninspected variants (fail-closed)', async () => {
+            const result = await MarketingTools.generate_ad_matrix({
+                campaignId: 'camp_unit_matrix_1',
+                title: 'Midnight Avenue',
+                brandOrArtistName: 'Nova',
+                hookHeadline: 'Drop 1 track. Get 4 ad cuts.',
+                ctaText: 'Stream now',
+                verticalFootageUrl: 'https://storage.googleapis.com/bucket/vertical.mp4',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.totalVariants).toBe(4);
+            expect(result.data.approvedVariants).toHaveLength(0);
+            expect(result.data.heldBackVariants).toHaveLength(4);
+        });
+
+        it('assembles a schema-valid ReleaseLaunchKit with 6 coordinated social posts', async () => {
+            const result = await MarketingTools.assemble_release_launch_kit({
+                title: 'Midnight Avenue',
+                artistOrBrandName: 'Nova',
+                hookHeadline: 'Out now everywhere',
+                ctaText: 'Listen on Spotify',
+                smartLinkUrl: 'https://indii.link/midnight',
+                measuredBpm: 122,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.title).toBe('Midnight Avenue');
+            expect(result.data.socialPosts).toHaveLength(6);
+            expect(result.data.socialPosts.map((p: { platform: string }) => p.platform)).toEqual([
+                'Instagram',
+                'InstagramStory',
+                'TikTok',
+                'YouTubeShorts',
+                'X',
+                'XHeader',
+            ]);
+        });
+    });
 });

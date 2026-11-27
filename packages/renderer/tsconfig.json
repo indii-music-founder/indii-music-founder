@@ -38,6 +38,12 @@
             ],
             "@indii/shared/*": [
                 "../shared/src/*"
+            ],
+            "@indii/video-compiler": [
+                "../video-compiler/src/index.ts"
+            ],
+            "@indii/video-compiler/*": [
+                "../video-compiler/src/*"
             ]
         }
     },

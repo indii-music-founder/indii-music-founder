@@ -43,9 +43,11 @@ export const MarketingAgent: AgentConfig = {
             analyze_campaign_roi: MarketingTools.analyze_campaign_roi,
             dispatch_multi_platform_campaign: MarketingTools.dispatch_multi_platform_campaign,
             record_attribution_conversion: MarketingTools.record_attribution_conversion,
+            generate_ad_matrix: MarketingTools.generate_ad_matrix,
+            assemble_release_launch_kit: MarketingTools.assemble_release_launch_kit,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['save_memory', 'recall_memories', 'verify_output', 'list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi', 'dispatch_multi_platform_campaign', 'record_attribution_conversion'],
+    authorizedTools: ['save_memory', 'recall_memories', 'verify_output', 'list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi', 'dispatch_multi_platform_campaign', 'record_attribution_conversion', 'generate_ad_matrix', 'assemble_release_launch_kit'],
     tools: [{
         functionDeclarations: [
             ...marketingRetrievalDeclarations,
@@ -350,6 +352,52 @@ export const MarketingAgent: AgentConfig = {
                         valueCents: { type: "NUMBER", description: "Optional conversion value in integer cents." }
                     },
                     required: ["eventName", "releaseId", "isrc", "smartlinkId", "clientIpAddress", "clientUserAgent"]
+                }
+            },
+            {
+                name: "generate_ad_matrix",
+                description: "Compiles one creative brief and canonical visual/audio assets into multi-shape HyperFrames ad projects (9:16, 1:1, 4:5, 16:9 across 6s/15s/30s) and scores cuts with the >=9/10 multimodal VideoAdAutorater.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        campaignId: { type: "STRING", description: "Optional campaign identifier." },
+                        title: { type: "STRING", description: "Release or campaign title." },
+                        brandOrArtistName: { type: "STRING", description: "Artist or brand display name." },
+                        hookHeadline: { type: "STRING", description: "Opening 0-2s visual hook headline." },
+                        subHeadline: { type: "STRING", description: "Optional mid-cut value proof copy (used on 15s/30s cuts)." },
+                        ctaText: { type: "STRING", description: "Call-to-action end-card copy." },
+                        verticalFootageUrl: { type: "STRING", description: "Portrait/vertical footage URL or gs:// URI." },
+                        landscapeFootageUrl: { type: "STRING", description: "Optional landscape 16:9 footage URL or gs:// URI." },
+                        audioHookUrl: { type: "STRING", description: "Optional synchronized 15s/30s audio hook URL." },
+                        shapes: {
+                            type: "ARRAY",
+                            items: { type: "STRING", enum: ["9:16", "1:1", "4:5", "16:9"] },
+                            description: "Target ad aspect shapes."
+                        },
+                        durations: {
+                            type: "ARRAY",
+                            items: { type: "NUMBER" },
+                            description: "Target ad durations in seconds (6, 15, or 30)."
+                        }
+                    },
+                    required: ["title", "brandOrArtistName", "hookHeadline", "ctaText", "verticalFootageUrl"]
+                }
+            },
+            {
+                name: "assemble_release_launch_kit",
+                description: "Assembles a schema-validated ReleaseLaunchKit binding canonical track metadata, measured BPM, SmartLink URL, and coordinated drafts for Instagram, Instagram Story, TikTok, YouTube Shorts, X, and X Header.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING", description: "Release or launch title." },
+                        artistOrBrandName: { type: "STRING", description: "Artist or brand name." },
+                        hookHeadline: { type: "STRING", description: "Primary launch hook line." },
+                        ctaText: { type: "STRING", description: "Call to action." },
+                        smartLinkUrl: { type: "STRING", description: "Optional SmartLink URL." },
+                        measuredBpm: { type: "NUMBER", description: "Optional measured tempo in BPM." },
+                        canonicalMasterStoragePath: { type: "STRING", description: "Optional canonical WAV/FLAC Storage path." }
+                    },
+                    required: ["title", "artistOrBrandName", "hookHeadline", "ctaText"]
                 }
             }
         ]

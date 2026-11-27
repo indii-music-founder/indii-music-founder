@@ -1,0 +1,22 @@
+{
+  "campaignId": "indii-launch-01",
+  "title": "One Track to Full Music Video & Ad Pack",
+  "brandOrArtistName": "indii.music",
+  "hookHeadline": "Turn 1 track into a music video + 4 ad cuts.",
+  "subHeadline": "Beat-synced & AI-scored before you spend.",
+  "ctaText": "Launch free at indii.music",
+  "accentColor": "#FFE135",
+  "backgroundColor": "#0B0D12",
+  "verticalFootageUrl": "https://indii.music/media/studio-storyboard-vertical.mp4",
+  "landscapeFootageUrl": "https://indii.music/media/studio-storyboard-landscape.mp4",
+  "audioHookUrl": "https://indii.music/media/indii-showcase-hook-15s.wav",
+  "shapes": ["9:16", "1:1", "4:5", "16:9"],
+  "durations": [15, 30],
+  "bpm": 122,
+  "smartLinkUrl": "https://indii.music",
+  "brandKit": {
+    "primaryColors": ["#FFE135", "#0B0D12", "#FFFFFF"],
+    "forbiddenElements": ["stock watermarks", "generic neon clipart", "unreadable tiny text"],
+    "vibe": "High-contrast independent record label studio minimalism"
+  }
+}

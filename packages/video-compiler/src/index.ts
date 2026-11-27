@@ -9,6 +9,7 @@
  */
 export * from './compiler.js';
 export * from './beatSnapTimeline.js';
+export * from './adMatrixTemplates.js';
 export * from './omniFlashValidator.js';
 export * from './nleTimelineMath.js';
 export * from './nleFFmpegCompiler.js';
