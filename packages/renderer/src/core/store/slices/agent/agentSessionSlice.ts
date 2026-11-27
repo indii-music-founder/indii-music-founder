@@ -3,6 +3,7 @@ import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceC
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';
 import type { SessionPageCursor } from '@/services/agent/SessionService';
+import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 let agentMessagesUnsubscribe: (() => void) | null = null;
@@ -218,7 +219,20 @@ function recoverInterruptedMessages(
     });
 }
 
-export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom';
+export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom' | 'meeting-room';
+
+export type MeetingRoomCollaborationMode = 'dag' | 'roundtable';
+export type MeetingRoomCategory = 'concept-lab' | 'release' | 'strategy' | 'legal-finance' | 'custom';
+
+export interface MeetingRoomConfig {
+    missionBrief: string;
+    includeConductor: boolean;
+    collaborationMode: MeetingRoomCollaborationMode;
+    maxRoundtableRounds: number;
+    referencedAssets: ReferencedAsset[];
+    category: MeetingRoomCategory;
+    isolateMemory: boolean;
+}
 
 export interface AgentMessage {
     id: string;
@@ -267,7 +281,11 @@ export interface ConversationSession {
     projectId?: string;
     /** New sessions store messages in append-only child documents. */
     messageStorage?: 'array' | 'subcollection';
+    /** Configuration when namespace === 'meeting-room'. */
+    meetingRoom?: MeetingRoomConfig;
 }
+
+export type CreateSessionExtra = Partial<Pick<ConversationSession, 'source' | 'meetingRoom'>>;
 
 export interface AgentSessionSlice {
     // Legacy mapping (computed/synced from activeSession)
@@ -282,7 +300,13 @@ export interface AgentSessionSlice {
     sessionsPaginationCursor?: SessionPageCursor;
 
     // Session Actions
-    createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
+    createSession: (
+        title?: string,
+        initialAgents?: string[],
+        namespace?: string,
+        projectId?: string | null,
+        extra?: CreateSessionExtra
+    ) => string;
     setActiveSession: (sessionId: string) => void;
     deleteSession: (sessionId: string) => void;
     updateSessionTitle: (sessionId: string, title: string) => void;
@@ -384,9 +408,15 @@ export function buildAgentSessionState(
         hasMoreSessions: true,
         sessionsPaginationCursor: undefined,
 
-        createSession: (title = 'New Conversation', initialAgents?: string[], namespace?: string, projectId?: string) => {
+        createSession: (
+            title = 'New Conversation',
+            initialAgents?: string[],
+            namespace?: string,
+            projectId?: string | null,
+            extra?: CreateSessionExtra
+        ) => {
             const state = get() as any;
-            const resolvedProjectId = projectId || state.currentProjectId;
+            const resolvedProjectId = projectId === null ? undefined : (projectId || state.currentProjectId);
 
             let resolvedAgents = initialAgents;
             if (!resolvedAgents) {
@@ -404,6 +434,8 @@ export function buildAgentSessionState(
                 participants: resolvedAgents,
                 ...(namespace ? { namespace } : {}),
                 ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+                ...(extra?.source ? { source: extra.source } : {}),
+                ...(extra?.meetingRoom ? { meetingRoom: extra.meetingRoom } : {}),
             };
 
             set(state => {
@@ -509,10 +541,12 @@ export function buildAgentSessionState(
                 return { sessions: { ...state.sessions, [sessionId]: updated } };
             });
 
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(sessionId, { projectId: projectId || undefined, updatedAt: Date.now() })
-                    .catch(e => logger.error('[AgentSlice] Session project update failed:', e));
-            });
+            void import('@/services/agent/SessionService')
+                .then(({ sessionService }) => sessionService.updateSession(sessionId, {
+                    projectId: projectId || undefined,
+                    updatedAt: Date.now(),
+                }))
+                .catch(e => logger.error('[AgentSlice] Session project update failed:', e));
         },
 
         archiveSession: (sessionId) => {
@@ -727,6 +761,7 @@ export function buildAgentSessionState(
         addParticipant: (sessionId, agentId) => set(state => {
             const session = state.sessions[sessionId];
             if (!session || session.participants.includes(agentId)) return {};
+            if (session.namespace === 'meeting-room') return {};
 
             const newParticipants = [...session.participants, agentId];
 

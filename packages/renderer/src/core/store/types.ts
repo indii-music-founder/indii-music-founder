@@ -21,6 +21,7 @@ import type { MarketplaceSlice } from "@/core/store/slices/marketplaceSlice";
 import type { EmailSlice } from "@/core/store/slices/emailSlice";
 import type { AnalyticsSlice } from "@/core/store/slices/analyticsSlice";
 import type { BoardroomSlice } from "@/core/store/slices/boardroomSlice";
+import type { MeetingRoomSlice } from "@/core/store/slices/meetingRoomSlice";
 import type { AgentFeedbackSlice } from "@/core/store/slices/agentFeedbackSlice";
 import type { RegistrationSlice } from "@/core/store/slices/registrationSlice";
 import type { AgentPlanSlice } from "@/core/store/slices/agentPlanSlice";
@@ -57,6 +58,7 @@ export interface StoreState extends
     EmailSlice,
     AnalyticsSlice,
     BoardroomSlice,
+    MeetingRoomSlice,
     AgentFeedbackSlice,
     RegistrationSlice,
     AgentPlanSlice,

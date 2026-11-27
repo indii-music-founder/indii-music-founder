@@ -1,5 +1,6 @@
 import type { AgentContext, AgentGraph, AgentResponse, ToolFunctionResult } from '@/services/agent/types';
-import { DEPARTMENTS, getDepartmentOf, isHead } from '@/services/agent/departments';
+import { DEPARTMENTS, getDepartmentOf, isHead, isWorker } from '@/services/agent/departments';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { isCapabilityQuestion } from '@/services/agent/capabilityTruth';
 
 const SHORT_CONFIRMATION_PATTERN = /^(?:yes|yep|yeah|sure|ok|okay|go ahead|do it|proceed|approve|approved|continue|start|sounds good|looks good|let['’]s do it)[.!?, ]*$/i;
@@ -123,6 +124,39 @@ export function withAddressedBoardroomSteps(steps: BoardroomActionStep[], addres
     return merged;
 }
 
+export function meetingRoomAddressedAgents(query: string, seatedAgents: readonly string[]): string[] {
+    const byName = new Map<string, string>();
+    const departments = Object.values(DEPARTMENTS);
+    for (const agentId of seatedAgents) {
+        const identity = resolveAgentVisualIdentity(agentId);
+        byName.set(agentId.toLowerCase(), agentId);
+        byName.set(identity.displayName.toLowerCase(), agentId);
+        const seatedDept = departments.find(dept => dept.headId === agentId);
+        if (seatedDept) {
+            byName.set(seatedDept.displayName.toLowerCase(), seatedDept.headId);
+        }
+        if (isWorker(agentId)) {
+            const suffix = agentId.split('.')[1];
+            if (suffix) {
+                byName.set(suffix.toLowerCase(), agentId);
+            }
+        }
+    }
+    const resolve = (raw: string) => {
+        const name = raw.trim().toLowerCase();
+        return byName.get(name) ?? byName.get(name.replace(ADDRESS_ROLE_SUFFIX, ''));
+    };
+    const segments = query.normalize('NFKC').slice(0, 240).split(/[,:]/);
+    const addressed: string[] = [];
+    for (const segment of segments.slice(0, -1)) {
+        const names = segment.split(/\s*(?:&|\band\b)\s*/i).filter(name => name.trim());
+        const agentIds = names.map(resolve);
+        if (!names.length || agentIds.some(id => !id)) break;
+        for (const agentId of agentIds as string[]) if (!addressed.includes(agentId)) addressed.push(agentId);
+    }
+    return addressed;
+}
+
 export interface BoardroomActionStep {
     id: string;
     agentId: string;
@@ -139,12 +173,17 @@ export interface BoardroomStepReceipt {
     response: AgentResponse;
 }
 
-export function validateBoardroomSteps(steps: BoardroomActionStep[]): void {
+export function validateBoardroomSteps(
+    steps: BoardroomActionStep[],
+    options?: { allowWorkers?: boolean }
+): void {
+    const allowWorkers = options?.allowWorkers === true;
     if (!steps.length || steps.length > 6) throw new Error('A Boardroom action must have between one and six steps.');
     const ids = new Set(steps.map(step => step.id));
     if (ids.size !== steps.length) throw new Error('Boardroom step IDs must be unique.');
     for (const step of steps) {
-        if ((!isHead(step.agentId) && step.agentId !== 'generalist') || !step.task.trim()) {
+        const ownerAllowed = isHead(step.agentId) || step.agentId === 'generalist' || (allowWorkers && isWorker(step.agentId));
+        if (!ownerAllowed || !step.task.trim()) {
             throw new Error('Each Boardroom step needs a registered department owner and a task.');
         }
         if (step.dependencies.some(id => !ids.has(id) || id === step.id)) throw new Error('Invalid Boardroom dependency.');
@@ -157,11 +196,6 @@ export function validateBoardroomSteps(steps: BoardroomActionStep[]): void {
     }
 }
 
-/**
- * Normalizes Boardroom steps by mapping worker agent IDs to their owning
- * department head (`getDepartmentOf`), falling back cleanly to a single-step
- * generalist plan instead of throwing when a step lacks a valid owner (ISSUE-1671).
- */
 export function normalizeBoardroomSteps(
     steps: BoardroomActionStep[],
     fallbackTask: string,
@@ -183,7 +217,10 @@ export function normalizeBoardroomSteps(
     }
 }
 
-export function stepsFromBoardroomGraph(graph: AgentGraph): BoardroomActionStep[] {
+export function stepsFromBoardroomGraph(
+    graph: AgentGraph,
+    options?: { allowWorkers?: boolean }
+): BoardroomActionStep[] {
     // Conditional/mapped graphs retain their own graph runner. Do not silently
     // reinterpret a condition as an unconditional action.
     if (graph.nodes.some(node => node.waitCondition !== 'all') || graph.edges.some(edge => edge.condition || Object.keys(edge.inputMapping ?? {}).length)) {
@@ -194,7 +231,7 @@ export function stepsFromBoardroomGraph(graph: AgentGraph): BoardroomActionStep[
         dependencies: graph.edges.filter(edge => edge.targetId === node.id).map(edge => edge.sourceId),
         requiresApproval: node.requiresApproval,
     }));
-    validateBoardroomSteps(steps);
+    validateBoardroomSteps(steps, options);
     return steps;
 }
 

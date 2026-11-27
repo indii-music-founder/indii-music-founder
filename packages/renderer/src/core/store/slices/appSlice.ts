@@ -214,6 +214,12 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
 
             // Only clear if actually switching modules
             if (outgoingModule !== module) {
+                if (outgoingModule === 'meeting-rooms') {
+                    store.leaveMeetingRoomContext?.();
+                } else if (module === 'meeting-rooms' && store.activeMeetingRoomId) {
+                    store.selectMeetingRoom?.(store.activeMeetingRoomId);
+                }
+
                 // Clean up Firestore subscriptions for the module we're leaving
                 // to prevent INTERNAL ASSERTION FAILED errors during rapid navigation
                 const prefixes: Partial<Record<string, string>> = {

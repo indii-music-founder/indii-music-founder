@@ -1,7 +1,7 @@
 import { getDepartmentOf, isHead, isWorker } from '@/services/agent/departments';
 
 export type AgentCommunicationKind = 'task' | 'note';
-export type AgentConversationMode = 'direct' | 'department' | 'boardroom';
+export type AgentConversationMode = 'direct' | 'department' | 'boardroom' | 'meeting-room';
 
 export interface CommunicationRequest {
     sourceAgentId: string;
@@ -41,6 +41,29 @@ export function validateAgentCommunication(request: CommunicationRequest): Commu
         }
         if (kind === 'task' && !(isHead(sourceAgentId) && isWorker(targetAgentId))) {
             return { allowed: false, code: 'MANAGER_ROUTE_REQUIRED', reason: 'Only a department manager can assign work to an employee in that department.' };
+        }
+        return { allowed: true };
+    }
+
+    if (mode === 'meeting-room') {
+        const isAllowedParticipant = (id: string) => id === 'generalist' || isHead(id) || isWorker(id);
+        if (!isAllowedParticipant(sourceAgentId) || !isAllowedParticipant(targetAgentId)) {
+            return { allowed: false, code: 'MEETING_ROOM_TIER_VIOLATION', reason: 'Only registered department heads, workers, or Conductor may participate in a Meeting Room.' };
+        }
+        if (!seatedAgents.includes(sourceAgentId) || !seatedAgents.includes(targetAgentId)) {
+            return { allowed: false, code: 'MEETING_ROOM_SEATING_VIOLATION', reason: 'Both agents must be seated in this Meeting Room.' };
+        }
+        if (kind === 'task') {
+            const isSameDeptHeadToWorker = Boolean(
+                sourceDepartment &&
+                targetDepartment &&
+                sourceDepartment.id === targetDepartment.id &&
+                isHead(sourceAgentId) &&
+                isWorker(targetAgentId)
+            );
+            if (!isSameDeptHeadToWorker) {
+                return { allowed: false, code: 'MEETING_ROOM_NOTES_ONLY', reason: 'Meeting Room peers share notes; only a seated department head may assign tasks to their own seated workers.' };
+            }
         }
         return { allowed: true };
     }

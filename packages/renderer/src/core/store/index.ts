@@ -28,6 +28,7 @@ import { EmailSlice, createEmailSlice } from '@/core/store/slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from '@/core/store/slices/analyticsSlice';
 import { AgentFeedbackSlice, createAgentFeedbackSlice } from '@/core/store/slices/agentFeedbackSlice';
 import { BoardroomSlice, ReferencedAsset, createBoardroomSlice, deduplicateBoardroomReferences } from '@/core/store/slices/boardroomSlice';
+import { createMeetingRoomSlice } from '@/core/store/slices/meetingRoomSlice';
 import { RegistrationSlice, createRegistrationSlice } from '@/core/store/slices/registrationSlice';
 import { AgentPlanSlice, createAgentPlanSlice } from '@/core/store/slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from '@/core/store/slices/agentCanvasSlice';
@@ -131,6 +132,7 @@ export const useStore = create<StoreState>()(
                 ...createAnalyticsSlice(...a),
                 ...createAgentFeedbackSlice(...a),
                 ...createBoardroomSlice(...a),
+                ...createMeetingRoomSlice(...a),
                 ...createRegistrationSlice(...a),
                 ...createAgentPlanSlice(...a),
                 ...createAgentCanvasSlice(...a),

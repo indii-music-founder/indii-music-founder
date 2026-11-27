@@ -154,6 +154,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isLiveActive,
         livePhase,
         activeSpeakingAgentId,
+        activeMeetingRoom,
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -179,6 +180,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isLiveActive: state?.isLiveConversationActive ?? false,
         livePhase: state?.liveConversationPhase ?? 'idle',
         activeSpeakingAgentId: state?.activeSpeakingAgentId ?? null,
+        activeMeetingRoom: state?.currentModule === 'meeting-rooms' && state?.activeMeetingRoomId
+            ? (state?.sessions?.[state.activeMeetingRoomId] ?? null)
+            : null,
     })));
 
     const activeSpeakingIdentity = useMemo(() => {
@@ -187,7 +191,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     }, [activeSpeakingAgentId, directTargetAgentId, activeDepartmentId]);
 
     const isBoardroom = conversationMode === 'boardroom';
-    const isBoardroomBlocked = isBoardroom && normalizeBoardroomAgentIds(activeAgents ?? []).length === 0;
+    const isMeetingRoom = Boolean(activeMeetingRoom && activeMeetingRoom.namespace === 'meeting-room');
+    const isBoardroomBlocked = !isMeetingRoom && isBoardroom && normalizeBoardroomAgentIds(activeAgents ?? []).length === 0;
 
 
     // Sync chatChannel (theme) with conversationMode
@@ -225,6 +230,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
 
     const activeAgentName = useMemo(() => {
+        if (isMeetingRoom && activeMeetingRoom) {
+            return `"${activeMeetingRoom.title}"`;
+        }
         if (conversationMode === 'direct' && directTargetAgentId) {
             const agent = agentRegistry.get(directTargetAgentId);
             return agent ? agent.name : directTargetAgentId;
@@ -237,7 +245,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             return 'Boardroom';
         }
         return 'indii Conductor';
-    }, [conversationMode, directTargetAgentId, activeDepartmentId]);
+    }, [isMeetingRoom, activeMeetingRoom, conversationMode, directTargetAgentId, activeDepartmentId]);
 
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
 
@@ -465,9 +473,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 }
             }
 
-            // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
+            // On mobile Agent Dashboard or Meeting Rooms, chat is displayed inline — don't open a ChatOverlay on top
             // In Boardroom mode, messages route to boardroomMessages — DON'T open the right panel
-            const isOnAgentModule = currentModule === 'agent';
+            const isOnAgentModule = currentModule === 'agent' || currentModule === 'meeting-rooms';
             if (!isOnAgentModule && !isBoardroom) {
                 if (!isRightPanelOpen) {
                     toggleRightPanel();
@@ -506,7 +514,20 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 }
 
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
-                await agentService.sendMessage(currentInput, outgoingAttachments, targetAgentId);
+                if (isMeetingRoom && activeMeetingRoom) {
+                    await agentService.sendMessage(
+                        currentInput,
+                        outgoingAttachments,
+                        targetAgentId,
+                        { meetingRoomSessionId: activeMeetingRoom.id }
+                    );
+                } else {
+                    await agentService.sendMessage(
+                        currentInput,
+                        outgoingAttachments,
+                        targetAgentId
+                    );
+                }
                 setIsLocalProcessing(false);
             } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
@@ -519,7 +540,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsLocalProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, isBoardroomBlocked, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, isBoardroomBlocked, isMeetingRoom, activeMeetingRoom, setCommandBarInput, setCommandBarAttachments]);
 
     const handleTalkRelease = useCallback(({ text, autoSend }: { text: string; autoSend: boolean }) => {
         setCommandBarInput(text);

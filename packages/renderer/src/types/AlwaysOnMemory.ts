@@ -70,6 +70,8 @@ export interface MemoryConnection {
     discoveredAt: Timestamp;
 }
 
+export type AlwaysOnMemoryScope = 'global' | 'room';
+
 /**
  * Extended memory item for the Always-On system.
  * Extends the existing UserMemory schema with tier, entities, connections, and decay.
@@ -96,6 +98,11 @@ export interface AlwaysOnMemory {
     sourceProjectId?: string;
     sourceFileName?: string;
     sourceMimeType?: string;
+
+    // Room-vs-Global scoping
+    memoryScope?: AlwaysOnMemoryScope;
+    promotedToGlobal?: boolean;
+    promotedAt?: Timestamp;
 
     // Metadata
     createdAt: Timestamp;

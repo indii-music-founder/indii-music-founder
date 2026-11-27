@@ -33,6 +33,8 @@ export interface BigBrainContext {
     dailyLog: string;
     /** CORE Vault facts relevant to the current agent */
     vaultFacts: string;
+    /** Meeting Room scoped memories for the active room */
+    roomMemory?: string;
     /** Deep Hive episodic memories matching the user's intent */
     episodicRecall: string;
     /** User alignment rules from feedback */
@@ -43,6 +45,7 @@ export interface BigBrainContext {
     meta: {
         dailyLogEntries: number;
         vaultFactCount: number;
+        roomMemoryCount?: number;
         episodicMatches: number;
         alignmentRuleCount: number;
         layerErrors: string[];
@@ -122,18 +125,21 @@ class BigBrainEngine {
         userId: string,
         agentId: string,
         userMessage: string,
-        _projectId?: string
+        _projectId?: string,
+        options?: { roomSessionId?: string }
     ): Promise<BigBrainContext> {
         if (this.isE2EMode) {
             return {
                 dailyLog: '',
                 vaultFacts: '',
+                roomMemory: '',
                 episodicRecall: '',
                 alignmentRules: [],
                 totalCharacters: 0,
                 meta: {
                     dailyLogEntries: 0,
                     vaultFactCount: 0,
+                    roomMemoryCount: 0,
                     episodicMatches: 0,
                     alignmentRuleCount: 0,
                     layerErrors: [],
@@ -144,22 +150,34 @@ class BigBrainEngine {
         const meta = {
             dailyLogEntries: 0,
             vaultFactCount: 0,
+            roomMemoryCount: 0,
             episodicMatches: 0,
             alignmentRuleCount: 0,
             layerErrors: [] as string[],
         };
 
-        const budgets = {
-            dailyLog: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.dailyLog),
-            vaultFacts: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.vaultFacts),
-            episodicRecall: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.episodicRecall),
-            alignmentRules: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.alignmentRules),
-        };
+        const roomSessionId = options?.roomSessionId;
+        const budgets = roomSessionId
+            ? {
+                roomMemory: Math.floor(this.config.maxTotalCharacters * 0.30),
+                vaultFacts: Math.floor(this.config.maxTotalCharacters * 0.25),
+                episodicRecall: Math.floor(this.config.maxTotalCharacters * 0.25),
+                dailyLog: Math.floor(this.config.maxTotalCharacters * 0.10),
+                alignmentRules: Math.floor(this.config.maxTotalCharacters * 0.10),
+            }
+            : {
+                roomMemory: 0,
+                dailyLog: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.dailyLog),
+                vaultFacts: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.vaultFacts),
+                episodicRecall: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.episodicRecall),
+                alignmentRules: Math.floor(this.config.maxTotalCharacters * this.config.budgetAllocation.alignmentRules),
+            };
 
-        // Run all 4 layers in parallel — non-blocking
-        const [dailyLog, vaultFacts, episodicRecall, alignmentRules] = await Promise.allSettled([
+        // Run all layers in parallel — non-blocking
+        const [dailyLog, vaultFacts, roomMemory, episodicRecall, alignmentRules] = await Promise.allSettled([
             this.fetchDailyLog(userId, budgets.dailyLog),
             this.fetchVaultFacts(userId, agentId, budgets.vaultFacts),
+            roomSessionId ? this.fetchRoomMemory(roomSessionId, budgets.roomMemory) : Promise.resolve(''),
             this.fetchEpisodicRecall(userId, userMessage, budgets.episodicRecall),
             this.fetchAlignmentRules(userId, userMessage, budgets.alignmentRules),
         ]);
@@ -167,12 +185,14 @@ class BigBrainEngine {
         // Extract results or handle failures
         const dailyLogResult = dailyLog.status === 'fulfilled' ? dailyLog.value : '';
         const vaultFactsResult = vaultFacts.status === 'fulfilled' ? vaultFacts.value : '';
+        const roomMemoryResult = roomMemory.status === 'fulfilled' ? roomMemory.value : '';
         const episodicRecallResult = episodicRecall.status === 'fulfilled' ? episodicRecall.value : '';
         const alignmentRulesResult = alignmentRules.status === 'fulfilled' ? alignmentRules.value : [];
 
         // Log failures
         if (dailyLog.status === 'rejected') meta.layerErrors.push(`dailyLog: ${dailyLog.reason}`);
         if (vaultFacts.status === 'rejected') meta.layerErrors.push(`vaultFacts: ${vaultFacts.reason}`);
+        if (roomMemory.status === 'rejected') meta.layerErrors.push(`roomMemory: ${roomMemory.reason}`);
         if (episodicRecall.status === 'rejected') meta.layerErrors.push(`episodicRecall: ${episodicRecall.reason}`);
         if (alignmentRules.status === 'rejected') meta.layerErrors.push(`alignmentRules: ${alignmentRules.reason}`);
 
@@ -183,21 +203,23 @@ class BigBrainEngine {
         // Count metadata
         meta.dailyLogEntries = dailyLogResult ? dailyLogResult.split('\n').length : 0;
         meta.vaultFactCount = vaultFactsResult ? vaultFactsResult.split('\n').filter(l => l.startsWith('-')).length : 0;
+        meta.roomMemoryCount = roomMemoryResult ? roomMemoryResult.split('\n').filter(l => l.startsWith('-')).length : 0;
         meta.episodicMatches = episodicRecallResult ? episodicRecallResult.split('\n').filter(l => l.startsWith('-')).length : 0;
         meta.alignmentRuleCount = alignmentRulesResult.length;
 
         const totalCharacters = dailyLogResult.length + vaultFactsResult.length +
-            episodicRecallResult.length + alignmentRulesResult.join('').length;
+            roomMemoryResult.length + episodicRecallResult.length + alignmentRulesResult.join('').length;
 
         logger.debug(
             `[BigBrain] Assembled context: ${totalCharacters} chars ` +
-            `(log:${meta.dailyLogEntries}, vault:${meta.vaultFactCount}, ` +
+            `(log:${meta.dailyLogEntries}, vault:${meta.vaultFactCount}, room:${meta.roomMemoryCount}, ` +
             `episodic:${meta.episodicMatches}, rules:${meta.alignmentRuleCount})`
         );
 
         return {
             dailyLog: dailyLogResult,
             vaultFacts: vaultFactsResult,
+            roomMemory: roomMemoryResult,
             episodicRecall: episodicRecallResult,
             alignmentRules: alignmentRulesResult,
             totalCharacters,
@@ -217,6 +239,10 @@ class BigBrainEngine {
 
         if (context.vaultFacts) {
             sections.push(`<authoritative_facts>\n${context.vaultFacts}\n</authoritative_facts>`);
+        }
+
+        if (context.roomMemory) {
+            sections.push(`<room_memory>\n${context.roomMemory}\n</room_memory>`);
         }
 
         if (context.episodicRecall) {
@@ -272,6 +298,28 @@ class BigBrainEngine {
     }
 
     /**
+     * Room Layer: Fetch long-term memories scoped specifically to the active Meeting Room.
+     */
+    private async fetchRoomMemory(roomSessionId: string, maxChars: number): Promise<string> {
+        if (!roomSessionId || maxChars <= 0) return '';
+        const roomMemories = await alwaysOnMemoryEngine.getRoomMemories(roomSessionId, 20);
+        const lines: string[] = [];
+        let currentChars = 0;
+
+        for (const mem of roomMemories) {
+            const text = (mem.summary || mem.content || '').trim();
+            if (!text) continue;
+            const badge = mem.promotedToGlobal ? `${mem.category} | promoted` : mem.category;
+            const line = `- [${badge}] ${text}`;
+            if (currentChars + line.length > maxChars) break;
+            lines.push(line);
+            currentChars += line.length + 1;
+        }
+
+        return lines.join('\n');
+    }
+
+    /**
      * Layer 2: Fetch episodic memories from Always-On Memory matching the user's intent.
      */
     private async fetchEpisodicRecall(
@@ -299,9 +347,9 @@ class BigBrainEngine {
             logger.warn('[BigBrain] Memory recall retrieval failed:', error);
         }
 
-        // 2. Fetch recent unconsolidated memories for fresh context
+        // 2. Fetch recent unconsolidated global/promoted memories for fresh context
         try {
-            const freshMemories = await alwaysOnMemoryEngine.getAllMemories(5);
+            const freshMemories = await alwaysOnMemoryEngine.getAllMemories(5, { excludeRoomScoped: true });
             for (const mem of freshMemories) {
                 // Skip if already in results (naive check)
                 if (lines.some(l => l.includes(mem.summary || mem.content.substring(0, 50)))) continue;

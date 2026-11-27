@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
 import {
     collection,
+    getDoc,
     getDocs,
     getDocsFromServer,
     query,
@@ -9,9 +10,11 @@ import {
     orderBy,
     limit,
     deleteDoc,
+    updateDoc,
     writeBatch,
     doc as firestoreDoc,
     getCountFromServer,
+    Timestamp,
 } from 'firebase/firestore';
 import { FirebaseIntelligenceService as AIService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { cleanPrompt } from '@/utils/prompt';
@@ -19,6 +22,8 @@ import { cleanPrompt } from '@/utils/prompt';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { MemoryConsolidator } from '@/services/agent/memory/MemoryConsolidator';
 import { MemoryIngestionPipeline, memoryIngestionPipeline } from '@/services/agent/memory/MemoryIngestionPipeline';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
+import { coreVaultService, type VaultCategory } from '@/services/agent/memory/CoreVaultService';
 import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
 import type {
     AlwaysOnMemory,
@@ -27,6 +32,7 @@ import type {
     ConsolidationInsight,
     MemoryTier,
     AlwaysOnMemoryCategory,
+    AlwaysOnMemoryScope,
 } from '@/types/AlwaysOnMemory';
 import {
     DEFAULT_ENGINE_CONFIG,
@@ -218,10 +224,11 @@ export class AlwaysOnMemoryEngine {
     public async ingest(
         text: string,
         source: string = 'user_input',
-        category?: AlwaysOnMemoryCategory
+        category?: AlwaysOnMemoryCategory,
+        options?: { sessionId?: string; projectId?: string; memoryScope?: AlwaysOnMemoryScope }
     ): Promise<string> {
         if (this.isE2EMode) return 'Mock Success';
-        const receipt = await this.ingestWithReceipt(text, source, category);
+        const receipt = await this.ingestWithReceipt(text, source, category, options);
         if (receipt.status === 'stored') return `📥 Stored: ${receipt.summary ?? ''}`;
         if (receipt.status === 'skipped') return `Skipped: ${receipt.reason}`;
         return `❌ Failed: ${receipt.reason}`;
@@ -231,7 +238,8 @@ export class AlwaysOnMemoryEngine {
     public async ingestWithReceipt(
         text: string,
         source: string = 'user_input',
-        category?: AlwaysOnMemoryCategory
+        category?: AlwaysOnMemoryCategory,
+        options?: { sessionId?: string; projectId?: string; memoryScope?: AlwaysOnMemoryScope }
     ): Promise<MemoryIngestReceipt> {
         if (this.isE2EMode) return { status: 'unconfirmed', reason: 'Simulated ingestion is not a durable memory receipt.' };
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
@@ -240,7 +248,14 @@ export class AlwaysOnMemoryEngine {
         this.activeIngestions++;
         this.isIngesting = true;
         try {
-            const result = await this.pipeline.ingestText(userId, { text, source, category });
+            const result = await this.pipeline.ingestText(userId, {
+                text,
+                source,
+                category,
+                sourceSessionId: options?.sessionId,
+                sourceProjectId: options?.projectId,
+                memoryScope: options?.memoryScope,
+            });
             if (!this.isCurrentOwner(userId, version)) return { status: 'unconfirmed', reason: 'Memory owner changed during ingestion. Check memory before retrying.' };
             if (result.skipped) return { status: 'skipped', reason: result.skipReason || 'No new memory was written.' };
             if (result.success && typeof result.memoryId === 'string' && result.memoryId.trim()) {
@@ -329,7 +344,8 @@ export class AlwaysOnMemoryEngine {
      */
     public async ingestFromSession(
         messages: Array<{ role: string; text: string }>,
-        sessionId: string
+        sessionId: string,
+        options?: { projectId?: string; memoryScope?: AlwaysOnMemoryScope }
     ): Promise<number> {
         if (this.isE2EMode) return 1;
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
@@ -339,7 +355,7 @@ export class AlwaysOnMemoryEngine {
         this.activeIngestions++;
         this.isIngesting = true;
         try {
-            const results = await this.pipeline.ingestFromSession(userId, messages, sessionId);
+            const results = await this.pipeline.ingestFromSession(userId, messages, sessionId, options);
             if (!this.isCurrentOwner(userId, version)) throw new Error('Memory owner changed during ingestion.');
             const stored = results.filter(r => r.success && !r.skipped && typeof r.memoryId === 'string' && r.memoryId.trim()).length;
             if (stored > 0) this.lastIngestedAt = new Date();
@@ -591,7 +607,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async getAllMemories(
         maxCount: number = 10000,
-        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory },
+        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory; excludeRoomScoped?: boolean },
         requireServer = false
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) {
@@ -621,21 +637,116 @@ If appropriate, suggest that the user can ingest relevant information to build a
 
             // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
             // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
-            const snapshot = await (requireServer ? getDocsFromServer : getDocs)(query(q, limit(maxCount)));
+            const fetchLimit = filters?.excludeRoomScoped ? Math.min(10000, maxCount * 4) : maxCount;
+            const snapshot = await (requireServer ? getDocsFromServer : getDocs)(query(q, limit(fetchLimit)));
             if (requireServer) this.requireCurrentOwner(userId, ownerVersion);
             else if (!this.isCurrentOwner(userId, ownerVersion)) return [];
-            if (snapshot.docs.length === maxCount) {
-                logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
+            if (snapshot.docs.length === fetchLimit) {
+                logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${fetchLimit} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
             }
-            return snapshot.docs.map(doc => ({
+            const items = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
             })) as AlwaysOnMemory[];
+            if (filters?.excludeRoomScoped) {
+                return items
+                    .filter(mem => mem.memoryScope !== 'room' || mem.promotedToGlobal === true)
+                    .slice(0, maxCount);
+            }
+            return items;
         } catch (error) {
             if (requireServer) throw error;
             logger.warn('[AlwaysOnMemoryEngine] getAllMemories failed:', error);
             return [];
         }
+    }
+
+    /**
+     * Fetch memories scoped to a specific Meeting Room session.
+     * Uses the existing (sourceSessionId, isActive, createdAt) composite index.
+     */
+    public async getRoomMemories(sessionId: string, maxCount: number = 50): Promise<AlwaysOnMemory[]> {
+        if (!sessionId?.trim()) return [];
+        return this.getAllMemories(maxCount, { sessionId });
+    }
+
+    /**
+     * Store a room-scoped memory pinned to a Meeting Room without syncing to global Mem0.
+     */
+    public async addRoomMemory(
+        sessionId: string,
+        projectId: string | undefined,
+        content: string,
+        category: AlwaysOnMemoryCategory = 'creative'
+    ): Promise<MemoryIngestReceipt> {
+        if (!sessionId?.trim()) throw new Error('Meeting Room session ID is required.');
+        return this.ingestWithReceipt(content, 'user_input', category, {
+            sessionId,
+            projectId,
+            memoryScope: 'room',
+        });
+    }
+
+    /**
+     * Promote a room-scoped memory to global long-term memory (and optionally CORE Vault).
+     */
+    public async promoteRoomMemoryToGlobal(
+        memoryId: string,
+        options?: { writeToVaultCategory?: VaultCategory }
+    ): Promise<{ promoted: boolean; memoryId: string; reason?: string }> {
+        if (!this.userId) throw new Error('Engine not started');
+        if (!memoryId?.trim()) throw new Error('Memory id is required');
+        if (this.isE2EMode) return { promoted: true, memoryId };
+
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
+        const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', memoryId);
+        const snap = await getDoc(ref);
+        this.requireCurrentOwner(userId, ownerVersion);
+
+        if (!snap.exists()) {
+            return { promoted: false, memoryId, reason: 'Memory not found.' };
+        }
+
+        const data = snap.data() as Partial<AlwaysOnMemory>;
+        if (data.promotedToGlobal === true && data.memoryScope === 'global') {
+            return { promoted: true, memoryId };
+        }
+        const summaryText = (data.summary || data.content || '').trim();
+        const now = Timestamp.now();
+
+        await updateDoc(ref, {
+            memoryScope: 'global',
+            promotedToGlobal: true,
+            promotedAt: now,
+            updatedAt: now,
+        });
+        this.requireCurrentOwner(userId, ownerVersion);
+
+        if (summaryText) {
+            try {
+                await memoryBankService.addMemory(userId, summaryText);
+            } catch (error) {
+                logger.warn('[AlwaysOnMemoryEngine] Promoted memory Mem0 sync warning:', error);
+            }
+
+            if (options?.writeToVaultCategory) {
+                try {
+                    await coreVaultService.addFact(
+                        userId,
+                        options.writeToVaultCategory,
+                        summaryText,
+                        'agent',
+                        { tags: ['meeting_room_promotion'] }
+                    );
+                } catch (error) {
+                    logger.warn('[AlwaysOnMemoryEngine] Promoted memory CORE Vault write warning:', error);
+                }
+            }
+        }
+
+        logger.info(`[AlwaysOnMemoryEngine] ⬆️ Promoted room memory ${memoryId} to global memory`);
+        return { promoted: true, memoryId };
     }
 
     /**

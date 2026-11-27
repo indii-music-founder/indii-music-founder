@@ -266,6 +266,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#00ff66', // Creative accent
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
+    },
+    'meeting-rooms': {
+        officeName: 'Meeting Rooms',
+        accent: '#818cf8', // Indigo-400
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.1), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 }
     }
 };
 

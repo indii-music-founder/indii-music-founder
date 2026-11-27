@@ -48,6 +48,7 @@ import {
     isShortConfirmationUtterance, readyBoardroomSteps, formatBoardroomReceipt, boardroomDependencyField, boardroomRequestedSourceId,
     type BoardroomActionStep, type BoardroomStepReceipt,
 } from '@/services/agent/orchestration/BoardroomActionPlan';
+import { MeetingRoomOrchestrator } from '@/services/agent/orchestration/MeetingRoomOrchestrator';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 import { isUserCancellation, errorText, USER_STOPPED_TEXT } from '@/services/agent/flowFailure';
 import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from '@/services/agent/boardroomRunTimeout';
@@ -67,6 +68,8 @@ export interface AgentSendOptions {
     conversationModeOverride?: 'boardroom' | 'department' | 'direct';
     /** Agent (direct) or department id chosen by the remote sender. */
     targetOverride?: string;
+    /** Explicit Meeting Room session ID to dispatch into. */
+    meetingRoomSessionId?: string;
 }
 
 /** Attachment payload accepted by agent orchestration flows. */
@@ -179,6 +182,7 @@ export class AgentService {
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
+    private meetingRoomOrchestrator: MeetingRoomOrchestrator;
     private useStoreCache?: typeof import('@/core/store').useStore;
 
     private async getStore(): Promise<typeof import('@/core/store').useStore> {
@@ -232,6 +236,14 @@ export class AgentService {
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.executor = new AgentExecutor(agentRegistry);
+        this.meetingRoomOrchestrator = new MeetingRoomOrchestrator({
+            executor: this.executor,
+            orchestrator: this.orchestrator,
+            appendRunMessage: (storeArg, msg, runSessionId) => this.appendRunMessage(storeArg as typeof import('@/core/store').useStore, msg, runSessionId),
+            notifyLiveConversationIfActive: (agentId, msgText, resId) => this.notifyLiveConversationIfActive(agentId, msgText, resId),
+            applyCompletedResponse: (agentId, question, resId, res, updateFn, getMsgFn, extra) =>
+                this.applyCompletedResponse(agentId, question, resId, res, updateFn, getMsgFn, extra),
+        });
 
         // Break circular dependencies by injecting runner into batcher and orchestration
         const runner = this.runAgent.bind(this);
@@ -467,9 +479,20 @@ export class AgentService {
 
             const store = useStoreInstance || await this.getStore();
             const state = store.getState();
-            const isBoardroomMode = (options?.source === 'mobile-remote'
-                ? options.conversationModeOverride ?? state.conversationMode : state.conversationMode) === 'boardroom';
-            logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
+            const requestedMode = options?.source === 'mobile-remote'
+                ? options.conversationModeOverride ?? state.conversationMode
+                : state.conversationMode;
+            const explicitMeetingRoomId = options?.meetingRoomSessionId
+                ?? (state.currentModule === 'meeting-rooms' ? state.activeMeetingRoomId : null);
+            const isMeetingRoomSession = Boolean(
+                explicitMeetingRoomId && state.sessions?.[explicitMeetingRoomId]?.namespace === 'meeting-room'
+            );
+            const isBoardroomMode = !isMeetingRoomSession && requestedMode === 'boardroom';
+            logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode, isMeetingRoomSession });
+
+            if (isMeetingRoomSession) {
+                userMsg.source = options?.source || 'meeting-room';
+            }
 
             // The session this run started in. Everything the run appends —
             // user message, model message, streaming updates — must stay in
@@ -478,17 +501,30 @@ export class AgentService {
             // the appends here must target the same session explicitly,
             // because the model message is appended after an await during
             // which the active session can change.)
-            const runSessionId = state.activeSessionId ?? null;
+            const activeSession = state.activeSessionId ? state.sessions?.[state.activeSessionId] : undefined;
+            const safeDirectSessionId = activeSession?.namespace === 'meeting-room'
+                ? null
+                : (state.activeSessionId ?? null);
+            const runSessionId = isMeetingRoomSession ? explicitMeetingRoomId! : safeDirectSessionId;
 
             this.appendRunMessage(store, userMsg, runSessionId);
 
             // Tier 2: Index user message for semantic recall (Episodic Indexing)
-            if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
+            if (state.currentProjectId && runSessionId && redactedText.length > 10) {
                 const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
+                const roomIsolation = isMeetingRoomSession
+                    && state.sessions?.[runSessionId]?.meetingRoom?.isolateMemory !== false;
                 alwaysOnMemoryEngine.ingest(
                     redactedText,
                     'user_input',
-                    'context'
+                    'context',
+                    isMeetingRoomSession
+                        ? {
+                            sessionId: runSessionId,
+                            projectId: state.currentProjectId,
+                            memoryScope: roomIsolation ? 'room' : 'global',
+                        }
+                        : undefined
                 ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
             }
 
@@ -786,7 +822,27 @@ export class AgentService {
             return;
         }
 
-        // 0. Dispatch by Mode — MUST be checked FIRST.
+        // 0. Dispatch by Mode — Meeting Room takes precedence when targeting a Meeting Room session.
+        const targetMeetingRoomId = options?.meetingRoomSessionId
+            ?? (state.currentModule === 'meeting-rooms' ? state.activeMeetingRoomId : null);
+        if (targetMeetingRoomId && state.sessions?.[targetMeetingRoomId]?.namespace === 'meeting-room') {
+            logger.debug('[AgentService] Routing to Meeting Room orchestrator:', { targetMeetingRoomId });
+            const rawUserUtterance = this.sanitizeBoardroomUtterance(effectiveText);
+            const roomTask: Readonly<BoardroomDispatchTask> = Object.freeze({
+                rawUserUtterance,
+            });
+            await this.meetingRoomOrchestrator.executeMeetingRoomRequest({
+                roomId: targetMeetingRoomId,
+                task: roomTask,
+                attachments,
+                context: inheritExecutionTokenBudget(context, { ...context, boardroomTask: roomTask }),
+                responseId,
+                signal,
+                store: useStore,
+            });
+            return;
+        }
+
         if (conversationMode === 'boardroom') {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
             const rawUserUtterance = this.sanitizeBoardroomUtterance(effectiveText);

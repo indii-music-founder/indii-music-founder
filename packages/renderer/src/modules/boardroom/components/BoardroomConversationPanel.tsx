@@ -15,6 +15,12 @@ import { BoardroomMessageRow } from '@/modules/boardroom/components/BoardroomMes
 
 interface BoardroomConversationPanelProps {
     messages?: AgentMessage[];
+    filterSessionId?: string | null;
+    filterProjectId?: string | null;
+    assetScope?: 'room' | 'project';
+    onAssetScopeChange?: (scope: 'room' | 'project') => void;
+    onInspectInWorkbench?: (itemId: string) => void;
+    emptyStateSlot?: React.ReactNode;
 }
 
 // Rich Boardroom messages can each mount Markdown controls, thought-chain
@@ -32,7 +38,15 @@ export const BOARDROOM_MESSAGE_BATCH_SIZE = 75;
  * oval container. This panel has proper rectangular boundaries, auto-scroll,
  * and agent identity badges with color coding from the agent registry.
  */
-export function BoardroomConversationPanel({ messages: messagesProp }: BoardroomConversationPanelProps) {
+export function BoardroomConversationPanel({
+    messages: messagesProp,
+    filterSessionId,
+    filterProjectId,
+    assetScope,
+    onAssetScopeChange,
+    onInspectInWorkbench,
+    emptyStateSlot,
+}: BoardroomConversationPanelProps) {
     const storeMessages = useStore(state => (messagesProp !== undefined ? undefined : state.agentHistory));
     const messages = messagesProp ?? storeMessages ?? [];
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -153,8 +167,8 @@ export function BoardroomConversationPanel({ messages: messagesProp }: Boardroom
                         )}
                     </div>
 
-                    {/* Quick executive action starters */}
-                    <BoardroomStarterCards compact={isAnyPhone} />
+                    {/* Quick executive action starters or custom room empty slot */}
+                    {emptyStateSlot ?? <BoardroomStarterCards compact={isAnyPhone} />}
                 </div>
 
             ) : (
@@ -172,7 +186,13 @@ export function BoardroomConversationPanel({ messages: messagesProp }: Boardroom
 
             {/* ISSUE-1361: in-page asset strip — created assets visible without
                 flipping back to the Studio */}
-            <BoardroomAssetStrip />
+            <BoardroomAssetStrip
+                filterSessionId={filterSessionId}
+                filterProjectId={filterProjectId}
+                assetScope={assetScope}
+                onAssetScopeChange={onAssetScopeChange}
+                onInspectInWorkbench={onInspectInWorkbench}
+            />
 
             {/* Scrollable Message List */}
             <div

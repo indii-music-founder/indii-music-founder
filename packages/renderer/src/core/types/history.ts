@@ -25,6 +25,10 @@ export interface HistoryItem {
     localPath?: string; // Path to locally saved file (Electron/Veo)
     /** ID of the source HistoryItem this was derived from (e.g., canvas-export of a generated image) */
     parentId?: string;
+    /** Session ID (e.g. Meeting Room or chat session) in which this asset was created. */
+    sessionId?: string;
+    /** Agent ID that created this asset when generated during a session. */
+    createdByAgentId?: string;
     /**
      * ISSUE-1007: cover-art mode asked the model for compliant dimensions
      * but never measured or validated the actual output against the

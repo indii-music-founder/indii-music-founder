@@ -117,6 +117,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           size="16"
         />
       </button>
+      <button
+        aria-label="Meeting Rooms"
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-2.5 py-1.5 text-[13px] rounded-md transition-colors duration-200 relative group overflow-hidden mb-px justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        data-state="closed"
+        data-testid="nav-item-meeting-rooms"
+        style="--dept-color: var(--color-test); border-left: 2px solid transparent;"
+      >
+        <div
+          class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+        />
+        <svg
+          class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+          data-testid="icon-MessagesSquare"
+          size="16"
+        />
+      </button>
     </div>
   </div>
   <div
@@ -610,6 +627,27 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
         >
           Knowledge Base
+        </span>
+      </button>
+      <button
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-2.5 py-1.5 text-[13px] rounded-md transition-colors duration-200 relative group overflow-hidden mb-px px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        data-state="closed"
+        data-testid="nav-item-meeting-rooms"
+        style="--dept-color: var(--color-test); border-left: 2px solid transparent;"
+      >
+        <div
+          class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+        />
+        <svg
+          class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+          data-testid="icon-MessagesSquare"
+          size="16"
+        />
+        <span
+          class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+        >
+          Meeting Rooms
         </span>
       </button>
     </div>

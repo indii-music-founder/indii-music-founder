@@ -15,6 +15,8 @@ import { useToast } from '@/core/context/ToastContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { HistoryItem } from '@/core/types/history';
+import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
+import { projectBucketMatches } from '@/core/constants';
 import { cn } from '@/lib/utils';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
 import { webArtifactStorage } from '@/services/agent/WebArtifactStorage';
@@ -27,12 +29,26 @@ type ArtifactRead = { request: ArtifactRequest } & (
     { status: 'loaded'; content: string } | { status: 'failed' }
 );
 
-export function BoardroomWorkbenchView() {
+export interface BoardroomWorkbenchViewProps {
+    filterSessionId?: string | null;
+    filterProjectId?: string | null;
+    assetScope?: 'room' | 'project';
+    onAssetScopeChange?: (scope: 'room' | 'project') => void;
+    onPinAsset?: (asset: ReferencedAsset) => void;
+}
+
+export function BoardroomWorkbenchView({
+    filterSessionId,
+    filterProjectId,
+    assetScope = 'room',
+    onAssetScopeChange,
+    onPinAsset,
+}: BoardroomWorkbenchViewProps = {}) {
     const toast = useToast();
     const openStudio = useStore(state => state.openBoardroomModulePreview);
     const artifactOwner = useStore(state => state.user?.uid);
     const {
-        generatedHistory,
+        generatedHistory: rawGeneratedHistory,
         isHistoryInitialized,
         historySyncError,
         initializeHistory,
@@ -56,6 +72,16 @@ export function BoardroomWorkbenchView() {
             takeBoardroomControl: state.takeBoardroomControl,
         }))
     );
+
+    const projectHistory = filterSessionId && filterProjectId
+        ? rawGeneratedHistory.filter(item => projectBucketMatches(item.projectId, filterProjectId))
+        : rawGeneratedHistory;
+    const roomHistory = filterSessionId
+        ? rawGeneratedHistory.filter(item => item.sessionId === filterSessionId)
+        : rawGeneratedHistory;
+    const generatedHistory = filterSessionId && assetScope === 'room'
+        ? roomHistory
+        : projectHistory;
 
     const [tabOverride, setTabOverride] = useState<{
         target: BoardroomWorkbenchTarget;
@@ -173,7 +199,7 @@ export function BoardroomWorkbenchView() {
     }, [toast]);
 
     const handlePinToTable = (item: HistoryItem) => {
-        addReferencedAsset({
+        const assetPayload: ReferencedAsset = {
             id: `asset-${item.id}`,
             name: (item.prompt || `${item.type} asset`).slice(0, 60),
             type: 'url',
@@ -181,8 +207,14 @@ export function BoardroomWorkbenchView() {
             prompt: item.prompt,
             sourceType: item.type,
             storageUri: item.storageUri,
-            origin: 'boardroom_workbench',
-        });
+            origin: filterSessionId ? 'meeting_room_workbench' : 'boardroom_workbench',
+        };
+        if (onPinAsset) {
+            onPinAsset(assetPayload);
+            toast.success('Asset pinned to Meeting Room references!');
+            return;
+        }
+        addReferencedAsset(assetPayload);
         toast.success(`Asset pinned to Boardroom references!`);
     };
 
@@ -247,7 +279,7 @@ export function BoardroomWorkbenchView() {
                 )}
             </div>
             {/* Workbench Sub-Tab Switcher */}
-            <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0">
                 <div
                     role="tablist"
                     aria-label="Asset Workbench sections"
@@ -311,6 +343,34 @@ export function BoardroomWorkbenchView() {
                         </button>
                     )}
                 </div>
+                {filterSessionId && onAssetScopeChange && subTab === 'assets' && (
+                    <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-lg border border-white/10 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => onAssetScopeChange('room')}
+                            className={cn(
+                                "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                assetScope === 'room'
+                                    ? "bg-indigo-600 text-white"
+                                    : "text-white/60 hover:text-white"
+                            )}
+                        >
+                            This Room ({roomHistory.length})
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onAssetScopeChange('project')}
+                            className={cn(
+                                "px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                assetScope === 'project'
+                                    ? "bg-indigo-600 text-white"
+                                    : "text-white/60 hover:text-white"
+                            )}
+                        >
+                            All Project ({projectHistory.length})
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Sub-tab 1: Generated Assets */}

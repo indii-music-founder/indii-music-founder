@@ -11,8 +11,25 @@ export class ContextResolver {
     async resolveContext(): Promise<AgentContext> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
-        const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule, conversationMode, activeAgents } = state;
-        const currentProject = projects?.find(p => p.id === currentProjectId);
+        const {
+            currentProjectId,
+            projects,
+            currentOrganizationId,
+            userProfile,
+            currentModule,
+            conversationMode,
+            activeAgents,
+            activeMeetingRoomId,
+            sessions,
+        } = state;
+        const activeMeetingRoom = currentModule === 'meeting-rooms' && activeMeetingRoomId
+            ? sessions?.[activeMeetingRoomId]
+            : undefined;
+        const isMeetingRoomActive = Boolean(activeMeetingRoom && activeMeetingRoom.namespace === 'meeting-room');
+        const effectiveProjectId = isMeetingRoomActive
+            ? (activeMeetingRoom?.projectId || currentProjectId)
+            : currentProjectId;
+        const currentProject = projects?.find(p => p.id === effectiveProjectId);
         const brandKit = userProfile?.brandKit;
 
         let projectHandle: ProjectHandle | undefined;
@@ -41,7 +58,7 @@ export class ContextResolver {
         }
 
         return {
-            projectId: currentProjectId,
+            projectId: effectiveProjectId,
             orgId: OrganizationService.getCurrentOrgId() ?? (currentOrganizationId === 'org-default' ? 'personal' : currentOrganizationId),
             projectHandle,
             assetReferences: conversationMode === 'direct'
@@ -55,8 +72,15 @@ export class ContextResolver {
             brandKit,
             activeModule: currentModule,
             chatHistory: conversationMode === 'boardroom' ? state.agentHistory || [] : state.agentHistory || [],
-            conversationMode: conversationMode === 'orchestrated' ? undefined : conversationMode,
-            seatedAgents: activeAgents,
+            conversationMode: isMeetingRoomActive
+                ? 'meeting-room'
+                : (conversationMode === 'orchestrated' ? undefined : conversationMode),
+            seatedAgents: isMeetingRoomActive ? (activeMeetingRoom?.participants ?? []) : activeAgents,
+            ...(isMeetingRoomActive && activeMeetingRoom ? {
+                meetingRoomSessionId: activeMeetingRoom.id,
+                meetingRoomTitle: activeMeetingRoom.title,
+                meetingRoomBrief: activeMeetingRoom.meetingRoom?.missionBrief,
+            } : {}),
             distributor,
             whiskState: state.whiskState
         };

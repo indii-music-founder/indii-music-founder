@@ -112,3 +112,62 @@ export function normalizeBoardroomAgentIds(agentIds: readonly string[]): string[
 export function listSeatedManagerIds(agentIds: readonly string[]): ValidAgentId[] {
     return normalizeBoardroomAgentIds(agentIds).filter(isValidHeadId);
 }
+
+/**
+ * Meeting Room roster helpers — unlike Boardroom HQ (strictly head-only),
+ * Meeting Rooms allow seating department heads, scoped sub-agent workers
+ * (e.g. "finance.tax", "legal.contracts"), and optionally Indii Conductor.
+ */
+export function isValidMeetingRoomAgentId(agentId: string): boolean {
+    return agentId === BOARDROOM_CONDUCTOR_ID || isValidHeadId(agentId) || isWorker(agentId);
+}
+
+/**
+ * Normalizes a Meeting Room participant roster, preserving insertion order,
+ * deduplicating entries, discarding invalid IDs, and toggling Conductor.
+ */
+export function normalizeMeetingRoomAgentIds(
+    agentIds: readonly string[],
+    options?: { includeConductor?: boolean }
+): string[] {
+    const includeConductor = options?.includeConductor;
+    const seen = new Set<string>();
+    const specialists: string[] = [];
+
+    for (const agentId of agentIds) {
+        if (!isValidMeetingRoomAgentId(agentId) || seen.has(agentId)) continue;
+        if (agentId === BOARDROOM_CONDUCTOR_ID) {
+            if (includeConductor === false) continue;
+            seen.add(agentId);
+            if (includeConductor === undefined) {
+                specialists.push(agentId);
+            }
+            continue;
+        }
+        seen.add(agentId);
+        specialists.push(agentId);
+    }
+
+    if (includeConductor === true) {
+        return [BOARDROOM_CONDUCTOR_ID, ...specialists];
+    }
+
+    return specialists;
+}
+
+export interface MeetingRoomSelectableDepartment {
+    id: string;
+    displayName: string;
+    headId: ValidAgentId;
+    workerIds: string[];
+}
+
+/** Returns all departments with their head and scoped workers for Meeting Room roster selection. */
+export function listMeetingRoomSelectableDepartments(): MeetingRoomSelectableDepartment[] {
+    return Object.values(DEPARTMENTS).map(dept => ({
+        id: dept.id,
+        displayName: dept.displayName,
+        headId: dept.headId,
+        workerIds: [...dept.workerIds],
+    }));
+}

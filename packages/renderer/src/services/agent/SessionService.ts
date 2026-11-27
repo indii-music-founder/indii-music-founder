@@ -5,7 +5,7 @@ import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceC
 import type { ConversationSession, AgentMessage } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '@/services/OrganizationService';
 import { auth } from '@/services/firebase';
-import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId, doc, serverTimestamp, writeBatch, runTransaction, getDocFromServer, getDocsFromServer } from 'firebase/firestore';
+import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId, doc, serverTimestamp, writeBatch, runTransaction, getDocFromServer, getDocsFromServer, deleteField } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -128,7 +128,12 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             delete firestoreUpdates.createdAt;
         }
 
-        await this.update(id, cleanFirestoreData(firestoreUpdates));
+        const cleanedUpdates = cleanFirestoreData(firestoreUpdates);
+        if ('projectId' in updates && !updates.projectId) {
+            cleanedUpdates.projectId = deleteField();
+        }
+
+        await this.update(id, cleanedUpdates);
 
         // KEEPER: Dual Write for Electron Local Persistence
         this.saveToLocal(id, updates);

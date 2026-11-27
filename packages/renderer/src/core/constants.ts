@@ -45,7 +45,8 @@ export const MODULE_IDS = [
     'screenwriter',
     'crm',
     'raw-converter',
-    'project-canvas'
+    'project-canvas',
+    'meeting-rooms'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -99,6 +100,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'memory': 'Memory',
     'raw-converter': 'RAW Converter',
     'project-canvas': 'Project Canvas',
+    'meeting-rooms': 'Meeting Rooms',
     // ISSUE-1441 (redundancy audit): these ids had no display name, so the
     // document-outline <h1> (AppShell) fell back to the raw module id.
     'analytics': 'Analytics',
@@ -122,6 +124,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
 
 export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'dashboard': 'generalist',
+    'meeting-rooms': 'generalist',
     'project-canvas': 'creative',
     'raw-converter': 'creative',
     'workflow': 'generalist',
