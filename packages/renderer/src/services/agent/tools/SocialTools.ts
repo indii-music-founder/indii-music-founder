@@ -5,7 +5,21 @@ import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
-import type { InstagramPublishingPayload } from '@indii/shared';
+import { z } from 'zod';
+import {
+    ReleaseLaunchKitSchema,
+    type InstagramPublishingPayload,
+    type LaunchSocialPost,
+    type ScoredAdVariantRecord,
+} from '@indii/shared';
+
+const MAX_SAFE_SCHEDULE_TIMESTAMP_MS = 8_640_000_000_000_000 - 91 * 86_400_000;
+
+const ScheduleLaunchKitRolloutArgsSchema = z.object({
+    launchKit: ReleaseLaunchKitSchema,
+    startTimestampMs: z.number().finite().nonnegative().max(MAX_SAFE_SCHEDULE_TIMESTAMP_MS).optional(),
+    reelAudienceIntent: z.enum(['discovery', 'nurture']).optional(),
+}).passthrough();
 
 // ============================================================================
 // SocialTools Implementation
@@ -281,6 +295,218 @@ Be specific and data-driven based on the post content above.`;
             const msg = error instanceof Error ? error.message : String(error);
             return toolError(`Webhook dispatch failed: ${msg}`, 'WEBHOOK_DISPATCH_FAILED');
         }
+    }),
+
+    schedule_launch_kit_rollout: wrapTool('schedule_launch_kit_rollout', async (args: {
+        launchKit: unknown;
+        startTimestampMs?: number;
+        reelAudienceIntent?: 'discovery' | 'nurture';
+    }) => {
+        const parsedArgs = ScheduleLaunchKitRolloutArgsSchema.safeParse(args);
+        if (!parsedArgs.success) {
+            return toolError(
+                `Invalid ReleaseLaunchKit rollout args: ${parsedArgs.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
+                'INVALID_LAUNCH_KIT',
+            );
+        }
+
+        const { launchKit: kit, startTimestampMs, reelAudienceIntent } = parsedArgs.data;
+        const variantById = new Map<string, ScoredAdVariantRecord>(
+            kit.adVariants.map((variant) => [variant.variantId, variant]),
+        );
+
+        interface SkippedLaunchPost {
+            postId: string;
+            platform: LaunchSocialPost['platform'];
+            attachedVariantId: string;
+            reason: string;
+        }
+        interface DispatchCandidate {
+            post: LaunchSocialPost;
+            variant?: ScoredAdVariantRecord;
+        }
+
+        const skippedPosts: SkippedLaunchPost[] = [];
+        const dispatchable: DispatchCandidate[] = [];
+        const videoRequiredPlatforms = new Set<LaunchSocialPost['platform']>(['TikTok', 'YouTubeShorts', 'Instagram']);
+
+        for (const post of kit.socialPosts) {
+            const variant = post.attachedVariantId ? variantById.get(post.attachedVariantId) : undefined;
+            if (post.attachedVariantId) {
+                if (!variant || !variant.approved || !variant.brandQcApproved || variant.discardedForRegression) {
+                    skippedPosts.push({
+                        postId: post.id,
+                        platform: post.platform,
+                        attachedVariantId: post.attachedVariantId,
+                        reason: !variant
+                            ? 'Referenced variant not found in launch kit.'
+                            : 'Referenced variant failed approval, BrandVisionQC, or regression gate.',
+                    });
+                    continue;
+                }
+            }
+
+            if (videoRequiredPlatforms.has(post.platform) && !variant?.renderUrl) {
+                skippedPosts.push({
+                    postId: post.id,
+                    platform: post.platform,
+                    attachedVariantId: post.attachedVariantId ?? '',
+                    reason: `${post.platform} post requires an approved variant with a valid renderUrl.`,
+                });
+                continue;
+            }
+
+            dispatchable.push({ post, variant });
+        }
+
+        if (dispatchable.length === 0) {
+            return toolError(
+                'No approved launch posts remain after fail-closed ad variant verification.',
+                'NO_APPROVED_POSTS',
+                { kitId: kit.kitId, skippedPosts },
+            );
+        }
+
+        const baseStartMs =
+            typeof startTimestampMs === 'number' && startTimestampMs > Date.now() + 60_000
+                ? startTimestampMs
+                : Date.now() + 5 * 60_000;
+
+        const needsAutoPoster = dispatchable.some(({ post, variant }) =>
+            Boolean(variant?.renderUrl) &&
+            (post.platform === 'TikTok' ||
+                post.platform === 'YouTubeShorts' ||
+                (post.platform === 'Instagram' && variant?.shape === '9:16')),
+        );
+        let autoPoster: Awaited<typeof import('@/services/marketing/SocialAutoPosterService')>['socialAutoPosterService'] | null = null;
+        if (needsAutoPoster) {
+            try {
+                autoPoster = (await importWithRetry(() => import('@/services/marketing/SocialAutoPosterService'))).socialAutoPosterService;
+            } catch (importErr: unknown) {
+                const msg = importErr instanceof Error ? importErr.message : String(importErr);
+                return toolError(`Failed to load SocialAutoPosterService: ${msg}`, 'LAUNCH_KIT_DISPATCH_FAILED');
+            }
+        }
+
+        const autopostPlatformMap = {
+            TikTok: 'tiktok',
+            YouTubeShorts: 'youtube_shorts',
+            Instagram: 'meta_reels',
+        } as const;
+
+        const outcomes = await Promise.allSettled(
+            dispatchable.map(async ({ post, variant }) => {
+                const useAutoPoster =
+                    Boolean(autoPoster) &&
+                    Boolean(variant?.renderUrl) &&
+                    (post.platform === 'TikTok' ||
+                        post.platform === 'YouTubeShorts' ||
+                        (post.platform === 'Instagram' && variant?.shape === '9:16'));
+
+                if (useAutoPoster && autoPoster && variant?.renderUrl) {
+                    const targetPlatform = autopostPlatformMap[post.platform as keyof typeof autopostPlatformMap];
+                    const instagramPayload: InstagramPublishingPayload | undefined =
+                        post.platform === 'Instagram'
+                            ? {
+                                  surface: 'reel',
+                                  width: 1080,
+                                  height: 1920,
+                                  durationSeconds: variant.durationSeconds,
+                                  reelAudienceIntent,
+                                  caption: post.copy,
+                                  hashtags: post.hashtags,
+                              }
+                            : undefined;
+
+                    const jobId = await autoPoster.queuePost({
+                        id: `${kit.kitId}-${post.id}`,
+                        mediaUrl: variant.renderUrl,
+                        caption: post.copy,
+                        hashtags: post.hashtags,
+                        platform: targetPlatform,
+                        instagramPayload,
+                    });
+                    return {
+                        postId: post.id,
+                        platform: post.platform,
+                        route: 'autopost' as const,
+                        status: 'queued' as const,
+                        jobId,
+                    };
+                }
+
+                const schedulePlatform: 'Twitter' | 'Instagram' =
+                    post.platform === 'Instagram' || post.platform === 'InstagramStory'
+                        ? 'Instagram'
+                        : 'Twitter';
+                const scheduledTime = Math.min(
+                    MAX_SAFE_SCHEDULE_TIMESTAMP_MS + 90 * 86_400_000,
+                    baseStartMs + post.scheduledDayOffset * 86_400_000,
+                );
+                const postId = await SocialService.schedulePost({
+                    platform: schedulePlatform,
+                    copy: post.copy,
+                    day: post.scheduledDayOffset + 1,
+                    scheduledTime,
+                    ...(variant?.renderUrl
+                        ? {
+                              imageAsset: {
+                                  assetType: 'image' as const,
+                                  title: `${kit.title} (${post.platform})`,
+                                  imageUrl: variant.renderUrl,
+                                  caption: post.copy,
+                              },
+                          }
+                        : {}),
+                });
+                return {
+                    postId: post.id,
+                    platform: post.platform,
+                    route: 'schedule' as const,
+                    status: 'scheduled' as const,
+                    jobId: postId,
+                    scheduledTime: new Date(scheduledTime).toISOString(),
+                };
+            }),
+        );
+
+        const results = outcomes.map((outcome, index) => {
+            const candidate = dispatchable[index]!;
+            if (outcome.status === 'fulfilled') {
+                return outcome.value;
+            }
+            return {
+                postId: candidate.post.id,
+                platform: candidate.post.platform,
+                status: 'failed' as const,
+                error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason),
+            };
+        });
+
+        const succeeded = results.filter((r) => r.status !== 'failed');
+        const failed = results.filter((r) => r.status === 'failed');
+
+        if (failed.length > 0 && succeeded.length > 0) {
+            return toolError(
+                `${succeeded.map((r) => r.platform).join(', ')} already queued; do not resubmit. ` +
+                    `Failed: ${failed.map((r) => `${r.platform} (${'error' in r ? r.error : 'unknown error'})`).join('; ')}.`,
+                'LAUNCH_KIT_PARTIAL_FAILURE',
+                { kitId: kit.kitId, dispatched: results, skippedPosts },
+            );
+        }
+
+        if (failed.length > 0) {
+            return toolError(
+                `Failed to schedule launch kit rollout: ${failed.map((r) => ('error' in r ? r.error : 'unknown error')).join('; ')}`,
+                'LAUNCH_KIT_DISPATCH_FAILED',
+                { kitId: kit.kitId, dispatched: results, skippedPosts },
+            );
+        }
+
+        return toolSuccess(
+            { kitId: kit.kitId, dispatched: results, skippedPosts },
+            `Scheduled ${succeeded.length} ReleaseLaunchKit post(s) across channels (${skippedPosts.length} skipped).`,
+        );
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -291,5 +517,6 @@ export const {
     schedule_social_post,
     analyze_sentiment,
     multi_platform_autopost,
-    dispatch_community_webhook
+    dispatch_community_webhook,
+    schedule_launch_kit_rollout
 } = SocialTools;

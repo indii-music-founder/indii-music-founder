@@ -416,5 +416,29 @@ export default tseslint.config(
         rules: {
             'no-restricted-globals': ['error', 'document', 'window'],
         },
+    },
+    {
+        // Refactor P1-B guardrail: flag direct Firebase SDK imports inside
+        // renderer React components so P2 can migrate them to services/hooks.
+        files: ['packages/renderer/src/**/*.tsx'],
+        ignores: ['**/*.test.tsx', '**/*.spec.tsx', '**/__tests__/**'],
+        rules: {
+            'no-restricted-imports': [
+                'warn',
+                {
+                    paths: [
+                        'firebase/firestore',
+                        'firebase/storage',
+                        'firebase/functions',
+                        'firebase/auth',
+                        'firebase/database',
+                    ].map((name) => ({
+                        name,
+                        message:
+                            'UI components must not call the Firebase SDK directly; use a *Service.ts or hook (refactor P2).',
+                    })),
+                },
+            ],
+        },
     }
 );

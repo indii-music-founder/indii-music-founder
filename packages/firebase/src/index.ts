@@ -290,6 +290,7 @@ export { notifyMobileVisualResult } from './functions/remote/mobilePushNotificat
 // TypeSafe System One judgments — server-side proxy (API key never leaves functions)
 export { typesafeJudge } from './functions/intelligence/typesafeJudge';
 export { analyzeCampaignAudio } from './functions/creative/analyzeCampaignAudio';
+export { evaluateVideoAdCut } from './functions/creative/evaluateVideoAdCut';
 
 // Post-Mastering Administrative Engine (P2) — receipt-complete audit trigger
 export { onAnalysisReceiptComplete } from './functions/audit/triggers';

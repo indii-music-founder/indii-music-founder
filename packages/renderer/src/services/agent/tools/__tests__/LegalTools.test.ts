@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LegalTools } from '../LegalTools';
+import { LegalTools } from '@/services/agent/tools/LegalTools';
+import { LegalService } from '@/services/legal/LegalService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+
+vi.mock('@/services/legal/LegalService', () => ({
+    LegalService: {
+        saveContract: vi.fn().mockResolvedValue('contract-123'),
+        updateContract: vi.fn(),
+        getContracts: vi.fn(),
+        getContractById: vi.fn()
+    }
+}));
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -66,6 +76,68 @@ describe('LegalTools', () => {
             terms: '1 year duration'
         });
         expect(result.success).toBe(true);
+    });
+
+    describe('draft_contract error handling and validation', () => {
+        const validArgs = {
+            type: 'Sync License',
+            parties: ['Artist', 'Label'],
+            terms: 'Exclusive rights for 2 years'
+        };
+
+        it('should handle AI service failure gracefully', async () => {
+            vi.mocked(AutonomousIntelligence.generateContent).mockRejectedValueOnce(new Error('AI Service Down'));
+
+            const result = await LegalTools.draft_contract!(validArgs);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBe('AI Service Down');
+            expect(result.metadata?.errorCode).toBe('TOOL_EXECUTION_ERROR');
+        });
+
+        it('should handle persistence failure (saveContract fails) but still return content', async () => {
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Contract Draft Content' }
+            } as any);
+            vi.mocked(LegalService.saveContract).mockRejectedValueOnce(new Error('DB Error'));
+
+            const result = await LegalTools.draft_contract!(validArgs);
+
+            expect(result.success).toBe(true);
+            expect(result.data.content).toBe('Contract Draft Content');
+            expect(result.data.contractId).toBeUndefined();
+            expect(result.message).toContain('failed to save');
+        });
+
+        it('should fail if parties is not an array', async () => {
+            const result = await LegalTools.draft_contract!({
+                ...validArgs,
+                parties: 'Not an array' as any
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Validation Error');
+        });
+
+        it('should fail if parties array is empty', async () => {
+            const result = await LegalTools.draft_contract!({
+                ...validArgs,
+                parties: []
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Validation Error');
+        });
+
+        it('should fail if type is missing', async () => {
+            const result = await LegalTools.draft_contract!({
+                ...validArgs,
+                type: undefined as any
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain('Validation Error');
+        });
     });
 
     /**

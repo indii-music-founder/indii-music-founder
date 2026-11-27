@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react';
-import MerchDesigner from './MerchDesigner';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import MerchDesigner from '@/modules/merchandise/MerchDesigner';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '@/core/context/ToastContext';
@@ -141,5 +142,64 @@ describe('MerchDesigner Accessibility', () => {
     // Verify Undo/Redo are accessible
     expect(screen.getAllByRole('button', { name: /Undo/i })[0]).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Redo/i })[0]).toBeInTheDocument();
+  });
+});
+
+describe('MerchDesigner interactions and lifecycle', () => {
+  function renderDesigner() {
+    return render(
+      <MemoryRouter initialEntries={['/merch/design']}>
+        <ToastProvider>
+          <MerchDesigner />
+        </ToastProvider>
+      </MemoryRouter>
+    );
+  }
+
+  it('renders Agent / User mode toggle', () => {
+    renderDesigner();
+    const agentBtns = screen.queryAllByRole('button', { name: /agent/i });
+    const userBtns = screen.queryAllByRole('button', { name: /user/i });
+    expect(agentBtns.length + userBtns.length).toBeGreaterThan(0);
+  });
+
+  it('switches to Showroom view on button click', () => {
+    renderDesigner();
+    const showroomBtns = screen.getAllByRole('button', { name: /showroom/i });
+    fireEvent.click(showroomBtns[0]!);
+    expect(screen.getAllByRole('button', { name: /design/i }).length).toBeGreaterThan(0);
+  });
+
+  it('renders a design name input or editable heading', () => {
+    renderDesigner();
+    const nameInput = document.querySelector('input[placeholder*="ntitled"], input[aria-label*="design name" i]');
+    const nameHeading = screen.queryByText(/untitled design/i);
+    expect(nameInput || nameHeading).toBeTruthy();
+  });
+
+  it('allows typing a new design name', async () => {
+    renderDesigner();
+    fireEvent.click(screen.getByText(/untitled design/i));
+    const nameInput = screen.getByDisplayValue('Untitled Design') as HTMLInputElement;
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Summer Drop Tee');
+    expect(nameInput.value).toBe('Summer Drop Tee');
+  });
+
+  it('opens the autonomous generation dialog when Autonomous button is clicked', async () => {
+    renderDesigner();
+    const autonomousBtns = screen.getAllByRole('button', { name: /autonomous/i });
+    fireEvent.click(autonomousBtns[0]!);
+
+    await waitFor(() => {
+      expect(screen.getByText('Generate Images')).toBeInTheDocument();
+    });
+  });
+
+  it('has no duplicate Undo/Redo button IDs', () => {
+    renderDesigner();
+    const ids = Array.from(document.querySelectorAll('[id]')).map((el) => el.id).filter(Boolean);
+    const unique = new Set(ids);
+    expect(unique.size).toBe(ids.length);
   });
 });

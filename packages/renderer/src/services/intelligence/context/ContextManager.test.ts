@@ -50,4 +50,17 @@ describe('ContextManager', () => {
         expect(result).toContain(history[0]); // verify we KEPT first message (anchor)
         expect(result).not.toContain(history[1]); // verify we dropped middle message
     });
+
+    it('should NOT infinite loop with large number of messages', () => {
+        const history: Content[] = Array.from({ length: 1000 }, () => ({
+            role: 'user',
+            parts: [{ text: 'a' }]
+        }));
+        const startedAt = performance.now();
+        const result = ContextManager.truncateContext(history, 1);
+        const elapsedMs = performance.now() - startedAt;
+
+        expect(result.length).toBe(2);
+        expect(elapsedMs).toBeLessThan(2000);
+    }, 2000);
 });

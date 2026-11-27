@@ -22,7 +22,7 @@ test.describe('Marketing Module', () => {
 
     test('navigates to marketing module without crash', async ({ authedPage: page }) => {
         // Check for the Campaign Dashboard h1 that MarketingToolbar renders
-        const heading = page.getByRole('heading', { level: 1 });
+        const heading = page.getByRole('heading', { level: 1, name: 'Campaign Dashboard' });
         await expect(heading).toBeVisible({ timeout: 10_000 });
 
         const h1Text = await heading.textContent().catch(() => '');

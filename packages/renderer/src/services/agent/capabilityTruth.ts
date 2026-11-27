@@ -197,6 +197,7 @@ const SOCIAL_PUBLISHING_TOOLS = [
     'schedule_post_execution',
     'multi_platform_autopost',
     'dispatch_community_webhook',
+    'schedule_launch_kit_rollout',
 ];
 const CALENDAR_ACTION_TOOLS = [
     'create_calendar_event',

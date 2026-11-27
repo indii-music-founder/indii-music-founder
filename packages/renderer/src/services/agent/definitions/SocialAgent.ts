@@ -72,6 +72,7 @@ export const SocialAgent: AgentConfig = {
             analyze_sentiment: SocialTools.analyze_sentiment,
             multi_platform_autopost: SocialTools.multi_platform_autopost,
             dispatch_community_webhook: SocialTools.dispatch_community_webhook,
+            schedule_launch_kit_rollout: SocialTools.schedule_launch_kit_rollout,
             analyze_engagement_rate: async (args: { platform: string, timePeriod: string }) => {
                 const prompt = `Analyze engagement rate for ${args.platform} over the last ${args.timePeriod}. Calculate the total engagement divided by followers or impressions, and provide actionable tips to increase engagement.`;
                 try {
@@ -83,7 +84,7 @@ export const SocialAgent: AgentConfig = {
             },
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'web_extract', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
+    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'web_extract', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'schedule_launch_kit_rollout', 'analyze_engagement_rate'],
     tools: [{
         functionDeclarations: [
             ...socialRetrievalDeclarations,
@@ -247,6 +248,19 @@ export const SocialAgent: AgentConfig = {
                         timePeriod: { type: "STRING", description: "The time period to analyze (e.g., '7d', '30d')." }
                     },
                     required: ["platform", "timePeriod"]
+                }
+            },
+            {
+                name: "schedule_launch_kit_rollout",
+                description: "Validate a ReleaseLaunchKit, verify every attached ad variant passed approval and BrandVisionQC, and schedule/queue coordinated posts across Instagram, TikTok, YouTube Shorts, and X.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        launchKit: { type: "OBJECT", description: "Schema-valid ReleaseLaunchKit payload." },
+                        startTimestampMs: { type: "NUMBER", description: "Optional UTC epoch milliseconds for Day 0 launch timing." },
+                        reelAudienceIntent: { type: "STRING", enum: ["discovery", "nurture"], description: "Audience intent for Instagram Reels delivery." }
+                    },
+                    required: ["launchKit"]
                 }
             }
         ]
