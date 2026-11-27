@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Layout, Network, Book, Users, DollarSign, FileText, StickyNote, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, Search, Settings, Gem, CalendarDays, GitBranch, Target, Library, Shield, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Layout, Network, Book, Users, DollarSign, FileText, StickyNote, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, Search, Settings, Gem, CalendarDays, GitBranch, Target, Library, Shield, MessagesSquare, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -176,6 +176,7 @@ export default function Sidebar() {
     const intelligenceItems: SidebarItem[] = [
         { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'meeting-rooms', icon: MessagesSquare, label: 'Meeting Rooms' },
     ];
 
     const managerItems: SidebarItem[] = [

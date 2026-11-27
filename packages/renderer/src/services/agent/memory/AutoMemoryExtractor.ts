@@ -114,8 +114,13 @@ export class AutoMemoryExtractor {
 
             if (recentMessages.length === 0) return 0;
 
-            // Ingest to memory engine
-            const count = await alwaysOnMemoryEngine.ingestFromSession(recentMessages, session.id);
+            // Ingest to memory engine (keep Meeting Room extractions room-scoped when isolation is enabled)
+            const isMeetingRoom = session.namespace === 'meeting-room';
+            const memoryScope = isMeetingRoom && session.meetingRoom?.isolateMemory !== false ? 'room' : 'global';
+            const count = await alwaysOnMemoryEngine.ingestFromSession(recentMessages, session.id, {
+                projectId: session.projectId,
+                memoryScope,
+            });
             
             // Update last extracted at
             await this.updateConfig({ lastExtractedAt: new Date().toISOString() });

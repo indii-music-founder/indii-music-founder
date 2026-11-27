@@ -19,7 +19,7 @@ export interface ExecutionContextOptions {
     projectId?: string;
     agentId: string;
     traceId: string;
-    conversationMode?: 'direct' | 'department' | 'boardroom';
+    conversationMode?: 'direct' | 'department' | 'boardroom' | 'meeting-room';
 }
 
 export interface StateModification {
@@ -367,7 +367,7 @@ export class ExecutionContextFactory {
         userId?: string;
         projectId?: string;
         traceId?: string;
-        conversationMode?: 'direct' | 'department' | 'boardroom';
+        conversationMode?: 'direct' | 'department' | 'boardroom' | 'meeting-room';
     }, agentId: string): Promise<AgentExecutionContext> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         return AgentExecutionContext._create({

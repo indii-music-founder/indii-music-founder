@@ -14,6 +14,7 @@ const firestoreMocks = vi.hoisted(() => ({
     storeAttachments: vi.fn(),
     restoreAttachments: vi.fn(),
     loadAttachment: vi.fn(),
+    deleteField: vi.fn(() => ({ __deleteField: true })),
 }));
 
 // 1. Mock External Dependencies (Firebase/Firestore)
@@ -37,6 +38,7 @@ vi.mock('firebase/firestore', () => ({
     getDocs: vi.fn(),
     getDocsFromServer: vi.fn(),
     getDocFromServer: firestoreMocks.serverGet,
+    deleteField: firestoreMocks.deleteField,
 }));
 
 // 2. Mock FirestoreService Base Class
@@ -98,6 +100,7 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        firestoreMocks.deleteField.mockReturnValue({ __deleteField: true });
         vi.mocked(isFirebaseE2EMockEnabled).mockReturnValue(false);
         vi.mocked(getDocs).mockResolvedValue({ empty: true, docs: [] } as Awaited<ReturnType<typeof getDocs>>);
         vi.mocked(getDocsFromServer).mockResolvedValue({ empty: true, docs: [] } as unknown as Awaited<ReturnType<typeof getDocsFromServer>>);
@@ -701,5 +704,14 @@ describe('SessionService Persistence (Dual Write)', () => {
             .mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 0 }) });
         await expect(sessionService.updateMessage('session-123', 'old', { text: 'late edit' })).rejects.toThrow('current conversation generation');
         expect(firestoreMocks.transactionUpdate).not.toHaveBeenCalled();
+    });
+
+    it('clears projectId in Firestore with deleteField when unassigning a session from a project', async () => {
+        await sessionService.updateSession('room-unassign', { projectId: undefined });
+        expect(firestoreMocks.deleteField).toHaveBeenCalledTimes(1);
+        expect(mockUpdate).toHaveBeenCalledWith(
+            'room-unassign',
+            expect.objectContaining({ projectId: { __deleteField: true } })
+        );
     });
 });

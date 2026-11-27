@@ -186,8 +186,31 @@ export function buildCreativeHistoryState(
             // Use dynamic import to avoid circular dependency with store
             import('@/core/store').then(({ useStore }) => {
                 logger.debug("CreativeSlice: addToHistory called", item.id);
-                const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
-                const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
+                const {
+                    currentOrganizationId,
+                    currentProjectId,
+                    currentModule,
+                    activeMeetingRoomId,
+                    activeSessionId,
+                    sessions,
+                    createFileNode,
+                    user,
+                } = useStore.getState();
+                const inferredSessionId =
+                    currentModule === 'meeting-rooms'
+                        ? (activeMeetingRoomId ?? activeSessionId ?? undefined)
+                        : (activeSessionId ?? undefined);
+                const activeRoomProjectId =
+                    currentModule === 'meeting-rooms' && activeMeetingRoomId
+                        ? sessions?.[activeMeetingRoomId]?.projectId
+                        : undefined;
+                const resolvedProjectId = item.projectId || activeRoomProjectId || currentProjectId;
+                const enrichedItem: HistoryItem = {
+                    ...item,
+                    projectId: resolvedProjectId,
+                    orgId: item.orgId || currentOrganizationId,
+                    ...(item.sessionId ?? inferredSessionId ? { sessionId: item.sessionId ?? inferredSessionId } : {}),
+                };
                 // Eviction policy: cap at 50 items to prevent memory bloat from base64 images.
                 // ISSUE-1395 (audit): dedupe by id — the video-job completion
                 // listener can re-add the same job.id within its unsubscribe

@@ -85,7 +85,8 @@ export const departmentCssVars = {
     screenwriter: '--color-dept-creative',          // Screenwriter uses Creative purple
     crm: '--color-dept-marketing',                  // CRM uses Marketing magenta
     'raw-converter': '--color-dept-creative',       // RAW Converter uses Creative purple
-    'project-canvas': '--color-dept-creative'       // Project Canvas uses Creative purple
+    'project-canvas': '--color-dept-creative',      // Project Canvas uses Creative purple
+    'meeting-rooms': '--color-dept-creative'        // Meeting Rooms uses Creative purple
 } as const;
 
 /**
@@ -529,6 +530,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         ring: 'focus-within:ring-dept-creative/50',
         hoverText: 'hover:text-dept-creative',
         hoverBg: 'hover:bg-dept-creative/5',
+        cssVar: '--color-dept-creative'
+    },
+    'meeting-rooms': {
+        text: 'text-indigo-300',
+        bg: 'bg-indigo-500/10',
+        border: 'border-indigo-500/30',
+        ring: 'focus-within:ring-indigo-500/50',
+        hoverText: 'hover:text-indigo-200',
+        hoverBg: 'hover:bg-indigo-500/15',
         cssVar: '--color-dept-creative'
     }
 };

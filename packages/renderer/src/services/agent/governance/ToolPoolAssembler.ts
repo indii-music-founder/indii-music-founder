@@ -48,7 +48,7 @@ export interface ToolPoolContext {
     localToolNames?: ReadonlySet<string>;
     authorizedTools?: readonly string[];
     isReadOnly?: boolean;
-    conversationMode?: 'direct' | 'department' | 'boardroom';
+    conversationMode?: 'direct' | 'department' | 'boardroom' | 'meeting-room';
 }
 
 /**
@@ -102,10 +102,10 @@ export class ToolPoolAssembler {
             pool = pool.filter(tool => allowedTools.has(tool.name) || UNIVERSAL_TRASH_TOOLS.has(tool.name));
         }
 
-        // Avoid offering tools that the hierarchy will reject. In Boardroom,
-        // managers coordinate with information notes; no peer manager executes
-        // another manager's task. Direct mode is intentionally 1:1.
-        if (context.conversationMode === 'boardroom') {
+        // Avoid offering tools that the hierarchy will reject. In Boardroom and
+        // Meeting Rooms, orchestration owns step routing and participants coordinate
+        // with information notes. Direct mode is intentionally 1:1.
+        if (context.conversationMode === 'boardroom' || context.conversationMode === 'meeting-room') {
             pool = pool.filter(tool => !['delegate_task', 'consult_experts'].includes(tool.name));
         } else if (context.conversationMode === 'direct') {
             pool = pool.filter(tool => !collaborationToolNames.includes(tool.name));
@@ -133,12 +133,18 @@ export class ToolPoolAssembler {
 
             // Finance/Legal tools restricted outside their domains
             if (name.includes('invoice') || name.includes('payment') || name.includes('budget')) {
-                return context.moduleContext.includes('finance') || context.agentId === 'finance' || context.agentId === 'generalist';
+                return context.moduleContext.includes('finance') ||
+                    context.agentId === 'finance' ||
+                    context.agentId.startsWith('finance.') ||
+                    context.agentId === 'generalist';
             }
 
             // Heavy distribution tools
             if (name.includes('ddex') || name.includes('isrc')) {
-                return context.moduleContext.includes('distribution') || context.agentId === 'distribution' || context.agentId === 'generalist';
+                return context.moduleContext.includes('distribution') ||
+                    context.agentId === 'distribution' ||
+                    context.agentId.startsWith('distribution.') ||
+                    context.agentId === 'generalist';
             }
 
             // System-level destruction tools only allowed for admin/devops/generalist

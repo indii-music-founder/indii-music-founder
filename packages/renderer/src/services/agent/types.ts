@@ -239,7 +239,12 @@ export interface AgentContext {
     ambitionLevel?: 'focused' | 'balanced' | 'ideas'; // Judgment layer: user-owned dial for offered-idea volume
     ragCorpus?: string;
     activeModule?: string;
-    conversationMode?: 'direct' | 'department' | 'boardroom';
+    conversationMode?: 'direct' | 'department' | 'boardroom' | 'meeting-room';
+    /** Active Meeting Room session metadata when operating inside a Meeting Room. */
+    meetingRoomSessionId?: string;
+    meetingRoomTitle?: string;
+    meetingRoomBrief?: string;
+    meetingRoomIsolateMemory?: boolean;
     /** Runtime-enforced observation mode; models cannot opt themselves out. */
     isReadOnly?: boolean;
     /** Application-owned assignment of the user's Boardroom request. */

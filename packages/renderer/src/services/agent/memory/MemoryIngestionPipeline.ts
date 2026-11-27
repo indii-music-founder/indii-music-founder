@@ -10,6 +10,7 @@ import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
+    AlwaysOnMemoryScope,
     IngestionContentType,
     IngestionStatus,
     MemoryEntity,
@@ -32,6 +33,9 @@ interface IngestTextInput {
     text: string;
     source?: string;
     category?: AlwaysOnMemoryCategory;
+    sourceSessionId?: string;
+    sourceProjectId?: string;
+    memoryScope?: AlwaysOnMemoryScope;
 }
 
 interface IngestFileInput {
@@ -103,7 +107,14 @@ export class MemoryIngestionPipeline {
      * @returns Ingestion result with memory ID if successful
      */
     async ingestText(userId: string, input: IngestTextInput): Promise<IngestResult> {
-        const { text, source = 'user_input', category } = input;
+        const {
+            text,
+            source = 'user_input',
+            category,
+            sourceSessionId,
+            sourceProjectId,
+            memoryScope = 'global',
+        } = input;
 
         if (!text.trim()) {
             return { success: false, error: 'Empty text content' };
@@ -127,7 +138,10 @@ export class MemoryIngestionPipeline {
 
         try {
             // Step 1: Deduplication check
-            const isDuplicate = await this.checkDuplicate(userId, text);
+            const isDuplicate = await this.checkDuplicate(userId, text, {
+                sourceSessionId,
+                memoryScope,
+            });
             if (isDuplicate) {
                 await this.updateIngestionEvent(userId, eventId, {
                     status: 'skipped',
@@ -156,6 +170,10 @@ export class MemoryIngestionPipeline {
                 topics: extracted.topics,
                 importance: extracted.importance,
                 source: source as MemorySource,
+                sourceSessionId,
+                sourceProjectId,
+                memoryScope,
+                promotedToGlobal: false,
                 sourceFileName: source !== 'user_input' ? source : undefined,
                 embedding,
                 tags: extracted.topics,
@@ -298,7 +316,8 @@ export class MemoryIngestionPipeline {
     async ingestFromSession(
         userId: string,
         messages: Array<{ role: string; text: string }>,
-        sessionId: string
+        sessionId: string,
+        options?: { projectId?: string; memoryScope?: AlwaysOnMemoryScope }
     ): Promise<IngestResult[]> {
         if (messages.length === 0) return [];
 
@@ -359,11 +378,15 @@ export class MemoryIngestionPipeline {
 
             // Ingest each extracted memory
             const results: IngestResult[] = [];
+            const memoryScope = options?.memoryScope ?? 'global';
             for (const mem of extractedMemories.slice(0, 10)) { // Cap at 10 per session
                 const result = await this.ingestText(userId, {
                     text: mem.content,
                     source: `session:${sessionId}`,
                     category: mem.category,
+                    sourceSessionId: sessionId,
+                    sourceProjectId: options?.projectId,
+                    memoryScope,
                 });
                 results.push(result);
             }
@@ -563,6 +586,8 @@ export class MemoryIngestionPipeline {
             sourceProjectId: data.sourceProjectId || null,
             sourceFileName: data.sourceFileName || null,
             sourceMimeType: data.sourceMimeType || null,
+            memoryScope: data.memoryScope || 'global',
+            promotedToGlobal: data.promotedToGlobal ?? false,
             createdAt: now,
             updatedAt: now,
             lastAccessedAt: now,
@@ -577,12 +602,14 @@ export class MemoryIngestionPipeline {
         };
 
         const docRef = await addDoc(memoryRef, docData);
-        
-        // SYNC TO MEM0
-        try {
-            await memoryBankService.addMemory(userId, docData.summary || docData.content);
-        } catch (error) {
-            logger.warn('[MemoryIngestionPipeline] Failed to sync to MemoryBank:', error);
+
+        // SYNC TO MEM0 — room-scoped memories remain isolated until explicitly promoted
+        if (docData.memoryScope !== 'room') {
+            try {
+                await memoryBankService.addMemory(userId, docData.summary || docData.content);
+            } catch (error) {
+                logger.warn('[MemoryIngestionPipeline] Failed to sync to MemoryBank:', error);
+            }
         }
 
         return docRef.id;
@@ -591,7 +618,11 @@ export class MemoryIngestionPipeline {
     /**
      * Check if similar content already exists in memory to prevent duplicates.
      */
-    private async checkDuplicate(userId: string, text: string): Promise<boolean> {
+    private async checkDuplicate(
+        userId: string,
+        text: string,
+        scope?: { sourceSessionId?: string; memoryScope?: AlwaysOnMemoryScope }
+    ): Promise<boolean> {
         try {
             const memoryRef = collection(db, 'users', userId, 'alwaysOnMemories');
             // Check last 50 memories for exact or near-exact content match
@@ -607,6 +638,16 @@ export class MemoryIngestionPipeline {
 
             for (const doc of snapshot.docs) {
                 const existing = doc.data();
+                const existingIsUnpromotedRoom = existing.memoryScope === 'room' && existing.promotedToGlobal !== true;
+                // Keep unpromoted room-scoped memories isolated from cross-room and global deduplication
+                if (scope?.memoryScope === 'room' && scope.sourceSessionId) {
+                    const sameRoom = existing.sourceSessionId === scope.sourceSessionId;
+                    if (!sameRoom && existingIsUnpromotedRoom) {
+                        continue;
+                    }
+                } else if (existingIsUnpromotedRoom) {
+                    continue;
+                }
                 const existingContent = (existing.content || '').toLowerCase().trim();
                 const existingRaw = (existing.rawText || '').toLowerCase().trim();
 

@@ -12,7 +12,7 @@
 
 import {
     Activity, BarChart, Book, Briefcase, Building, CalendarDays, Camera, Clapperboard, ClipboardList,
-    DollarSign, FileText, FolderOpen, Gem, History, LayoutDashboard, LayoutGrid, Library, Mic, Monitor,
+    DollarSign, FileText, FolderOpen, Gem, History, LayoutDashboard, LayoutGrid, Library, MessagesSquare, Mic, Monitor,
     Music, Palette, PenTool, Scale, Server, Share2, Shield, ShoppingBag, Smartphone, Star, StickyNote,
     Target, Terminal, Users, type LucideIcon,
 } from 'lucide-react';
@@ -102,6 +102,7 @@ const REGISTRY: Record<ModuleId, ModuleRegistryEntry> = {
     // Intelligence & Automations
     'workflow': { id: 'workflow', label: 'Workflow Builder', group: 'Intelligence & Automations', icon: Book },
     'knowledge': { id: 'knowledge', label: 'Knowledge Base', group: 'Intelligence & Automations', icon: Book },
+    'meeting-rooms': { id: 'meeting-rooms', label: 'Meeting Rooms', group: 'Intelligence & Automations', icon: MessagesSquare },
     // Tools
     'dashboard': { id: 'dashboard', label: 'Home', group: 'Tools', icon: LayoutDashboard },
     'files': { id: 'files', label: 'Files', group: 'Tools', icon: FolderOpen },

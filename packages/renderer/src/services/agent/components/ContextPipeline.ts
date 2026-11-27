@@ -81,12 +81,16 @@ export class ContextPipeline {
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
         const agentId = stateContext.activeModule || 'generalist';
+        const roomRecallOptions = stateContext.meetingRoomSessionId
+            ? { roomSessionId: stateContext.meetingRoomSessionId }
+            : undefined;
         let recallPending = (userId && isKnowledgeBaseEnabled && earlyRecentContext)
             ? readOptionalContext('memory recall', () => bigBrainEngine.assembleContext(
                 userId,
                 agentId,
                 earlyRecentContext,
-                stateContext.projectId
+                stateContext.projectId,
+                roomRecallOptions
             ), 3_500, signal)
             : undefined;
         recallPending?.catch(() => undefined);
@@ -103,7 +107,8 @@ export class ContextPipeline {
                 userId,
                 agentId,
                 recentContext,
-                stateContext.projectId
+                stateContext.projectId,
+                roomRecallOptions
             ), 3_500, signal);
             recallPending.catch(() => undefined);
         }
@@ -143,6 +148,11 @@ export class ContextPipeline {
 
                 // Format into XML block for prompt injection
                 autoRecallBlock = bigBrainEngine.formatForPrompt(bigBrainContext);
+                if (stateContext.meetingRoomBrief && stateContext.meetingRoomBrief.trim()) {
+                    const safeTitle = (stateContext.meetingRoomTitle || 'Meeting Room').replace(/"/g, '&quot;');
+                    const briefBlock = `<meeting_room_brief title="${safeTitle}">\n${stateContext.meetingRoomBrief.trim()}\n</meeting_room_brief>`;
+                    autoRecallBlock = autoRecallBlock ? `${briefBlock}\n${autoRecallBlock}` : briefBlock;
+                }
 
                 // Extract individual components for backward compatibility
                 userAlignmentRules = bigBrainContext.alignmentRules;

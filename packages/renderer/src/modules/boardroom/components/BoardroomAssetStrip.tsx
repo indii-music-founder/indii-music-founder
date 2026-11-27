@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { isSafeExternalAssetUrl } from '@/modules/boardroom/utils/boardroomUrls';
+import { projectBucketMatches } from '@/core/constants';
 
 /**
  * BoardroomAssetStrip — a horizontal strip of the artist's most recent
@@ -29,7 +30,21 @@ function AssetIcon({ type }: { type: HistoryItem['type'] }) {
     }
 }
 
-export const BoardroomAssetStrip: React.FC = () => {
+export interface BoardroomAssetStripProps {
+    filterSessionId?: string | null;
+    filterProjectId?: string | null;
+    assetScope?: 'room' | 'project';
+    onAssetScopeChange?: (scope: 'room' | 'project') => void;
+    onInspectInWorkbench?: (itemId: string) => void;
+}
+
+export const BoardroomAssetStrip: React.FC<BoardroomAssetStripProps> = ({
+    filterSessionId,
+    filterProjectId,
+    assetScope = 'room',
+    onAssetScopeChange,
+    onInspectInWorkbench,
+} = {}) => {
     const { generatedHistory, openImageInStudio, openBoardroomWorkbench } = useStore(
         useShallow(state => ({
             generatedHistory: state.generatedHistory || [],
@@ -40,9 +55,17 @@ export const BoardroomAssetStrip: React.FC = () => {
     const toast = useToast();
     const [previewItem, setPreviewItem] = useState<HistoryItem | null>(null);
 
-    const assets = generatedHistory
-        .filter(item => item.url && item.url.startsWith('data:image') === false)
-        .slice(0, MAX_ASSETS);
+    const eligibleHistory = generatedHistory.filter(
+        item => item.url && item.url.startsWith('data:image') === false
+    );
+    const projectAssets = filterSessionId && filterProjectId
+        ? eligibleHistory.filter(item => projectBucketMatches(item.projectId, filterProjectId))
+        : eligibleHistory;
+    const roomAssets = filterSessionId
+        ? eligibleHistory.filter(item => item.sessionId === filterSessionId)
+        : eligibleHistory;
+    const isRoomScoped = Boolean(filterSessionId) && assetScope === 'room';
+    const assets = (isRoomScoped ? roomAssets : projectAssets).slice(0, MAX_ASSETS);
 
     const closePreview = useCallback(() => setPreviewItem(null), []);
     const previewRef = useModalAccessibility(Boolean(previewItem) && assets.length > 0, closePreview);
@@ -93,17 +116,51 @@ export const BoardroomAssetStrip: React.FC = () => {
         }
     }, [toast]);
 
-    if (assets.length === 0) return null;
+    if (assets.length === 0 && !filterSessionId) return null;
+    if (eligibleHistory.length === 0) return null;
 
     return (
         <div className="shrink-0 border-b border-white/5 px-4 py-2 bg-white/[0.02]">
-            <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                 <ImageIcon size={11} className="text-indigo-400" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                    Recent Assets
+                    {filterSessionId ? 'Room Assets' : 'Recent Assets'}
                 </span>
                 <span className="text-[10px] text-white/20 ml-1">(click to preview)</span>
+                {filterSessionId && onAssetScopeChange && (
+                    <div className="ml-auto flex items-center gap-1 bg-black/40 p-0.5 rounded-md border border-white/10">
+                        <button
+                            type="button"
+                            onClick={() => onAssetScopeChange('room')}
+                            data-testid="asset-scope-room-btn"
+                            className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                                assetScope === 'room'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-white/50 hover:text-white'
+                            }`}
+                        >
+                            This Room ({roomAssets.length})
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onAssetScopeChange('project')}
+                            data-testid="asset-scope-project-btn"
+                            className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                                assetScope === 'project'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-white/50 hover:text-white'
+                            }`}
+                        >
+                            All Project ({projectAssets.length})
+                        </button>
+                    </div>
+                )}
             </div>
+            {assets.length === 0 ? (
+                <p className="text-[11px] text-white/35 italic py-1" data-testid="room-assets-empty-note">
+                    No assets created in this room yet. Switch to All Project to browse project assets.
+                </p>
+            ) : (
             <div className="flex gap-2 overflow-x-auto pb-1" data-testid="boardroom-asset-strip">
                 {assets.map(item => (
                     <div
@@ -151,6 +208,7 @@ export const BoardroomAssetStrip: React.FC = () => {
                     </div>
                 ))}
             </div>
+            )}
 
             {/* Enlarged in-place preview (lightbox) */}
             {previewItem && (
@@ -217,7 +275,9 @@ export const BoardroomAssetStrip: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    if (openBoardroomWorkbench) {
+                                    if (onInspectInWorkbench) {
+                                        onInspectInWorkbench(previewItem.id);
+                                    } else if (openBoardroomWorkbench) {
                                         openBoardroomWorkbench({ kind: 'asset', itemId: previewItem.id }, 'split');
                                     }
                                     setPreviewItem(null);
