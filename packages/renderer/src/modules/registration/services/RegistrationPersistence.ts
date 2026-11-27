@@ -1,4 +1,4 @@
-import type { OrgId } from '../types';
+import type { OrgId } from '@/modules/registration/types';
 import { logger } from '@/utils/logger';
 
 /**

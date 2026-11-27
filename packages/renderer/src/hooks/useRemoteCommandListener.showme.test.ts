@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { resolveShowMeResponse } from './useRemoteCommandListener';
+import { resolveShowMeResponse } from '@/hooks/useRemoteCommandListener';
 import type { HistoryItem } from '@/core/types/history';
 
 const makeItem = (over: Partial<HistoryItem>): HistoryItem => ({

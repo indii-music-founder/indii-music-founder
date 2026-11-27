@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
-import ProductCard from './ProductCard';
+import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { Product } from '@/services/marketplace/types';
 
 // Mock dependencies

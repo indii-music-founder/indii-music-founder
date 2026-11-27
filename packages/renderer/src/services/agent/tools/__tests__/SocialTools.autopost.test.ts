@@ -5,7 +5,7 @@ vi.mock('@/services/marketing/SocialAutoPosterService', () => ({
     socialAutoPosterService: { queuePost },
 }));
 
-import { SocialTools } from '../SocialTools';
+import { SocialTools } from '@/services/agent/tools/SocialTools';
 
 const args = {
     videoUrl: 'https://example.com/v.mp4',

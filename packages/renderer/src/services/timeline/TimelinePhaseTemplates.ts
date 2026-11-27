@@ -16,7 +16,7 @@
 import type {
     TimelineTemplate,
     TimelineTemplateId,
-} from './TimelineTypes';
+} from '@/services/timeline/TimelineTypes';
 
 // ============================================================================
 // Single Release — 8 Week Campaign

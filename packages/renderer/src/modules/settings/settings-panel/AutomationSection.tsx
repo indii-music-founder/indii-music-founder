@@ -9,7 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { MousePointerClick, ShieldAlert, Target, ShieldCheck, Laptop2, Plus, X } from 'lucide-react';
-import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
+import { SectionHeader, SettingRow, Toggle } from '@/modules/settings/settings-panel/SettingsShared';
 import { useToast } from '@/core/context/ToastContext';
 import { artistOperatingProfileService } from '@/services/agent/governance/ArtistOperatingProfileService';
 import { DEFAULT_ARTIST_OPERATING_PROFILE, type ArtistOperatingProfile } from '@indii/shared';

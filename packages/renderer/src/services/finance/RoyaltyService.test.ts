@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
 vi.mock('@/services/firebase', () => ({ functions: { project: 'test' } }));
 
-import { RoyaltyService } from './RoyaltyService';
+import { RoyaltyService } from '@/services/finance/RoyaltyService';
 
 describe('RoyaltyService server-owned compatibility boundary', () => {
     beforeEach(() => {

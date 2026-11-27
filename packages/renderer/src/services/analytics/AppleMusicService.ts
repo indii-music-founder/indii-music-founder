@@ -34,7 +34,7 @@
 
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
-import type { PlatformData, StreamDataPoint } from './types';
+import type { PlatformData, StreamDataPoint } from '@/services/analytics/types';
 
 // ── MusicKit JS type declarations ─────────────────────────────────────────────
 // MusicKit is loaded via CDN — not an npm package

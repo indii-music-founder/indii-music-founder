@@ -1,6 +1,6 @@
 import { ExtendedGoldenMetadata, GoldenMetadata } from '@/services/metadata/types';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
-import { RecordingInformationMessage, RecordingInformationContent, RecordingInformationSoundRecording, RecordingInformationContributor } from './types/rin';
+import { RecordingInformationMessage, RecordingInformationContent, RecordingInformationSoundRecording, RecordingInformationContributor } from '@/services/distribution/proprietary-ingestion/types/rin';
 
 /**
  * Optional session/studio fields available on tracks for RecordingInformation messages.

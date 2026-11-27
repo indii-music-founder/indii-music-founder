@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { CatalogTrack } from '../types';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 /**
  * ISSUE-970: when the external ASCAP submission succeeds (a real
@@ -19,11 +19,11 @@ vi.mock('@/services/rights/PRORightsService', () => ({
     registerWithASCAP: mocks.mockRegisterWithASCAP,
 }));
 
-vi.mock('../services/RegistrationPersistence', () => ({
+vi.mock('@/modules/registration/services/RegistrationPersistence', () => ({
     persistOrgRecord: mocks.mockPersistOrgRecord,
 }));
 
-import { AscapAdapter } from './AscapAdapter';
+import { AscapAdapter } from '@/modules/registration/adapters/AscapAdapter';
 
 function makeTrack(): CatalogTrack {
     return {

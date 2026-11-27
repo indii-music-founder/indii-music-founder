@@ -8,8 +8,8 @@
  */
 import type { BrandKit } from '@/types/User';
 import type { Box2D } from '@/services/image/ImageAnalysisService';
-import { deltaE2000, extractDominantColors, srgbToLab, type ColorCluster } from './ColorExtraction';
-import { evaluateAesthetic, hasAestheticIdentity, type AestheticAssessment } from './AestheticVisionEngine';
+import { deltaE2000, extractDominantColors, srgbToLab, type ColorCluster } from '@/services/brand/ColorExtraction';
+import { evaluateAesthetic, hasAestheticIdentity, type AestheticAssessment } from '@/services/brand/AestheticVisionEngine';
 import { logger } from '@/utils/logger';
 
 export type ComplianceViolationType = 'color' | 'typography' | 'logo' | 'safe-zone' | 'aesthetic';

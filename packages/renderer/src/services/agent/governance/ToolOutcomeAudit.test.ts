@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { httpsCallable } from 'firebase/functions';
-import { recordToolOutcome } from './ToolOutcomeAudit';
+import { recordToolOutcome } from '@/services/agent/governance/ToolOutcomeAudit';
 
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }));
 vi.mock('@/services/firebase', () => ({ functions: {} }));

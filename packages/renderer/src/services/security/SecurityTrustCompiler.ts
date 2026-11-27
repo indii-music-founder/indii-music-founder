@@ -1,6 +1,6 @@
-import type { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
-import { createHarnessRun } from '../business-harness/types';
-import type { HarnessRun, HarnessAgentBrief, HarnessApprovalGate, HarnessFinding, HarnessSeverity } from '../business-harness/types';
+import type { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
+import { createHarnessRun } from '@/services/business-harness/types';
+import type { HarnessRun, HarnessAgentBrief, HarnessApprovalGate, HarnessFinding, HarnessSeverity } from '@/services/business-harness/types';
 
 export interface SecurityTrustInput {
   actionType: 'credentials' | 'spending' | 'delivery' | 'biometrics' | 'evidence' | 'agent_permissions';

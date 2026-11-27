@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Crown, Star, Users, TrendingUp, Gift, Send, ChevronUp, Search, Loader2 } from 'lucide-react';
-import { useSuperfans, FanTier } from '../hooks/useSuperfans';
+import { useSuperfans, FanTier } from '@/modules/publicist/hooks/useSuperfans';
 
 // Fans are loaded from the real contacts collection in Firestore.
 

@@ -7,7 +7,7 @@ import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandS
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ProductType, CatalogProductSchema } from '../types';
+import { ProductType, CatalogProductSchema } from '@/modules/merchandise/types';
 import { logger } from '@/utils/logger';
 import { judgeMerchPrintViability, type MerchPrintVerdict } from '@/config/typesafeJudgments';
 

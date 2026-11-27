@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { RoadMode } from './RoadMode';
+import { RoadMode } from '@/modules/touring/components/RoadMode';
 
 const mocks = vi.hoisted(() => ({
     searchNearbyPlaces: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@/core/context/VoiceContext', () => ({
     }),
 }));
 
-vi.mock('../hooks/useTouring', () => ({
+vi.mock('@/modules/touring/hooks/useTouring', () => ({
     useTouring: () => ({
         currentItinerary: {
             stops: [{ id: 'stop-1', city: 'Detroit, MI', venue: 'Magic Stick', date: '2099-06-15' }],

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BoardroomAssetStrip } from './BoardroomAssetStrip';
+import { BoardroomAssetStrip } from '@/modules/boardroom/components/BoardroomAssetStrip';
 
 const mockStore = vi.hoisted(() => ({
     openImageInStudio: vi.fn(),

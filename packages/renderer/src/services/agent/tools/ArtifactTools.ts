@@ -1,8 +1,8 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction, FunctionDeclaration } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, FunctionDeclaration } from '@/services/agent/types';
 import { auth } from '@/services/firebase';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { webArtifactStorage } from '../WebArtifactStorage';
+import { webArtifactStorage } from '@/services/agent/WebArtifactStorage';
 
 export const ArtifactTools = {
     /**

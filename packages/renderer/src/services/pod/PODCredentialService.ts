@@ -11,7 +11,7 @@
 
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { logger } from '@/utils/logger';
-import type { PODProvider } from './PrintOnDemandService';
+import type { PODProvider } from '@/services/pod/PrintOnDemandService';
 
 interface Credentials {
     [key: string]: string | undefined;

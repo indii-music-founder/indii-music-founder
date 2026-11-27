@@ -1,8 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import EditDefinitionsPanel from '../EditDefinitionsPanel';
-import { STUDIO_COLORS } from '../../constants';
+import EditDefinitionsPanel from '@/modules/creative/components/EditDefinitionsPanel';
+import { STUDIO_COLORS } from '@/modules/creative/constants';
 
 const mockUseStore = vi.fn();
 const mockToast = {

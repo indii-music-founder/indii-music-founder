@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreativeAgent } from './CreativeAgent';
+import { CreativeAgent } from '@/services/agent/definitions/CreativeAgent';
 
 // Mock raw prompt import
 vi.mock('@agents/creative/prompt.md?raw', () => ({
@@ -7,7 +7,7 @@ vi.mock('@agents/creative/prompt.md?raw', () => ({
 }));
 
 // Mock DirectorTools
-vi.mock('../tools/DirectorTools', () => ({
+vi.mock('@/services/agent/tools/DirectorTools', () => ({
     DirectorTools: {
         generate_image: vi.fn(),
         batch_edit_images: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('../tools/DirectorTools', () => ({
     }
 }));
 
-vi.mock('../tools/CanvasTools', () => ({
+vi.mock('@/services/agent/tools/CanvasTools', () => ({
     CanvasTools: {
         canvas_open_image: vi.fn(),
         canvas_add_layer: vi.fn(),
@@ -46,32 +46,32 @@ vi.mock('../tools/CanvasTools', () => ({
     }
 }));
 
-vi.mock('../tools/VideoTools', () => ({
+vi.mock('@/services/agent/tools/VideoTools', () => ({
     VideoTools: {
         animate_still: vi.fn(),
         interpolate_sequence: vi.fn(),
     }
 }));
 
-vi.mock('../tools/VideoProjectTools', () => ({
+vi.mock('@/services/agent/tools/VideoProjectTools', () => ({
     VideoProjectTools: { queue_video_render: vi.fn() }
 }));
 
-vi.mock('../tools/McpTools', () => ({
+vi.mock('@/services/agent/tools/McpTools', () => ({
     McpTools: {
         queue_release_canvas_render: vi.fn(),
         audit_asset_resolutions: vi.fn(),
     }
 }));
 
-vi.mock('../tools/StorageTools', () => ({
+vi.mock('@/services/agent/tools/StorageTools', () => ({
     StorageTools: {
         list_files: vi.fn(),
         search_files: vi.fn(),
     }
 }));
 
-vi.mock('../tools/EditorTools', () => ({
+vi.mock('@/services/agent/tools/EditorTools', () => ({
     EditorTools: {
         video_list_renderable_assets: vi.fn(),
         video_plan_sequence: vi.fn(),

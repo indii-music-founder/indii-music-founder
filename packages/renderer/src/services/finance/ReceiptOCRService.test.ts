@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ReceiptOCRService } from './ReceiptOCRService';
+import { ReceiptOCRService } from '@/services/finance/ReceiptOCRService';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { LiveConversationButton } from './LiveConversationButton';
+import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';
 import { useStore } from '@/core/store';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 

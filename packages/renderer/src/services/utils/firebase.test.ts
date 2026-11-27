@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.unmock('firebase/firestore');
 import { arrayUnion, increment, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { cleanFirestoreData } from './firebase';
+import { cleanFirestoreData } from '@/services/utils/firebase';
 
 describe('cleanFirestoreData', () => {
     it('removes undefined values without copying Firestore sentinels into plain objects', () => {

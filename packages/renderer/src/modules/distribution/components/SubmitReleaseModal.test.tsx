@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { SubmitReleaseModal } from './SubmitReleaseModal';
+import { SubmitReleaseModal } from '@/modules/distribution/components/SubmitReleaseModal';
 
 const { mockListCanonicalTracks, mockSubmitRelease, mockCanRunDeliveryPipeline, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile, mockGeneratedHistory } = vi.hoisted(() => ({
     mockListCanonicalTracks: vi.fn(),

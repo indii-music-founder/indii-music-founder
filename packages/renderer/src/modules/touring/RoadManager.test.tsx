@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import RoadManager from './RoadManager';
-import { useTouring } from './hooks/useTouring';
+import RoadManager from '@/modules/touring/RoadManager';
+import { useTouring } from '@/modules/touring/hooks/useTouring';
 
 const mocks = vi.hoisted(() => ({
     toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
@@ -37,14 +37,14 @@ vi.mock('@/services/firebase', () => ({
     functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
     getFirebaseAI: vi.fn(() => ({})),
 }));
-vi.mock('./hooks/useTouring', () => ({ useTouring: vi.fn() }));
-vi.mock('./components/TourMap', () => ({
+vi.mock('@/modules/touring/hooks/useTouring', () => ({ useTouring: vi.fn() }));
+vi.mock('@/modules/touring/components/TourMap', () => ({
     TourMap: (props: Record<string, unknown>) => {
         mocks.tourMapProps.push(props);
         return <div data-testid="tour-map" />;
     },
 }));
-vi.mock('./components/TourRouteOptimizer', () => ({
+vi.mock('@/modules/touring/components/TourRouteOptimizer', () => ({
     TourRouteOptimizer: () => <div data-testid="tour-route-optimizer" />,
 }));
 vi.mock('@/utils/logger', () => ({ logger: mocks.logger }));

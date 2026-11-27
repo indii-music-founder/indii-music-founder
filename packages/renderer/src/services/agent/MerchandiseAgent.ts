@@ -1,9 +1,9 @@
-import { BaseAgent } from './BaseAgent';
+import { BaseAgent } from '@/services/agent/BaseAgent';
 import { z } from 'zod';
-import { FunctionDeclaration } from './types';
+import { FunctionDeclaration } from '@/services/agent/types';
 import systemPrompt from '@agents/merchandise/prompt.md?raw';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from './tools/DomainTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 const merchandiseRetrievalConfig = {
     'merchandise': { path: 'merchandise', requiresUserIdFilter: true },
@@ -305,11 +305,11 @@ export class MerchandiseAgent extends BaseAgent {
             functions: {
                 ...merchandiseRetrievalTools,
                 generate_mockup: async (args, context) => {
-                    const { CommerceTools } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    const { CommerceTools } = await importWithRetry(() => import('@/services/agent/tools/CommerceTools'));
                     return CommerceTools.generate_mockup(args as Parameters<typeof CommerceTools.generate_mockup>[0], context);
                 },
                 mockup_merchandise: async (args, context) => {
-                    const { CommerceTools } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    const { CommerceTools } = await importWithRetry(() => import('@/services/agent/tools/CommerceTools'));
                     return CommerceTools.mockup_merchandise(args as Parameters<typeof CommerceTools.mockup_merchandise>[0], context);
                 },
                 search_assets: async (args, _context) => {
@@ -371,7 +371,7 @@ export class MerchandiseAgent extends BaseAgent {
                         };
                     }
 
-                    const { resolveAgentAssetUrl } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    const { resolveAgentAssetUrl } = await importWithRetry(() => import('@/services/agent/tools/CommerceTools'));
                     const resolvedAssetUrl = (await resolveAgentAssetUrl(assetUrl, context)) ?? assetUrl.trim();
                     const trimmedUrl = resolvedAssetUrl.trim();
                     const isDataUrl = trimmedUrl.startsWith('data:');

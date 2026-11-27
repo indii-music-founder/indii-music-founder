@@ -16,7 +16,7 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 
-import { renderVideoProjectLocally } from './LocalVideoProjectRenderer';
+import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 
 export interface RelayJobSnapshot {
     jobId: string;

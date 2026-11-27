@@ -22,7 +22,7 @@ import {
   SocialStats,
   ScheduledPost,
   CampaignStatus,
-} from "./types";
+} from "@/services/social/types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
 import { validateInstagramPublishingPayload, type InstagramPublishingPayload } from '@indii/shared';
 

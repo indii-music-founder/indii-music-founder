@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ ref: vi.fn((_storage, path) => path), upload: vi.fn(), get: vi.fn(), remove: vi.fn() }));
 vi.mock('firebase/storage', () => ({ ref: mocks.ref, uploadString: mocks.upload, getBytes: mocks.get, deleteObject: mocks.remove }));
 vi.mock('@/services/firebase', () => ({ storage: {} }));
-import { deleteSessionAttachment, loadSessionAttachment, sessionAttachmentPath, uploadSessionAttachment, storeSessionAttachments, restoreSessionAttachments } from './SessionAttachmentStorage';
+import { deleteSessionAttachment, loadSessionAttachment, sessionAttachmentPath, uploadSessionAttachment, storeSessionAttachments, restoreSessionAttachments } from '@/services/agent/SessionAttachmentStorage';
 
 describe('session attachment storage boundary', () => {
     beforeEach(() => { vi.clearAllMocks(); mocks.upload.mockResolvedValue({}); mocks.remove.mockResolvedValue(undefined); });

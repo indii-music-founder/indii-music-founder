@@ -2,11 +2,11 @@
 import { e2eEncryptionService, MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { DigitalHandshake } from '@/services/agent/governance/DigitalHandshake';
 import { Directive } from '@/services/directive/DirectiveTypes';
-import { AgentCard, AgentCardSchema } from './AgentCard';
-import { A2ATransport, RouterCallContext } from './transport/A2ATransport';
-import { LoopbackA2ATransport } from './transport/LoopbackA2ATransport';
-import { HttpA2ATransport } from './transport/HttpA2ATransport';
-import { resolveA2AConfig, invalidateA2AConfig, MY_AGENT_ID } from './A2AConfig';
+import { AgentCard, AgentCardSchema } from '@/services/agent/a2a/AgentCard';
+import { A2ATransport, RouterCallContext } from '@/services/agent/a2a/transport/A2ATransport';
+import { LoopbackA2ATransport } from '@/services/agent/a2a/transport/LoopbackA2ATransport';
+import { HttpA2ATransport } from '@/services/agent/a2a/transport/HttpA2ATransport';
+import { resolveA2AConfig, invalidateA2AConfig, MY_AGENT_ID } from '@/services/agent/a2a/A2AConfig';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 

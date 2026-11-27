@@ -1,6 +1,6 @@
 import { GeminiRetrieval, GeminiFile } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
-import { knowledgeRetrievalService, FrontendKnowledgeDoc } from './KnowledgeRetrievalService';
+import { knowledgeRetrievalService, FrontendKnowledgeDoc } from '@/modules/knowledge/services/KnowledgeRetrievalService';
 import { logger } from '@/utils/logger';
 import { WikiStorageAdapter } from '@/services/agent/memory/WikiStorageAdapter';
 import { auth } from '@/services/firebase';

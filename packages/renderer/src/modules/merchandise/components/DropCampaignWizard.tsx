@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Zap, Clock, Users, CheckCircle2, Flame, Lock } from 'lucide-react';
-import { MerchProduct } from '../types';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 

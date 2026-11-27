@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
-import AudioPIPPlayer from './AudioPIPPlayer';
+import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { useStore } from '@/core/store';
 import { events } from '@/core/events';
 

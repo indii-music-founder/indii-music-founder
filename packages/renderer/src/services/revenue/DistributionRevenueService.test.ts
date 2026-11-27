@@ -45,7 +45,7 @@ vi.mock('@/services/distribution/adapters/CDBabyAdapter', () => {
     };
 });
 
-import { DistributionRevenueService } from './DistributionRevenueService';
+import { DistributionRevenueService } from '@/services/revenue/DistributionRevenueService';
 import type { DateRange, DistributorEarnings, DistributorId, DistributorCredentials } from '@/services/distribution/types/distributor';
 
 describe('DistributionRevenueService', () => {

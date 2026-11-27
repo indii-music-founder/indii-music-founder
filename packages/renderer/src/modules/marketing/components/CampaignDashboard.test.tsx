@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import CampaignDashboard from './CampaignDashboard';
+import CampaignDashboard from '@/modules/marketing/components/CampaignDashboard';
 import { MarketingService } from '@/services/marketing/MarketingService';
 
 const { mockToastError } = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ const TEST_CAMPAIGN = { id: 'campaign-1', title: 'Test Campaign', posts: [] };
 const AI_GENERATED_CAMPAIGN = { title: 'AI Generated Campaign', posts: [] };
 
 // Mock CampaignManager as it has its own complexities
-vi.mock('./CampaignManager', () => ({
+vi.mock('@/modules/marketing/components/CampaignManager', () => ({
     default: ({ selectedCampaign, onCreateNew, onUpdateCampaign, onAIGenerate }: any) => {
         // If selectedCampaign is present, show "Managing: Title"
         // Otherwise show list/empty state which includes "Create New Campaign" button
@@ -80,7 +80,7 @@ vi.mock('./CampaignManager', () => ({
 // Mock IntelligenceCampaignModal to directly exercise handleAISave without
 // driving the full generate-then-create UI flow (already covered in
 // IntelligenceCampaignModal.test.tsx).
-vi.mock('./IntelligenceCampaignModal', () => ({
+vi.mock('@/modules/marketing/components/IntelligenceCampaignModal', () => ({
     default: ({ onSave }: any) => (
         <div data-testid="ai-campaign-modal">
             <button onClick={() => { onSave(AI_GENERATED_CAMPAIGN).catch(() => {}); }}>Trigger AI Save</button>

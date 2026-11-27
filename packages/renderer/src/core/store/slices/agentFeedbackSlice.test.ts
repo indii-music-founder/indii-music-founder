@@ -1,6 +1,6 @@
 import { createStore } from 'zustand/vanilla';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createAgentFeedbackSlice, type AgentFeedbackSlice } from './agentFeedbackSlice';
+import { createAgentFeedbackSlice, type AgentFeedbackSlice } from '@/core/store/slices/agentFeedbackSlice';
 import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 

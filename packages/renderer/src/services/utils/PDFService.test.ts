@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PDFService } from './PDFService';
+import { PDFService } from '@/services/utils/PDFService';
 
 const { getPage, destroy, getDocument } = vi.hoisted(() => ({
     getPage: vi.fn(),

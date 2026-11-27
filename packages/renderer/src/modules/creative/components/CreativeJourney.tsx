@@ -9,10 +9,10 @@ import {
     type CreativeJourneyIntent,
     type CreativeJourneyIntentVerdict,
 } from '@/config/typesafeJudgments';
-import { useVideoEditorStore } from '../video/store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { instantiateQuickWorkflow } from '@/modules/workflow/services/quickWorkflowTemplates';
 
-const CharacterLibrary = lazy(() => import('./CharacterLibrary').then(module => ({ default: module.CharacterLibrary })));
+const CharacterLibrary = lazy(() => import('@/modules/creative/components/CharacterLibrary').then(module => ({ default: module.CharacterLibrary })));
 
 const JOURNEYS: { id: CreativeJourneyIntent; label: string; description: string }[] = [
     { id: 'phone_recording', label: 'Phone recording', description: 'Review a long take or live recording.' },

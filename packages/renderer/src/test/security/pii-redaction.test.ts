@@ -1,13 +1,13 @@
-import '../setup';
+import '@/test/setup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentService } from '../../services/agent/AgentService';
+import { AgentService } from '@/services/agent/AgentService';
 
 const { executeMock } = vi.hoisted(() => ({
     executeMock: vi.fn().mockResolvedValue({ text: 'Agent Response', thoughtSignature: 'mock-sig' })
 }));
 
 // Fix for "is not a constructor" - we must provide a class or constructor function
-vi.mock('../../services/agent/components/AgentExecutor', () => {
+vi.mock('@/services/agent/components/AgentExecutor', () => {
     return {
         AgentExecutor: class {
             execute = executeMock;
@@ -16,7 +16,7 @@ vi.mock('../../services/agent/components/AgentExecutor', () => {
 });
 
 // Also need to mock ContextPipeline and AgentOrchestrator
-vi.mock('../../services/agent/components/ContextPipeline', () => {
+vi.mock('@/services/agent/components/ContextPipeline', () => {
     return {
         ContextPipeline: class {
             buildContext = vi.fn().mockResolvedValue({
@@ -27,7 +27,7 @@ vi.mock('../../services/agent/components/ContextPipeline', () => {
     };
 });
 
-vi.mock('../../services/agent/components/AgentOrchestrator', () => {
+vi.mock('@/services/agent/components/AgentOrchestrator', () => {
     return {
         AgentOrchestrator: class {
             determineOrchestrationPath = vi.fn().mockResolvedValue({ type: 'single', agentId: 'generalist' });
@@ -36,7 +36,7 @@ vi.mock('../../services/agent/components/AgentOrchestrator', () => {
 });
 
 // Mock the store to avoid side effects
-vi.mock('../../core/store', () => {
+vi.mock('@/core/store', () => {
     const messages: any[] = [];
     return {
         serverTimestamp: vi.fn(),
@@ -58,7 +58,7 @@ vi.mock('../../core/store', () => {
 // Mock dependencies from AgentService
 vi.mock('@/utils/logger', () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('../../services/agent/MemoryService', () => ({ memoryService: { saveMemory: vi.fn().mockResolvedValue(true) } }));
-vi.mock('../../services/intelligence/AutonomousIntelligence', () => ({ AutonomousIntelligence: { generateContentStream: vi.fn() } }));
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({ AutonomousIntelligence: { generateContentStream: vi.fn() } }));
 
 describe('🛡️ Shield: PII Redaction Security Test', () => {
     let agentService: AgentService;

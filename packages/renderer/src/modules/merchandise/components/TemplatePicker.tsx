@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { X, Search, LayoutTemplate, Disc3, MapPin, Tag, Music2, Image as ImageIcon, Share2, FileText, Ticket } from 'lucide-react';
-import { templateService, DesignTemplate } from '../templates/DesignTemplates';
+import { templateService, DesignTemplate } from '@/modules/merchandise/templates/DesignTemplates';
 import { cn } from '@/lib/utils';
 
 interface TemplatePickerProps {

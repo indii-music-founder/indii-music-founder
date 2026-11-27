@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentExecutor } from '../AgentExecutor';
-import { TraceService } from '../../observability/TraceService';
-import { agentRegistry } from '../../registry';
+import { AgentExecutor } from '@/services/agent/components/AgentExecutor';
+import { TraceService } from '@/services/agent/observability/TraceService';
+import { agentRegistry } from '@/services/agent/registry';
 
 // Mock dependencies
-vi.mock('../../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn(),
         addStep: vi.fn(),
@@ -13,14 +13,14 @@ vi.mock('../../observability/TraceService', () => ({
     }
 }));
 
-vi.mock('../../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         get: vi.fn(),
         getAsync: vi.fn()
     }
 }));
 
-vi.mock('../../fine-tuned-models', () => ({
+vi.mock('@/services/agent/fine-tuned-models', () => ({
     getFineTunedModel: vi.fn(() => 'mock-model')
 }));
 

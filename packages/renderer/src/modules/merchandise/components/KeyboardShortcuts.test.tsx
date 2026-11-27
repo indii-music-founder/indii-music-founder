@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { KeyboardShortcuts } from '@/modules/merchandise/components/KeyboardShortcuts';
 
 describe('Merchandise keyboard shortcuts dialog', () => {
     it('announces the dialog, focuses its close control, and restores trigger focus', () => {

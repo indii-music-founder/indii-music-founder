@@ -7,13 +7,13 @@ import {
     AgentContext,
     VALID_AGENT_IDS,
     ValidAgentId
-} from '../types';
+} from '@/services/agent/types';
 import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
-import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { TokenEstimator } from '../governance/TokenEstimator';
-import { getFineTunedModel } from '../fine-tuned-models';
-import { extractConfirmedProposalContext, stepsFromBoardroomGraph } from './BoardroomActionPlan';
+import { executionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { TokenEstimator } from '@/services/agent/governance/TokenEstimator';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
+import { extractConfirmedProposalContext, stepsFromBoardroomGraph } from '@/services/agent/orchestration/BoardroomActionPlan';
 
 /**
  * GraphDecompositionService — Dynamic DAG Generator

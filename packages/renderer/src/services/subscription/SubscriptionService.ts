@@ -13,7 +13,7 @@ import { auth, functions } from '@/services/firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import {
   UsageWarningLevel
-} from './types';
+} from '@/services/subscription/types';
 import type {
   Subscription,
   UsageStats,
@@ -21,10 +21,10 @@ import type {
   CheckoutSessionParams,
   CheckoutSessionResponse,
   UsageWarning
-} from './types';
-import { SubscriptionTier, getTierConfig } from './SubscriptionTier';
+} from '@/services/subscription/types';
+import { SubscriptionTier, getTierConfig } from '@/services/subscription/SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
-import { SubscriptionSchema, UsageStatsSchema } from './schemas';
+import { SubscriptionSchema, UsageStatsSchema } from '@/services/subscription/schemas';
 import { logger } from '@/utils/logger';
 
 export class SubscriptionService {

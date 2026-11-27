@@ -5,7 +5,7 @@ import {
     listWorkerIds,
     normalizeBoardroomAgentIds,
 } from '@/services/agent/departments';
-import { BoardroomSlice, createBoardroomSlice, MAX_BOARDROOM_REFERENCED_ASSETS } from './boardroomSlice';
+import { BoardroomSlice, createBoardroomSlice, MAX_BOARDROOM_REFERENCED_ASSETS } from '@/core/store/slices/boardroomSlice';
 
 function createBoardroomStore() {
     return createStore<BoardroomSlice>()(createBoardroomSlice);

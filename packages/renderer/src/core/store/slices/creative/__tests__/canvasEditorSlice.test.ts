@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createCanvasEditorSlice } from '../canvasEditorSlice';
+import { createCanvasEditorSlice } from '@/core/store/slices/creative/canvasEditorSlice';
 import type { RasterLayer } from '@/services/canvas/CanvasDoc';
 
 // Simpler approach: exercise the slice with a tiny zustand store.

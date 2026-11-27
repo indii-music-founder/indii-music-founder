@@ -5,10 +5,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { logger } from '@/utils/logger';
-import { Ingredient } from '../components/IngredientDropZone';
-import { SequenceBlock } from '../components/SequenceTimeline';
-import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
-import { VideoAspectRatioSchema } from '../video/schemas';
+import { Ingredient } from '@/modules/creative/components/IngredientDropZone';
+import { SequenceBlock } from '@/modules/creative/components/SequenceTimeline';
+import { VideoGenerationJob } from '@/modules/creative/components/veo/VideoGenerationProgress';
+import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import { functions, db, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -17,7 +17,7 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { ImageGeneration, type ImageGenerationOptions } from '@/services/image/ImageGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { buildDirectVideoInputManifest } from './directVideoInputs';
+import { buildDirectVideoInputManifest } from '@/modules/creative/hooks/directVideoInputs';
 
 type CallableGenerationError = {
     code?: unknown;

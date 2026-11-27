@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
-import { FirestoreService } from '../FirestoreService';
-import { Directive, DirectiveStatus, AgentRole } from './DirectiveTypes';
+import { FirestoreService } from '@/services/FirestoreService';
+import { Directive, DirectiveStatus, AgentRole } from '@/services/directive/DirectiveTypes';
 
 /**
  * DirectiveService — The execution tracker and goal ancestry manager.

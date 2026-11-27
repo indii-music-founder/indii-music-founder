@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import VoiceTextViewingStage from './VoiceTextViewingStage';
+import VoiceTextViewingStage from '@/modules/mobile-remote/components/VoiceTextViewingStage';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['whileTap', 'initial', 'animate', 'exit', 'transition', 'layoutId', 'layout'];

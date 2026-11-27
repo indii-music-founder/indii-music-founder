@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
-import { LivingPlansTracker } from './LivingPlansTracker';
+import { LivingPlansTracker } from '@/modules/boardroom/components/LivingPlansTracker';
 
 const mocks = vi.hoisted(() => ({
     currentProjectId: 'proj-1' as string | null,

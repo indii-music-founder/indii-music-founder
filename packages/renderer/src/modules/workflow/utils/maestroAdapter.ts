@@ -2,7 +2,7 @@ import { WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
 import { Node, Edge } from 'reactflow';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { v4 as uuidv4 } from 'uuid';
-import { Status } from '../types';
+import { Status } from '@/modules/workflow/types';
 
 const AGENT_DEPARTMENT_MAP: Record<string, { departmentName: string; selectedJobId?: string }> = {
     creative: { departmentName: 'Art Department', selectedJobId: 'art-department-job-0' },

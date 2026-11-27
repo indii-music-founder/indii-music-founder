@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TrashService, FileNodeTrashAdapter } from '../TrashService';
+import { TrashService, FileNodeTrashAdapter } from '@/services/trash/TrashService';
 import { TrashTarget, TrashProvenance } from '@indii/shared';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';

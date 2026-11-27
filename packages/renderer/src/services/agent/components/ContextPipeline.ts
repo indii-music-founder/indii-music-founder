@@ -1,21 +1,21 @@
-import { ContextPreparation } from './ContextPreparation';
-import { readOptionalContext } from './OptionalContext';
-import { ContextResolver } from './ContextResolver';
-import { AgentContext, Directive } from '../types';
+import { ContextPreparation } from '@/services/agent/components/ContextPreparation';
+import { readOptionalContext } from '@/services/agent/components/OptionalContext';
+import { ContextResolver } from '@/services/agent/components/ContextResolver';
+import { AgentContext, Directive } from '@/services/agent/types';
 import { Timestamp } from 'firebase/firestore';
-import { PlanStep } from '../LivingPlanService';
-import { HistoryManager } from './HistoryManager';
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
-import { bigBrainEngine } from '../memory/BigBrainEngine';
-import { livingPlanService } from '../LivingPlanService';
+import { PlanStep } from '@/services/agent/LivingPlanService';
+import { HistoryManager } from '@/services/agent/components/HistoryManager';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { bigBrainEngine } from '@/services/agent/memory/BigBrainEngine';
+import { livingPlanService } from '@/services/agent/LivingPlanService';
 import { logger } from '@/utils/logger';
 import { Logger } from '@/core/logger/Logger';
 import { auth } from '@/services/firebase';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { IdeaParkingService } from '../tools/IdeaParking';
-import { buildAmbitionDialPrompt } from '../builders/AmbitionDialPrompt';
-import { ProductSkillRegistry } from '../skills/ProductSkillRegistry';
-import { artistDirectiveService } from '../skills/ArtistDirectiveService';
+import { IdeaParkingService } from '@/services/agent/tools/IdeaParking';
+import { buildAmbitionDialPrompt } from '@/services/agent/builders/AmbitionDialPrompt';
+import { ProductSkillRegistry } from '@/services/agent/skills/ProductSkillRegistry';
+import { artistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;

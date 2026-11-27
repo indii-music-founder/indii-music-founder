@@ -1,5 +1,5 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
@@ -10,7 +10,7 @@ export const AnalysisTools = {
     analyze_contract: wrapTool('analyze_contract', async (args: { file_data: string, mime_type: string }) => {
         const { creatorProtectionHarnessService } = await importWithRetry(() => import('@/services/creator-protection'));
         const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
-        const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
+        const { getFineTunedModel } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
         const systemPrompt = `You are a senior entertainment attorney reviewing a music industry contract for an independent creator.
 Audit the contract and return valid JSON with this structure:

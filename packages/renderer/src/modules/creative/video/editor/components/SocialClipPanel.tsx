@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { ProjectService } from '@/services/ProjectService';
 import { projectToMetadata } from '@/services/dashboard/projectTypeUtils';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
-import { loadVideoProject, saveVideoProject } from '../../services/VideoProjectPersistenceService';
-import { createSocialClipProject, type SocialFormat } from '../../services/socialClipProject';
-import { CREATIVE_JOURNEY_LIMITS } from '../../../creativeJourney';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { loadVideoProject, saveVideoProject } from '@/modules/creative/video/services/VideoProjectPersistenceService';
+import { createSocialClipProject, type SocialFormat } from '@/modules/creative/video/services/socialClipProject';
+import { CREATIVE_JOURNEY_LIMITS } from '@/modules/creative/creativeJourney';
 
 export function SocialClipPanel({ flushSave }: { flushSave: () => Promise<void> }) {
     const project = useVideoEditorStore(state => state.project);

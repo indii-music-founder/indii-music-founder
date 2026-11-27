@@ -14,7 +14,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { CostControlService } from '@/services/billing/CostControlService';
-import { normalizeEditImageResult } from './editResponse';
+import { normalizeEditImageResult } from '@/services/image/editResponse';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 // ============================================================================
 // TYPES

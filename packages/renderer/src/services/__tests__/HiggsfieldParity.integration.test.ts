@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EditingService } from '../image/EditingService';
-import { ImageAnalysisService } from '../image/ImageAnalysisService';
-import { VideoGenerationService } from '../video/VideoGenerationService';
+import { EditingService } from '@/services/image/EditingService';
+import { ImageAnalysisService } from '@/services/image/ImageAnalysisService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({
@@ -20,7 +20,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: () => mockHttpsCallable
 }));
 
-vi.mock('../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateStructuredData: vi.fn()
     }
@@ -34,13 +34,13 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
     }
 }));
 
-vi.mock('../creative/CreativeStorageService', () => ({
+vi.mock('@/services/creative/CreativeStorageService', () => ({
     CreativeStorageService: {
         uploadReferenceMedia: vi.fn().mockResolvedValue('https://fake-storage-url/image.png')
     }
 }));
 
-import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 describe.skip('Higgsfield Parity Integration Tests', () => {
     const mockImage = { mimeType: 'image/png', data: 'base64testdata' };

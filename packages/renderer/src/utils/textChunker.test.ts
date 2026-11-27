@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { smartChunk } from './textChunker';
+import { smartChunk } from '@/utils/textChunker';
 
 describe('smartChunk', () => {
   it('should return an empty array for empty input', () => {

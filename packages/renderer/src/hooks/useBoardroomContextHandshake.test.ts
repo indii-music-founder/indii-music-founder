@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { publishBoardroomContextUpdate } from './useBoardroomContextHandshake';
+import { publishBoardroomContextUpdate } from '@/hooks/useBoardroomContextHandshake';
 import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
 
 describe('publishBoardroomContextUpdate', () => {

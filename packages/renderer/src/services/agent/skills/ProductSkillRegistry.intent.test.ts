@@ -20,7 +20,7 @@ vi.mock('@/config/featureFlags', () => ({
     FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' },
 }));
 
-import { ProductSkillRegistry, parseSkillDocument } from './ProductSkillRegistry';
+import { ProductSkillRegistry, parseSkillDocument } from '@/services/agent/skills/ProductSkillRegistry';
 
 const RAW_SKILL = `---
 name: digital_distribution

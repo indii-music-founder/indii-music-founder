@@ -1,5 +1,5 @@
-import type { FunctionDeclaration, ToolRiskTier, ToolRiskMetadata } from './types';
-import { ADDITIONAL_TOOL_RISK_CATALOG } from './AdditionalToolRiskCatalog';
+import type { FunctionDeclaration, ToolRiskTier, ToolRiskMetadata } from '@/services/agent/types';
+import { ADDITIONAL_TOOL_RISK_CATALOG } from '@/services/agent/AdditionalToolRiskCatalog';
 
 /**
  * ToolRiskRegistry — Centralized risk classification for all agent tools.

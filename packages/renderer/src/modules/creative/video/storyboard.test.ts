@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { StoryboardSlotSchema, StoryboardProjectSchema } from './schemas/storyboard';
+import { StoryboardSlotSchema, StoryboardProjectSchema } from '@/modules/creative/video/schemas/storyboard';
 
 describe('Storyboard Schemas & Quantization Math', () => {
     describe('Storyboard Zod Schemas', () => {

@@ -19,7 +19,7 @@
  * 3. Sequence edges between frames represent visual ordering only.
  */
 
-import type { ProjectCanvasBlock, LifecycleStage } from '../types';
+import type { ProjectCanvasBlock, LifecycleStage } from '@/modules/project-canvas/types';
 
 export const LIFECYCLE_STAGES: Record<LifecycleStage, { label: string; description: string; color: string }> = {
     create: {

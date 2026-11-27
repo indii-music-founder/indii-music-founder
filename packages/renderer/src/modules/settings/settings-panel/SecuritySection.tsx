@@ -29,7 +29,7 @@ import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
-import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
+import { SectionHeader, SettingRow, Toggle } from '@/modules/settings/settings-panel/SettingsShared';
 import { Database } from 'lucide-react';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { getTierConfig } from '@/services/subscription/SubscriptionTier';

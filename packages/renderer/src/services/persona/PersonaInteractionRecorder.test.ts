@@ -25,7 +25,7 @@ import {
     recordPersonaSwitched,
     recordThreadAbandoned,
     PersonaInteractionRecorderError,
-} from './PersonaInteractionRecorder';
+} from '@/services/persona/PersonaInteractionRecorder';
 
 describe('PersonaInteractionRecorder', () => {
     beforeEach(() => {

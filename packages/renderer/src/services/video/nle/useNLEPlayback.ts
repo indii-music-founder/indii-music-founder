@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { IndiiVideoProject } from '@indii/shared';
-import { NLEPreviewAudio } from './NLEPreviewAudio';
-import { MasterAudioClock } from './MasterAudioClock';
-import { NLEFrameRenderer } from './NLEFrameRenderer';
-import { WebGL2Compositor } from './WebGL2Compositor';
+import { NLEPreviewAudio } from '@/services/video/nle/NLEPreviewAudio';
+import { MasterAudioClock } from '@/services/video/nle/MasterAudioClock';
+import { NLEFrameRenderer } from '@/services/video/nle/NLEFrameRenderer';
+import { WebGL2Compositor } from '@/services/video/nle/WebGL2Compositor';
 import { logger } from '@/utils/logger';
 
 export interface UseNLEPlaybackOptions {

@@ -1,4 +1,4 @@
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';

@@ -1,5 +1,5 @@
-import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
-import { persistOrgRecord } from '../services/RegistrationPersistence';
+import type { OrgAdapter, CatalogTrack, SubmissionResult } from '@/modules/registration/types';
+import { persistOrgRecord } from '@/modules/registration/services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
 
 export const SesacAdapter: OrgAdapter = {

@@ -6,7 +6,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useAgentStream } from './useAgentStream';
+import { useAgentStream } from '@/hooks/useAgentStream';
 
 describe('useAgentStream', () => {
   const mockUserId = 'test-user-123';

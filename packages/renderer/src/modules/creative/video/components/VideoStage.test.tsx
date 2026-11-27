@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { VideoStage } from './VideoStage';
+import { VideoStage } from '@/modules/creative/video/components/VideoStage';
 import { HistoryItem } from '@/core/store';
 
-vi.mock('./VideoJsPlayer', () => ({
+vi.mock('@/modules/creative/video/components/VideoJsPlayer', () => ({
     VideoJsPlayer: React.forwardRef(({ videoUrl }: { videoUrl: string }, _ref) => <video data-testid="video-player" src={videoUrl} />),
 }));
 

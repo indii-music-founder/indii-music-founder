@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RightsCopilotService } from './RightsCopilotService';
+import { RightsCopilotService } from '@/services/rights/RightsCopilotService';
 import { DepositAsset } from '@indii/shared';
 
 const mockSetDoc = vi.fn().mockResolvedValue(undefined);

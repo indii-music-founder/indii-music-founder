@@ -15,7 +15,7 @@ import type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySl
 import type {
     ProjectCanvasBlock,
     ProjectCanvasEdge,
-} from '../types';
+} from '@/modules/project-canvas/types';
 
 export class InfiniteCanvasAdapter {
     /**

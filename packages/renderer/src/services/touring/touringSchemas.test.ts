@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     ItinerarySchema,
     VehicleStatsSchema
-} from './TouringService';
+} from '@/services/touring/TouringService';
 
 describe('Touring Schemas', () => {
     describe('ItinerarySchema', () => {

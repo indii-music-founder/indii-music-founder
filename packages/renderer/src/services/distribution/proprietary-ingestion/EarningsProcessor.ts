@@ -2,7 +2,7 @@ import {
     EarningsReportReport,
     RoyaltyCalculation,
     ContributorPayment,
-} from './types/dsr';
+} from '@/services/distribution/proprietary-ingestion/types/dsr';
 import { ExtendedGoldenMetadata, RoyaltySplit } from '@/services/metadata/types';
 
 /**

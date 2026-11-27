@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveTreatment, resolveTreatmentPreset, VIDEO_TREATMENT_PRESET_IDS } from './treatmentPresets';
+import { resolveTreatment, resolveTreatmentPreset, VIDEO_TREATMENT_PRESET_IDS } from '@/services/video/treatmentPresets';
 
 describe('treatment presets', () => {
     it('maps direction words to the amber night preset', () => {

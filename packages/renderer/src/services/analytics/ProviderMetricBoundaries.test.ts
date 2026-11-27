@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { TikTokAnalyticsService } from './TikTokAnalyticsService';
-import { YouTubeAnalyticsService } from './YouTubeAnalyticsService';
+import { TikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsService';
+import { YouTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },

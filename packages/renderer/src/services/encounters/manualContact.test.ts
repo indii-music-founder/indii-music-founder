@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { manualContactRecord, type ManualContactFields } from './manualContact';
+import { manualContactRecord, type ManualContactFields } from '@/services/encounters/manualContact';
 
 const fields: ManualContactFields = {
     name: '  Example Artist  ', phone: ' +1 555 0100 ', email: ' artist@example.com ',

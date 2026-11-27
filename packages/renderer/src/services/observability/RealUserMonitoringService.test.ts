@@ -8,7 +8,7 @@ import {
   RealUserMonitoringService,
   getRealUserMonitoringService,
   initializeRealUserMonitoring,
-} from './RealUserMonitoringService';
+} from '@/services/observability/RealUserMonitoringService';
 
 describe('RealUserMonitoringService', () => {
   let service: RealUserMonitoringService;

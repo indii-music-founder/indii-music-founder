@@ -47,7 +47,7 @@ vi.mock('@/utils/logger', () => ({
 // IMPORTS (after mocks)
 // ============================================================================
 
-import { captainsLogService } from '../CaptainsLogService';
+import { captainsLogService } from '@/services/agent/memory/CaptainsLogService';
 import { setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 // ============================================================================

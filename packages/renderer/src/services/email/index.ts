@@ -6,9 +6,9 @@
  *   import type { EmailMessage } from '@/services/email';
  */
 
-export { EmailService } from './EmailService';
-export { GmailProvider } from './GmailProvider';
-export { OutlookProvider } from './OutlookProvider';
+export { EmailService } from '@/services/email/EmailService';
+export { GmailProvider } from '@/services/email/GmailProvider';
+export { OutlookProvider } from '@/services/email/OutlookProvider';
 export type {
     EmailProvider,
     EmailAccount,
@@ -23,4 +23,4 @@ export type {
     EmailProviderInterface,
     OAuthTokens,
     OAuthExchangeResult,
-} from './types';
+} from '@/services/email/types';

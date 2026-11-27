@@ -7,7 +7,7 @@ import { Logger } from '@/core/logger/Logger';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AgentMessage } from '@/core/store/slices/agent';
-import { createVisaPlanningEntry, loadVisaPlanningEntries, type VisaPlanningEntry } from './VisaPlanning';
+import { createVisaPlanningEntry, loadVisaPlanningEntries, type VisaPlanningEntry } from '@/modules/touring/components/VisaPlanning';
 
 type CountryKey = 'Canada' | 'UK' | 'EU' | 'Japan' | 'Australia' | 'Mexico';
 

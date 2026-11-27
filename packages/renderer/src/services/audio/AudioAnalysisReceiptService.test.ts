@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canonicalReceiptId, parseAudioAnalysisReceipt } from './AudioAnalysisReceiptService';
+import { canonicalReceiptId, parseAudioAnalysisReceipt } from '@/services/audio/AudioAnalysisReceiptService';
 
 describe('AudioAnalysisReceiptService', () => {
     const identity = {

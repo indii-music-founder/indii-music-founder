@@ -8,13 +8,13 @@ import {
     Sparkles, Video, MonitorPlay, MessageSquare,
     Palette, Clock, Rocket, Cpu, ArrowLeft, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import IntelligencePromptBuilder from './IntelligencePromptBuilder';
+import IntelligencePromptBuilder from '@/modules/creative/components/IntelligencePromptBuilder';
 import { useToast } from '@/core/context/ToastContext';
-import BrandAssetsDrawer from './BrandAssetsDrawer';
-import HistoryDrawer from './HistoryDrawer';
-import AgentCapabilityRegistry from './AgentCapabilityRegistry';
-import CreativeJourney from './CreativeJourney';
-import CanvasModePicker from './CanvasModePicker';
+import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
+import HistoryDrawer from '@/modules/creative/components/HistoryDrawer';
+import AgentCapabilityRegistry from '@/modules/creative/components/AgentCapabilityRegistry';
+import CreativeJourney from '@/modules/creative/components/CreativeJourney';
+import CanvasModePicker from '@/modules/creative/components/CanvasModePicker';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { embedded?: boolean }
 

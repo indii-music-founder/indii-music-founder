@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   WebGL2Compositor,
   computeTransformMatrix,
-} from './WebGL2Compositor';
+} from '@/services/video/nle/WebGL2Compositor';
 import type { Transform2D } from '@indii/shared';
 
 describe('WebGL2Compositor - GPU Layer Compositor', () => {

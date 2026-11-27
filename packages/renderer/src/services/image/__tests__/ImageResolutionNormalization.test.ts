@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ImageGeneration } from '../ImageGenerationService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 // Match the project's mock pattern
 vi.mock('@/services/firebase', () => ({

@@ -15,9 +15,9 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { MetadataValidationService } from '@/services/distribution/MetadataValidationService';
 import type { IngestionMetadata, IngestionTrack } from '@/types/distribution';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
-import { MusicTools } from './MusicTools';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
+import { MusicTools } from '@/services/agent/tools/MusicTools';
 import { logger } from '@/utils/logger';
 
 /**
@@ -923,7 +923,7 @@ export const DistributionTools = {
         trackId?: string;
         overrideReason?: string;
     }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.render_distribution_bundle!(args);
     })
 } satisfies Record<string, AnyToolFunction>;

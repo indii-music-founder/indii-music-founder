@@ -13,8 +13,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TimelineOrchestratorService } from './TimelineOrchestratorService';
-import type { TimelineBrief, Timeline, TimelinePhase, TimelineMilestone } from './TimelineTypes';
+import { TimelineOrchestratorService } from '@/services/timeline/TimelineOrchestratorService';
+import type { TimelineBrief, Timeline, TimelinePhase, TimelineMilestone } from '@/services/timeline/TimelineTypes';
 
 // ============================================================================
 // Mocks

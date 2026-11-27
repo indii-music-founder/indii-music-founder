@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { ScheduledPost } from '../types';
+import { ScheduledPost } from '@/modules/marketing/types';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 interface EditableCopyModalProps {
     post: ScheduledPost;

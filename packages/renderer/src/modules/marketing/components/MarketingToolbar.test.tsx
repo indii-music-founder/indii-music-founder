@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { MarketingToolbar } from './MarketingToolbar';
+import { MarketingToolbar } from '@/modules/marketing/components/MarketingToolbar';
 
 describe('MarketingToolbar', () => {
     it('reports campaign search input instead of presenting an inert field', async () => {

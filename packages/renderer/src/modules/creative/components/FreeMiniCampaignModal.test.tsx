@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { FreeMiniCampaignModal } from './FreeMiniCampaignModal';
+import { FreeMiniCampaignModal } from '@/modules/creative/components/FreeMiniCampaignModal';
 import { FreeMiniCampaignService } from '@/services/creative/FreeMiniCampaignService';
 import * as typesafeJudgments from '@/config/typesafeJudgments';
 

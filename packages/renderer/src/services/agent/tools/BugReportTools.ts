@@ -1,6 +1,6 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';
 import { importWithRetry } from '@/utils/dynamicImport';

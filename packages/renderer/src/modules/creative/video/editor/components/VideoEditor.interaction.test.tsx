@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { VideoEditor } from '../VideoEditor';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoEditor } from '@/modules/creative/video/editor/VideoEditor';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { httpsCallable } from 'firebase/functions';
 
 // Mock dependencies
-vi.mock('../../store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockStore = vi.fn();
     (mockStore as any).subscribe = vi.fn(() => () => { });
     // getState() must reflect whatever mockImplementation the test's beforeEach
@@ -33,7 +33,7 @@ vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn()
 }));
 
-vi.mock('../utils/mediaMetadata', () => ({
+vi.mock('@/modules/creative/video/editor/utils/mediaMetadata', () => ({
     resolveMediaDurationSeconds: vi.fn().mockResolvedValue(10),
     getMediaDurationFromFile: vi.fn().mockResolvedValue(0),
     durationSecondsToFrames: (durationSeconds: number, fps: number, fallback = 150) =>
@@ -54,17 +54,17 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Mock complex sub-components to focus on integration logic
-vi.mock('./VideoPreview', () => ({
+vi.mock('@/modules/creative/video/editor/components/VideoPreview', () => ({
     VideoPreview: () => <div data-testid="video-preview" />
 }));
 
-vi.mock('./VideoPropertiesPanel', () => ({
+vi.mock('@/modules/creative/video/editor/components/VideoPropertiesPanel', () => ({
     VideoPropertiesPanel: () => <div data-testid="video-properties-panel" />
 }));
 
 // We keep VideoTimeline and Sidebar real if possible, or mock them if they are too complex.
 // For now, let's mock them but make them interactive enough for our test.
-vi.mock('./VideoTimeline', () => ({
+vi.mock('@/modules/creative/video/editor/components/VideoTimeline', () => ({
     VideoTimeline: ({ handlePlayPause, handleAddTrack, handleAddSampleClip }: any) => (
         <div data-testid="video-timeline">
             <button data-testid="play-pause-btn" onClick={handlePlayPause}>Play/Pause</button>
@@ -74,7 +74,7 @@ vi.mock('./VideoTimeline', () => ({
     )
 }));
 
-vi.mock('./VideoEditorSidebar', () => ({
+vi.mock('@/modules/creative/video/editor/components/VideoEditorSidebar', () => ({
     VideoEditorSidebar: ({ onLibraryDragStart }: any) => (
         <div data-testid="video-editor-sidebar">
             <div

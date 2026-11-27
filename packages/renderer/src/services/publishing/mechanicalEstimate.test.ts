@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateMechanicalFee } from './mechanicalEstimate';
+import { estimateMechanicalFee } from '@/services/publishing/mechanicalEstimate';
 
 // Pure statutory-estimate arithmetic, not a licensing-service or customer fixture.
 describe('2026 physical/permanent-download mechanical estimate', () => {

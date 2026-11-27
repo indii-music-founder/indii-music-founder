@@ -10,7 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
-import { ContractLoadError } from './ContractLoadError';
+import { ContractLoadError } from '@/modules/legal/components/ContractLoadError';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AssetsPanel from './AssetsPanel';
+import AssetsPanel from '@/core/components/right-panel/AssetsPanel';
 import { useStore } from '@/core/store';
 import { useAssetPickRequest } from '@/services/creative/assetPickRequest';
 

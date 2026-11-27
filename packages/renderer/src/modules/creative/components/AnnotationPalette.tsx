@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState } from 'react';
 import { Settings } from 'lucide-react';
-import { STUDIO_COLORS, CreativeColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '@/modules/creative/constants';
 
 interface AnnotationPaletteProps {
     activeColor: CreativeColor;

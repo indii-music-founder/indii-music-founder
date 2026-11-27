@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from './approvalConsent';
+import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from '@/services/agent/utils/approvalConsent';
 
 const paused = "Execution paused: 'report_bug' requires your explicit approval (File a bug report). Check the Approvals panel to approve or deny.";
 

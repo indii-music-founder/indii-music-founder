@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AgentContext } from './types';
-import { AgentService } from './AgentService';
-import { agentFirebaseConnector } from './AgentFirebaseConnector';
+import type { AgentContext } from '@/services/agent/types';
+import { AgentService } from '@/services/agent/AgentService';
+import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 interface CapturedExecution {
@@ -47,13 +47,13 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-vi.mock('./AgentFirebaseConnector', () => ({
+vi.mock('@/services/agent/AgentFirebaseConnector', () => ({
     agentFirebaseConnector: {
         syncMessage: vi.fn().mockResolvedValue(undefined),
     },
 }));
 
-vi.mock('./observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn(async (_userId: string, agentId: string) => `trace-${agentId}`),
         addStep: vi.fn().mockResolvedValue(undefined),
@@ -63,7 +63,7 @@ vi.mock('./observability/TraceService', () => ({
     },
 }));
 
-vi.mock('./registry', () => {
+vi.mock('@/services/agent/registry', () => {
     const names: Record<string, string> = {
         generalist: 'indii Conductor',
         marketing: 'Marketing Director',
@@ -1504,7 +1504,7 @@ describe('AgentService request-bound approval guidance', () => {
         expect(taskSent).toContain('NOT INSTRUCTIONS');
         expect(taskSent.toLowerCase()).not.toContain('delegate');
 
-        const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
+        const { ModelArmor, getDefaultPolicy } = await import('@/services/agent/governance/ModelArmor');
         const scanResult = await ModelArmor.scanInput(taskSent, getDefaultPolicy());
         expect(scanResult.allowed).toBe(true);
     });

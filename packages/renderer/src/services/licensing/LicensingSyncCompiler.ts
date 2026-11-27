@@ -10,7 +10,7 @@ import {
   HarnessAgentBrief,
   HarnessApprovalGate,
   HarnessEvidenceRef,
-} from '../business-harness/types';
+} from '@/services/business-harness/types';
 
 export interface LicensingSyncInput {
   trackId: string;

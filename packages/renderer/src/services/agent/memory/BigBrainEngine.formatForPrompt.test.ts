@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { bigBrainEngine, type BigBrainContext } from './BigBrainEngine';
+import { bigBrainEngine, type BigBrainContext } from '@/services/agent/memory/BigBrainEngine';
 
 const emptyMeta: BigBrainContext['meta'] = {
   vaultFactCount: 0,

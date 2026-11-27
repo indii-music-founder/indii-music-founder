@@ -6,7 +6,7 @@ import { DashboardService, ProjectMetadata } from '@/services/dashboard/Dashboar
 import {
     FolderOpen, Clock, Image, Plus, ArrowUpRight, Sparkles,
 } from 'lucide-react';
-import NewProjectModal from './NewProjectModal';
+import NewProjectModal from '@/modules/dashboard/components/NewProjectModal';
 import { logger } from '@/utils/logger';
 
 export default function RecentProjects() {

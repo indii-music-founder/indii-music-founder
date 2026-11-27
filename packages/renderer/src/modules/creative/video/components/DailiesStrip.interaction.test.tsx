@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { DailiesStrip } from './DailiesStrip';
+import { DailiesStrip } from '@/modules/creative/video/components/DailiesStrip';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 describe('DailiesStrip Interaction', () => {

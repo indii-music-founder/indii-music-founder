@@ -62,7 +62,7 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
-import { CustomizableAnalyticsDashboard } from './CustomizableAnalyticsDashboard';
+import { CustomizableAnalyticsDashboard } from '@/modules/analytics/components/CustomizableAnalyticsDashboard';
 
 const revenueStats = {
     totalRevenue: 100,

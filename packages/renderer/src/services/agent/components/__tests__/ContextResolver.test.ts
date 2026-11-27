@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ContextResolver } from '../ContextResolver';
+import { ContextResolver } from '@/services/agent/components/ContextResolver';
 import { useStore } from '@/core/store';
 
 // Mock the store

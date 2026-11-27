@@ -1,4 +1,4 @@
-import type { HarnessDomain } from './types';
+import type { HarnessDomain } from '@/services/business-harness/types';
 
 export interface HarnessCatalogEntry {
   domain: HarnessDomain;

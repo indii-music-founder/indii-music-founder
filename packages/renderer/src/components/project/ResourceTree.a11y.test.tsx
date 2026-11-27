@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ResourceTree } from './ResourceTree';
+import { ResourceTree } from '@/components/project/ResourceTree';
 import { useStore } from '@/core/store';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { axe } from 'vitest-axe';

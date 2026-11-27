@@ -46,7 +46,7 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => 'server-timestamp'),
 }));
 
-import { CatalogAdminTools } from './CatalogAdminTools';
+import { CatalogAdminTools } from '@/services/agent/tools/CatalogAdminTools';
 
 // Deterministic sha256 helper mirrors the tool's Web Crypto path.
 async function sha256Hex(input: string): Promise<string> {

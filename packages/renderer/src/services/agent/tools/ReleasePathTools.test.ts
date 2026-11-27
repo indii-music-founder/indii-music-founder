@@ -15,9 +15,9 @@ vi.mock('@/services/distribution/ReleaseCatalogService', () => ({
     },
 }));
 
-import { PublishingTools } from './PublishingTools';
-import { Web3Tools } from './Web3Tools';
-import { CoreTools } from './CoreTools';
+import { PublishingTools } from '@/services/agent/tools/PublishingTools';
+import { Web3Tools } from '@/services/agent/tools/Web3Tools';
+import { CoreTools } from '@/services/agent/tools/CoreTools';
 
 describe('release-backed agent tools', () => {
     beforeEach(() => mocks.listCurrentUserReleases.mockReset());

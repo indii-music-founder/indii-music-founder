@@ -5,7 +5,7 @@ import {
     PRINT_EXTREME_ASPECT_THRESHOLD,
     getPrintPreset,
     planPrintOutput,
-} from '../PrintSpec';
+} from '@/services/print/PrintSpec';
 
 describe('PRINT_MEDIA_PRESETS (data sanity)', () => {
     it('covers the PRD media list with unique ids', () => {

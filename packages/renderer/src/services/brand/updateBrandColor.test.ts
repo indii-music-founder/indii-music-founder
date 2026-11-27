@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updateBrandColorByName } from './updateBrandColor';
+import { updateBrandColorByName } from '@/services/brand/updateBrandColor';
 
 const updateBrandKit = vi.fn().mockResolvedValue(undefined);
 let colors: string[] = [];

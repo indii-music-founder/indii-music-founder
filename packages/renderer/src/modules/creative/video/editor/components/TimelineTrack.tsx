@@ -1,10 +1,10 @@
 import React, { memo, useCallback } from 'react';
 import { Volume2, VolumeX, Headphones, Eye, EyeOff, Lock, Unlock, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-import { VideoTrack, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
-import { TimelineClip } from './TimelineClip';
-import { PIXELS_PER_FRAME } from '../constants';
+import { VideoTrack, VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { TimelineClip } from '@/modules/creative/video/editor/components/TimelineClip';
+import { PIXELS_PER_FRAME } from '@/modules/creative/video/editor/constants';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import { ClipDragType } from '../hooks/useTimelineDrag';
+import { ClipDragType } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 export interface TimelineTrackProps {
     key?: React.Key;
@@ -256,12 +256,12 @@ export const TimelineTrack = memo(({
 
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
-                        const { useVideoEditorStore } = await import('../../store/videoEditorStore');
+                        const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
                         const zoom = useVideoEditorStore.getState().timelineZoom;
                         const frame = Math.max(0, Math.round(x / (PIXELS_PER_FRAME * zoom)));
 
                         const files = Array.from(e.dataTransfer.files) as File[];
-                        const { getMediaDurationFromFile, resolveMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
+                        const { getMediaDurationFromFile, resolveMediaDurationSeconds, durationSecondsToFrames } = await import('@/modules/creative/video/editor/utils/mediaMetadata');
                         const fps = useVideoEditorStore.getState().project?.fps || 30;
 
                         if (files.length > 0) {

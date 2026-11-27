@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SubscriptionService } from '../SubscriptionService';
-import { SubscriptionTier, TIER_CONFIGS } from '../SubscriptionTier';
+import { SubscriptionService } from '@/services/subscription/SubscriptionService';
+import { SubscriptionTier, TIER_CONFIGS } from '@/services/subscription/SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
-import { UsageWarningLevel } from '../types';
+import { UsageWarningLevel } from '@/services/subscription/types';
 import { httpsCallable } from 'firebase/functions';
 
 // Mock Firebase

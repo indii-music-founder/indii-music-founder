@@ -1,5 +1,5 @@
-import type { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
-import { createHarnessRun, type HarnessRun, type HarnessFinding, type HarnessRecommendation, type HarnessAgentBrief, type HarnessApprovalGate } from '../business-harness/types';
+import type { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
+import { createHarnessRun, type HarnessRun, type HarnessFinding, type HarnessRecommendation, type HarnessAgentBrief, type HarnessApprovalGate } from '@/services/business-harness/types';
 
 export interface CreativeProductionTrack {
   id: string;

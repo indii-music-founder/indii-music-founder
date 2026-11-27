@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CanvasOperationsService } from '../CanvasOperationsService';
+import { CanvasOperationsService } from '@/modules/creative/services/CanvasOperationsService';
 import { logger } from '@/utils/logger';
 
 // ISSUE-1391: "Failed to execute 'removeChild' on 'Node': The node to be

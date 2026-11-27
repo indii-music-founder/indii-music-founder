@@ -1,8 +1,8 @@
 import React from 'react';
 import { CheckCircle2, Clock, AlertCircle, Circle, ChevronRight, ExternalLink, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { OrgAdapter, RegistrationStatus } from '../types';
-import { CATEGORY_LABELS } from '../types';
+import type { OrgAdapter, RegistrationStatus } from '@/modules/registration/types';
+import { CATEGORY_LABELS } from '@/modules/registration/types';
 
 interface OrgStatusCardProps {
   adapter: OrgAdapter;

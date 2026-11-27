@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import { PanelLeft, PanelRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceLayout } from '@/hooks/useWorkspaceLayout';
-import { AdaptiveWorkspaceContext } from './AdaptiveWorkspaceContext';
+import { AdaptiveWorkspaceContext } from '@/components/layout/AdaptiveWorkspaceContext';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 

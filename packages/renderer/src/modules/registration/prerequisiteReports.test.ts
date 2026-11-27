@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editPrerequisite, parsePrerequisiteReports, reportPrerequisite, serializePrerequisiteReports } from './prerequisiteReports';
+import { editPrerequisite, parsePrerequisiteReports, reportPrerequisite, serializePrerequisiteReports } from '@/modules/registration/prerequisiteReports';
 
 describe('prerequisite report format (pure data, no account/provider fixtures)', () => {
   it('migrates legacy checkmarks as user reports, never provider verification', () => {

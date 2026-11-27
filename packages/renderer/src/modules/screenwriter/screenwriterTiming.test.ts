@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getStoryboardTimingError, isValidStoryboardSceneDuration } from './screenwriterTiming';
+import { getStoryboardTimingError, isValidStoryboardSceneDuration } from '@/modules/screenwriter/screenwriterTiming';
 
 describe('screenwriter timing validation', () => {
     it.each([1, 8, 60])('accepts valid whole-second scene duration %s', (duration) => {

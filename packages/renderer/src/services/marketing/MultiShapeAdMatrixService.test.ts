@@ -13,7 +13,7 @@ vi.mock('@/services/agent/governance/VideoAdAutorater', () => ({
     },
 }));
 
-import { MultiShapeAdMatrixService } from './MultiShapeAdMatrixService';
+import { MultiShapeAdMatrixService } from '@/services/marketing/MultiShapeAdMatrixService';
 
 describe('MultiShapeAdMatrixService', () => {
     beforeEach(() => {

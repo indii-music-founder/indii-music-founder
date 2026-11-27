@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { JsonViewer } from './JsonViewer';
+import { JsonViewer } from '@/core/components/chat/JsonViewer';
 import { describe, it, expect } from 'vitest';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';

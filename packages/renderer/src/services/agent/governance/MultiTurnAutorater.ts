@@ -2,10 +2,10 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getFineTunedModel } from '../fine-tuned-models';
-import type { ValidAgentId } from '../types';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
+import type { ValidAgentId } from '@/services/agent/types';
 
 export interface TraceMessage {
     role: 'user' | 'model' | 'system' | 'tool';

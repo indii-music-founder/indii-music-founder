@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateCampaignDialog } from './CreateCampaignDialog';
+import { CreateCampaignDialog } from '@/components/ui/CreateCampaignDialog';
 import { useStore } from '@/core/store';
 
 // Mock store

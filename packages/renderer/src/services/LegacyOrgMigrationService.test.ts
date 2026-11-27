@@ -5,7 +5,7 @@ const mockCommit = vi.fn();
 const mockBatchUpdate = vi.fn();
 const mockAuth: { currentUser: { uid: string } | null } = { currentUser: { uid: 'user-123' } };
 
-vi.mock('./firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     db: {},
     get auth() { return mockAuth; }
 }));
@@ -20,7 +20,7 @@ vi.mock('firebase/firestore', () => ({
     writeBatch: vi.fn(() => ({ update: mockBatchUpdate, commit: mockCommit })),
 }));
 
-import { LegacyOrgMigrationService } from './LegacyOrgMigrationService';
+import { LegacyOrgMigrationService } from '@/services/LegacyOrgMigrationService';
 
 const emptySnapshot = { empty: true, size: 0, docs: [] };
 

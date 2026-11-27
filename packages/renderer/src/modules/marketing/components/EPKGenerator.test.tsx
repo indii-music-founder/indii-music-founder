@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import EPKGenerator from './EPKGenerator';
+import EPKGenerator from '@/modules/marketing/components/EPKGenerator';
 
 /**
  * ISSUE-945: handleDownloadHtml (formerly handleDownloadPDF) interpolated raw

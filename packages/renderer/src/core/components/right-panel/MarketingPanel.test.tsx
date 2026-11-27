@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import MarketingPanel from './MarketingPanel';
+import MarketingPanel from '@/core/components/right-panel/MarketingPanel';
 
 const mocks = vi.hoisted(() => ({
     executeWorkflowWithStatus: vi.fn(),

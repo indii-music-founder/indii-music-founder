@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Calendar, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, ItineraryStop, ScheduleReview } from '../types';
-import { formatTouringDate } from '../itinerary';
-import { TourMap } from './TourMap';
+import { Itinerary, ItineraryStop, ScheduleReview } from '@/modules/touring/types';
+import { formatTouringDate } from '@/modules/touring/itinerary';
+import { TourMap } from '@/modules/touring/components/TourMap';
 
 interface PlanningTabProps {
     startDate: string;

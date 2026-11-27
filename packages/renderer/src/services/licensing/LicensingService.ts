@@ -1,8 +1,8 @@
-import { auth, db } from '../firebase';
+import { auth, db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
-import { FirestoreService } from '../FirestoreService';
-import { License, LicenseRequest } from './types';
+import { FirestoreService } from '@/services/FirestoreService';
+import { License, LicenseRequest } from '@/services/licensing/types';
 import { query, where, orderBy, limit, Unsubscribe, collection, getDocs, Timestamp } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 

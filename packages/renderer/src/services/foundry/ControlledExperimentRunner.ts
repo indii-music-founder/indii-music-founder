@@ -3,7 +3,7 @@ import {
   ExperimentResult,
   ExperimentMutation
 } from '@indii/shared';
-import { FormatForensicsEngine } from './FormatForensicsEngine';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 
 export class ControlledExperimentRunner {
   /**

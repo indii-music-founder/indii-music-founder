@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MaestroBatchingService, batchTaskUpdateFromResult, toMaestroBatchResult } from './MaestroBatchingService';
-import { TraceService } from './observability/TraceService';
+import { MaestroBatchingService, batchTaskUpdateFromResult, toMaestroBatchResult } from '@/services/agent/MaestroBatchingService';
+import { TraceService } from '@/services/agent/observability/TraceService';
 
 describe('Maestro batch result contract', () => {
     it('does not turn a resolved agent error into a successful action', () => {

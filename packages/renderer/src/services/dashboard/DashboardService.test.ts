@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DashboardService } from './DashboardService';
-import { SalesAnalyticsData } from './schema';
+import { DashboardService } from '@/services/dashboard/DashboardService';
+import { SalesAnalyticsData } from '@/services/dashboard/schema';
 
 // Mock the store
 vi.mock('@/core/store', () => ({

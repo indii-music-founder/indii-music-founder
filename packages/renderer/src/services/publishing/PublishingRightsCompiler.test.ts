@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PublishingRightsCompiler, PublishingRightsInput } from './PublishingRightsCompiler';
-import { HarnessContext } from '../business-harness/HarnessCompiler';
+import { PublishingRightsCompiler, PublishingRightsInput } from '@/services/publishing/PublishingRightsCompiler';
+import { HarnessContext } from '@/services/business-harness/HarnessCompiler';
 
 describe('PublishingRightsCompiler', () => {
   const compiler = new PublishingRightsCompiler();

@@ -14,7 +14,7 @@ vi.mock('@/core/store', () => ({
 }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 
-import { BoardroomAgentFeedView } from './BoardroomAgentFeedView';
+import { BoardroomAgentFeedView } from '@/modules/boardroom/components/BoardroomAgentFeedView';
 
 type ComputerApi = { abort: ReturnType<typeof vi.fn>; resetAbort: ReturnType<typeof vi.fn>; getAbortState: ReturnType<typeof vi.fn> };
 const win = window as unknown as { electronAPI?: { computer?: ComputerApi } };

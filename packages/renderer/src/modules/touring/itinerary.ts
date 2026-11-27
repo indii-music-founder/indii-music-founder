@@ -1,4 +1,4 @@
-import type { Itinerary, ItineraryStop } from './types';
+import type { Itinerary, ItineraryStop } from '@/modules/touring/types';
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 

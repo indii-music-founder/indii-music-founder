@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HistoryItem } from '@/core/types/history';
 import { extractVideoFrame } from '@/utils/video';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { CreativeStorageService } from './CreativeStorageService';
-import { materializeVideoFrameForHandoff } from './CreativeMediaHandoffService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 
 vi.mock('@/utils/video', () => ({
     extractVideoFrame: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('@/services/storage/resolveStorageUrl', () => ({
     resolveStorageUrl: vi.fn(),
 }));
 
-vi.mock('./CreativeStorageService', () => ({
+vi.mock('@/services/creative/CreativeStorageService', () => ({
     CreativeStorageService: {
         uploadReferenceMedia: vi.fn(),
     },

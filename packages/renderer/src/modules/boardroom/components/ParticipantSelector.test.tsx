@@ -55,7 +55,7 @@ import ParticipantSelector, {
     BOARDROOM_PRIMARY_HEAD_IDS,
     calculateParticipantSeatLayout,
     type ParticipantSeatLayout,
-} from './ParticipantSelector';
+} from '@/modules/boardroom/components/ParticipantSelector';
 
 function minimumSeatDistance(layout: ParticipantSeatLayout): number {
     let minimum = Number.POSITIVE_INFINITY;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mediaUrlToBlob } from './mediaUrlToBlob';
+import { mediaUrlToBlob } from '@/services/storage/mediaUrlToBlob';
 
 describe('mediaUrlToBlob (ISSUE-1708)', () => {
     afterEach(() => vi.restoreAllMocks());

@@ -17,11 +17,11 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'user-1' } },
     db: {},
 }));
-vi.mock('../RemoteRelayService', () => ({
+vi.mock('@/services/agent/RemoteRelayService', () => ({
     isFreshStudioState: vi.fn((state: { listenerReady?: boolean } | null) => state?.listenerReady === true),
 }));
 
-import { RemoteSupportTools } from './RemoteSupportTools';
+import { RemoteSupportTools } from '@/services/agent/tools/RemoteSupportTools';
 
 describe('RemoteSupportTools', () => {
     beforeEach(() => {

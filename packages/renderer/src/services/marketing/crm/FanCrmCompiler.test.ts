@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FanCrmCompiler, FanCrmInput } from './FanCrmCompiler';
+import { FanCrmCompiler, FanCrmInput } from '@/services/marketing/crm/FanCrmCompiler';
 
 describe('FanCrmCompiler', () => {
   it('should identify high-LTV superfans and gate VIP merchandise offers', () => {

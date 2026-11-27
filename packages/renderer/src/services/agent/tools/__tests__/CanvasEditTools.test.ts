@@ -26,7 +26,7 @@ vi.mock('@/core/store', () => {
     return { useStore: { getState: () => store } };
 });
 
-import { CanvasTools } from '../CanvasTools';
+import { CanvasTools } from '@/services/agent/tools/CanvasTools';
 
 const t = (name: string) => (CanvasTools as unknown as Record<string, (a: never) => Promise<{ success: boolean; data: Record<string, unknown>; message: string }>>)[name]!;
 

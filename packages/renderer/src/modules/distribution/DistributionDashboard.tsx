@@ -4,27 +4,27 @@ import { Radio, PlusCircle, Library, BarChart3, Activity, CheckSquare } from 'lu
 
 /* ── UI Components ── */
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DistributorConnectionsPanel } from './components/DistributorConnectionsPanel';
-import { BankPanel } from './components/BankPanel';
-import { AuthorityPanel } from './components/AuthorityPanel';
-import { QCPanel } from './components/QCPanel';
-import { KeysPanel } from './components/KeysPanel';
-import { TransferPanel } from './components/TransferPanel';
-import { QCVisualizer } from './components/QCVisualizer';
+import { DistributorConnectionsPanel } from '@/modules/distribution/components/DistributorConnectionsPanel';
+import { BankPanel } from '@/modules/distribution/components/BankPanel';
+import { AuthorityPanel } from '@/modules/distribution/components/AuthorityPanel';
+import { QCPanel } from '@/modules/distribution/components/QCPanel';
+import { KeysPanel } from '@/modules/distribution/components/KeysPanel';
+import { TransferPanel } from '@/modules/distribution/components/TransferPanel';
+import { QCVisualizer } from '@/modules/distribution/components/QCVisualizer';
 
 /* ── Extracted Sub-components ── */
-import { FastPathSongIngestionCard } from './components/FastPathSongIngestionCard';
-import { ReleasesContent } from './components/ReleasesContent';
-import { DistributorQuickView } from './components/DistributorQuickView';
-import { DeliveryHealthPanel } from './components/DeliveryHealthPanel';
-import { QuickLinksPanel } from './components/QuickLinksPanel';
-import { QCQuickPanel } from './components/QCQuickPanel';
-import { KeysStatusPanel } from './components/KeysStatusPanel';
-import { AuthorityInfoPanel } from './components/AuthorityInfoPanel';
-import { RegistrationChecklistPanel } from './components/RegistrationChecklistPanel';
+import { FastPathSongIngestionCard } from '@/modules/distribution/components/FastPathSongIngestionCard';
+import { ReleasesContent } from '@/modules/distribution/components/ReleasesContent';
+import { DistributorQuickView } from '@/modules/distribution/components/DistributorQuickView';
+import { DeliveryHealthPanel } from '@/modules/distribution/components/DeliveryHealthPanel';
+import { QuickLinksPanel } from '@/modules/distribution/components/QuickLinksPanel';
+import { QCQuickPanel } from '@/modules/distribution/components/QCQuickPanel';
+import { KeysStatusPanel } from '@/modules/distribution/components/KeysStatusPanel';
+import { AuthorityInfoPanel } from '@/modules/distribution/components/AuthorityInfoPanel';
+import { RegistrationChecklistPanel } from '@/modules/distribution/components/RegistrationChecklistPanel';
 
 /* ── Logic ── */
-import { useDistributionDashboard } from './hooks/useDistributionDashboard';
+import { useDistributionDashboard } from '@/modules/distribution/hooks/useDistributionDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';

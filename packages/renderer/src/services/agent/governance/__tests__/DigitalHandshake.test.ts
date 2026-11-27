@@ -1,8 +1,8 @@
 import { expect, test, describe, vi, beforeEach } from 'vitest';
-import { DigitalHandshake } from '../DigitalHandshake';
-import { Directive } from '../../../directive/DirectiveTypes';
+import { DigitalHandshake } from '@/services/agent/governance/DigitalHandshake';
+import { Directive } from '@/services/directive/DirectiveTypes';
 import { Timestamp } from 'firebase/firestore';
-import { DirectiveService } from '../../../directive/DirectiveService';
+import { DirectiveService } from '@/services/directive/DirectiveService';
 
 // Mock internal firebase imports
 vi.mock('../../../../firebase', () => ({
@@ -21,7 +21,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 // Mock DirectiveService
-vi.mock('../../../directive/DirectiveService', () => ({
+vi.mock('@/services/directive/DirectiveService', () => ({
     DirectiveService: {
         updateStatus: vi.fn().mockResolvedValue(undefined)
     }

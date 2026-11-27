@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AppleMusicService } from './AppleMusicService';
-import type { PlatformData, StreamDataPoint } from './types';
+import { AppleMusicService } from '@/services/analytics/AppleMusicService';
+import type { PlatformData, StreamDataPoint } from '@/services/analytics/types';
 
 describe('AppleMusicService', () => {
     it('reports disconnected when no secured MusicKit/backend is configured', async () => {

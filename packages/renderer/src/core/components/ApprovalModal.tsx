@@ -1,4 +1,4 @@
-import { useStore } from '../store';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, Check, X } from 'lucide-react';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';

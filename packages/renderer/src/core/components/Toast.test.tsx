@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { Toast, ToastMessage } from './Toast';
+import { Toast, ToastMessage } from '@/core/components/Toast';
 
 // Mock motion
 vi.mock('motion/react', () => ({

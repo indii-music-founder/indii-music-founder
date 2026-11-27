@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import CampaignDetail from './CampaignDetail';
-import { CampaignStatus, type CampaignAsset } from '../types';
+import CampaignDetail from '@/modules/marketing/components/CampaignDetail';
+import { CampaignStatus, type CampaignAsset } from '@/modules/marketing/types';
 
-vi.mock('./IntelligencePredictionPanel', () => ({
+vi.mock('@/modules/marketing/components/IntelligencePredictionPanel', () => ({
     default: () => null,
 }));
 

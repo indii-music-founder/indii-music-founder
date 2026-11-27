@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readOptionalContext } from './OptionalContext';
+import { readOptionalContext } from '@/services/agent/components/OptionalContext';
 
 describe('optional context budget', () => {
     afterEach(() => vi.useRealTimers());

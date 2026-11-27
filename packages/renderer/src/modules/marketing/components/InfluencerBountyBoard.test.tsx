@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import InfluencerBountyBoard from './InfluencerBountyBoard';
+import InfluencerBountyBoard from '@/modules/marketing/components/InfluencerBountyBoard';
 
 const listBountyLinksMock = vi.hoisted(() => vi.fn());
 const generateBountyLinkMock = vi.hoisted(() => vi.fn());

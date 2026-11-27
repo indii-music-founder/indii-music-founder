@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { useURLSync } from './useURLSync';
+import { useURLSync } from '@/hooks/useURLSync';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Use vi.hoisted to create variables accessible inside vi.mock

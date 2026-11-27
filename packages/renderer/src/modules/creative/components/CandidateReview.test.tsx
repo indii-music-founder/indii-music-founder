@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { CandidateReview, Candidate } from './CandidateReview';
+import { CandidateReview, Candidate } from '@/modules/creative/components/CandidateReview';
 
 // Mock motion/react to avoid animation complexity in tests
 vi.mock('motion/react', () => ({

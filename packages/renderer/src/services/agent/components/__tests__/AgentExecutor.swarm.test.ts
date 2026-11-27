@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentExecutor } from '../AgentExecutor';
-import { TraceService } from '../../observability/TraceService';
-import { BaseAgent } from '../../BaseAgent';
+import { AgentExecutor } from '@/services/agent/components/AgentExecutor';
+import { TraceService } from '@/services/agent/observability/TraceService';
+import { BaseAgent } from '@/services/agent/BaseAgent';
 
 // Mock Dependencies
-vi.mock('../../observability/TraceService');
+vi.mock('@/services/agent/observability/TraceService');
 
 // Mock agentRegistry import
-vi.mock('../../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAsync: vi.fn()
     }
 }));
-import { agentRegistry } from '../../registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'user-123' } },

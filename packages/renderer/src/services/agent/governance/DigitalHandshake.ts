@@ -1,11 +1,11 @@
 import { logger } from '@/utils/logger';
 import { Timestamp, collection, addDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { Directive } from '../../directive/DirectiveTypes';
-import { DirectiveService } from '../../directive/DirectiveService';
-import type { ToolRiskTier } from '../types';
-import { getToolRiskMetadata } from '../ToolRiskRegistry';
-import type { AgentIdentityCard } from './AgentIdentity';
+import { db } from '@/services/firebase';
+import { Directive } from '@/services/directive/DirectiveTypes';
+import { DirectiveService } from '@/services/directive/DirectiveService';
+import type { ToolRiskTier } from '@/services/agent/types';
+import { getToolRiskMetadata } from '@/services/agent/ToolRiskRegistry';
+import type { AgentIdentityCard } from '@/services/agent/governance/AgentIdentity';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { importWithRetry } from '@/utils/dynamicImport';
 
@@ -53,7 +53,7 @@ export class DigitalHandshake {
         const computeExceeded = computeAllocation.tokensUsed >= computeAllocation.maxTokens;
 
         // --- GEAP Phase 2: Model Armor Integration ---
-        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./ModelArmor'));
+        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('@/services/agent/governance/ModelArmor'));
         const armorResult = await ModelArmor.scanInput(actionDescription, getDefaultPolicy());
         let armorBlocked = false;
         

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ExecutionTokenBudget, executionTokenBudget, inheritExecutionTokenBudget } from '../ExecutionTokenBudget';
+import { ExecutionTokenBudget, executionTokenBudget, inheritExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 describe('ExecutionTokenBudget', () => {
     it('reserves atomically before parallel calls can use the same allowance', async () => {

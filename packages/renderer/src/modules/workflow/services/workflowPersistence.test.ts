@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SavedWorkflow } from '../types';
+import type { SavedWorkflow } from '@/modules/workflow/types';
 
 const { getAllWorkflowsFromStorage, getWorkflowFromStorage, saveWorkflowToStorage, auth } = vi.hoisted(() => ({
     getAllWorkflowsFromStorage: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('@/services/storage/repository', () => ({
     saveWorkflowToStorage,
 }));
 
-import { getUserWorkflows, loadWorkflow, saveWorkflow } from './workflowPersistence';
+import { getUserWorkflows, loadWorkflow, saveWorkflow } from '@/modules/workflow/services/workflowPersistence';
 
 const workflow: SavedWorkflow = {
     id: 'workflow-1',

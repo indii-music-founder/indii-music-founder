@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GeneralistAgent } from './GeneralistAgent';
+import { GeneralistAgent } from '@/services/agent/specialists/GeneralistAgent';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
@@ -33,7 +33,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
 });
 
 // Mock ModelArmor to prevent prompt rejections
-vi.mock('../governance/ModelArmor', () => ({
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
     ModelArmor: {
         scanInput: vi.fn().mockResolvedValue({ allowed: true }),
         scanOutput: vi.fn().mockResolvedValue({ allowed: true })

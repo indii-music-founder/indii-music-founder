@@ -23,7 +23,7 @@ import { saveWorkflow } from '@/modules/workflow/services/workflowPersistence';
 import { auth } from '@/services/firebase';
 import { Status } from '@/modules/workflow/types';
 import type { CustomNode, CustomEdge } from '@/modules/workflow/types';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface PromoteToWorkflowModalProps {
     isOpen: boolean;

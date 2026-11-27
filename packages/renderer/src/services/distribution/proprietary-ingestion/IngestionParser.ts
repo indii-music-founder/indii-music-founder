@@ -4,8 +4,8 @@
  */
 
 import { XMLParser } from 'fast-xml-parser';
-import type { IngestionNotificationMessage } from './types/ern';
-import type { EarningsReportReport } from './types/dsr';
+import type { IngestionNotificationMessage } from '@/services/distribution/proprietary-ingestion/types/ern';
+import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 
 // Parser options for Ingestion XML
 const parserOptions = {

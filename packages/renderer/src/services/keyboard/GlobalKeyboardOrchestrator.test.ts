@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { globalKeyboardOrchestrator } from './GlobalKeyboardOrchestrator';
+import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
 
 describe('GlobalKeyboardOrchestrator registration cleanup', () => {
     const cleanups: Array<() => void> = [];

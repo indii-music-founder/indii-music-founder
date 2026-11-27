@@ -34,7 +34,7 @@ import {
     ProjectCanvasDocumentSchema,
     ProjectCanvasBlockSchema,
     ProjectCanvasEdgeSchema,
-} from '../types';
+} from '@/modules/project-canvas/types';
 
 export interface CanvasSaveState {
     isSaving: boolean;

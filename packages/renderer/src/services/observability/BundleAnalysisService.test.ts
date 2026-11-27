@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BundleAnalysisService } from './BundleAnalysisService';
-import type { BundleMetrics } from './BundleAnalysisService';
+import { BundleAnalysisService } from '@/services/observability/BundleAnalysisService';
+import type { BundleMetrics } from '@/services/observability/BundleAnalysisService';
 
 describe('BundleAnalysisService', () => {
   let service: BundleAnalysisService;

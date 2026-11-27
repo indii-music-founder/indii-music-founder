@@ -11,8 +11,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
-import type { DomainTestScenario } from './AgentStressTest.harness';
+import { AgentPromptBuilder } from '@/services/agent/builders/AgentPromptBuilder';
+import type { DomainTestScenario } from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Mocks (must be top-level per Vitest hoisting requirements)
@@ -78,7 +78,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),

@@ -1,4 +1,4 @@
-import type { Itinerary, ItineraryStop } from './types';
+import type { Itinerary, ItineraryStop } from '@/modules/touring/types';
 import type { MileageTripInput } from '@/services/finance/FinanceCompiler';
 
 /**

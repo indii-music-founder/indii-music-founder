@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ callable: vi.fn() }));
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => mocks.callable) }));
 vi.mock('@/services/firebase', () => ({ functions: {} }));
 
-import { loadCanonicalCatalogIntelligence } from './CanonicalCatalogIntelligence';
+import { loadCanonicalCatalogIntelligence } from '@/modules/registration/services/CanonicalCatalogIntelligence';
 
 describe('loadCanonicalCatalogIntelligence', () => {
     it('requests a user-scoped report and validates the returned report contract', async () => {

@@ -2,11 +2,11 @@
 import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { vi } from 'vitest';
-import ReleaseWizard from './ReleaseWizard';
-import { useDDEXRelease } from '../hooks/useDDEXRelease';
+import ReleaseWizard from '@/modules/publishing/components/ReleaseWizard';
+import { useDDEXRelease } from '@/modules/publishing/hooks/useDDEXRelease';
 
 // Mock the hook
-vi.mock('../hooks/useDDEXRelease');
+vi.mock('@/modules/publishing/hooks/useDDEXRelease');
 
 describe('ReleaseWizard Integration', () => {
     const mockUpdateMetadata = vi.fn();
@@ -164,7 +164,7 @@ describe('ReleaseWizard Integration', () => {
 
 describe('parseAiTools (ISSUE-1707)', () => {
     it('keeps spaces inside a tool name and drops empty entries', async () => {
-        const { parseAiTools } = await import('./ReleaseWizard');
+        const { parseAiTools } = await import('@/modules/publishing/components/ReleaseWizard');
         expect(parseAiTools('Flow Music (flowmusic.app), Suno ,, ')).toEqual(['Flow Music (flowmusic.app)', 'Suno']);
         expect(parseAiTools('Flow ')).toEqual(['Flow']);
     });

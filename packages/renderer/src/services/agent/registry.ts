@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { AGENT_CONFIGS } from './agentConfig';
-import { SpecializedAgent, AgentRegistryProvider } from './types';
-import { DEPARTMENTS } from './departments';
+import { AGENT_CONFIGS } from '@/services/agent/agentConfig';
+import { SpecializedAgent, AgentRegistryProvider } from '@/services/agent/types';
+import { DEPARTMENTS } from '@/services/agent/departments';
 
 export class AgentRegistry implements AgentRegistryProvider {
     private agents: Map<string, SpecializedAgent> = new Map();
@@ -52,11 +52,11 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(meta, async () => {
-                const module = await importWithRetry(() => import('./specialists/GeneralistAgent'));
+                const module = await importWithRetry(() => import('@/services/agent/specialists/GeneralistAgent'));
                 if (!module.GeneralistAgent) {
                     throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
-                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent(
                     generalistKey,
                     module.GeneralistAgent
@@ -78,8 +78,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(merchMeta, async () => {
-                const { MerchandiseAgent } = await importWithRetry(() => import('./MerchandiseAgent'));
-                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                const { MerchandiseAgent } = await importWithRetry(() => import('@/services/agent/MerchandiseAgent'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent('merchandise', MerchandiseAgent);
             });
         } catch (e: unknown) {
@@ -100,7 +100,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                     } as SpecializedAgent;
 
                     this.registerLazy(meta, async () => {
-                        const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                        const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                         return SpecialistAgentFactory.createConfigAgent(config);
                     });
                 } catch (e: unknown) {
@@ -121,7 +121,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(keeperMeta, async () => {
-                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createBaseAgent({
                     id: 'keeper',
                     name: 'Keeper',
@@ -148,8 +148,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(curriculumMeta, async () => {
-                const { CurriculumAgent } = await importWithRetry(() => import('./specialists/CurriculumAgent'));
-                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                const { CurriculumAgent } = await importWithRetry(() => import('@/services/agent/specialists/CurriculumAgent'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent('curriculum', CurriculumAgent);
             });
         } catch (e: unknown) {
@@ -177,7 +177,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                         } as SpecializedAgent;
 
                         this.registerLazy(workerMeta, async () => {
-                            const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
+                            const { SpecialistAgentFactory } = await importWithRetry(() => import('@/services/agent/builders/SpecialistAgentFactory'));
                             return SpecialistAgentFactory.createBaseAgent({
                                 id: workerId,
                                 name: workerMeta.name,

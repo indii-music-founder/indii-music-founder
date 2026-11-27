@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { liveConversationService } from '../LiveConversationService';
+import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 import { voiceService } from '@/services/intelligence/VoiceService';
 
 vi.mock('@/services/intelligence/VoiceService', () => ({

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@/services/business-harness';
-import { HarnessTools } from '../HarnessTools';
+import { HarnessTools } from '@/services/agent/tools/HarnessTools';
 import { HarnessRegistry } from '@/services/business-harness/HarnessCompiler';
 import * as HarnessStorage from '@/services/business-harness/HarnessStorage';
 

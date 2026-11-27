@@ -11,7 +11,7 @@
  * from registry membership alone.
  */
 
-import type { ValidAgentId } from './types';
+import type { ValidAgentId } from '@/services/agent/types';
 
 export const BOARDROOM_CONDUCTOR_ID = 'generalist' as const;
 

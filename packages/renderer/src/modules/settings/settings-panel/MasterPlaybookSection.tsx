@@ -23,7 +23,7 @@ import {
     CheckCircle2,
     LucideIcon,
 } from 'lucide-react';
-import { SectionHeader } from './SettingsShared';
+import { SectionHeader } from '@/modules/settings/settings-panel/SettingsShared';
 import { useToast } from '@/core/context/ToastContext';
 import { artistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 import {

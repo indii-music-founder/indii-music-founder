@@ -10,7 +10,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: mocks.httpsCallable,
 }));
 
-import { PreSaveCampaignService } from './PreSaveCampaignService';
+import { PreSaveCampaignService } from '@/services/marketing/PreSaveCampaignService';
 
 describe('PreSaveCampaignService', () => {
     beforeEach(() => {

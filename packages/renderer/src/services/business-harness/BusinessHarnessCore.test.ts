@@ -1,15 +1,15 @@
-import './index';
+import '@/services/business-harness/index';
 import { describe, expect, it } from 'vitest';
-import { activityValueService } from './ActivityValueService';
-import { boardroomMetaHarnessService } from './BoardroomMetaHarnessService';
-import { hiddenCostHarnessService } from './HiddenCostHarnessService';
-import { BUSINESS_HARNESS_CATALOG } from './HarnessCatalog';
-import { merchPodHarnessService } from './MerchPodHarnessService';
-import { uploadIntakeHarnessService } from './UploadIntakeHarnessService';
-import { createHarnessRun } from './types';
-import { APPROVAL_GATE_REGISTRY } from './ApprovalGateRegistry';
-import { HarnessRegistry, compileHarness } from './HarnessCompiler';
-import { releaseHarnessCompiler } from '../release-harness/ReleaseHarnessCompiler';
+import { activityValueService } from '@/services/business-harness/ActivityValueService';
+import { boardroomMetaHarnessService } from '@/services/business-harness/BoardroomMetaHarnessService';
+import { hiddenCostHarnessService } from '@/services/business-harness/HiddenCostHarnessService';
+import { BUSINESS_HARNESS_CATALOG } from '@/services/business-harness/HarnessCatalog';
+import { merchPodHarnessService } from '@/services/business-harness/MerchPodHarnessService';
+import { uploadIntakeHarnessService } from '@/services/business-harness/UploadIntakeHarnessService';
+import { createHarnessRun } from '@/services/business-harness/types';
+import { APPROVAL_GATE_REGISTRY } from '@/services/business-harness/ApprovalGateRegistry';
+import { HarnessRegistry, compileHarness } from '@/services/business-harness/HarnessCompiler';
+import { releaseHarnessCompiler } from '@/services/release-harness/ReleaseHarnessCompiler';
 
 describe('Business Harness core', () => {
   it('converts active app time into value tracking without calling it revenue', () => {

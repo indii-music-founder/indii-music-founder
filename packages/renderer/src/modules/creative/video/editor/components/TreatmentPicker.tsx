@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import {
     resolveTreatment,
     VIDEO_TREATMENT_PRESETS,

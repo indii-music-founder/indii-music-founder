@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FinanceAgent } from './FinanceAgent';
+import { FinanceAgent } from '@/services/agent/definitions/FinanceAgent';
 
 // Mock prompt.md?raw
 vi.mock('@agents/finance/prompt.md?raw', () => ({

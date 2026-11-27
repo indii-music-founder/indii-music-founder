@@ -16,12 +16,12 @@ import {
     useCanvasPresence,
     getCollaboratorColor,
     COLLABORATOR_PALETTE,
-} from '../hooks/useCanvasPresence';
+} from '@/modules/project-canvas/hooks/useCanvasPresence';
 import {
     CanvasPresenceLayer,
     CollaboratorPills,
-} from '../components/presence/CanvasPresenceLayer';
-import type { CanvasPresenceState, ProjectCanvasBlock } from '../types';
+} from '@/modules/project-canvas/components/presence/CanvasPresenceLayer';
+import type { CanvasPresenceState, ProjectCanvasBlock } from '@/modules/project-canvas/types';
 import { setDoc, deleteDoc } from 'firebase/firestore';
 
 // Mock Firebase

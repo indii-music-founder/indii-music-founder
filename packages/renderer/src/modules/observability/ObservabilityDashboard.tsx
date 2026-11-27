@@ -10,7 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RUMSnapshot, VitalsReport } from '@/services/observability';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Search, MessageSquareWarning, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { AdminLockScreen } from './AdminLockScreen';
+import { AdminLockScreen } from '@/modules/observability/AdminLockScreen';
 import { toMillisSafe } from '@/utils/timestamps';
 
 interface MetricPoint {

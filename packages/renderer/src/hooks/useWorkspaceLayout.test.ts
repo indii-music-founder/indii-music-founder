@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWorkspaceMode } from './useWorkspaceLayout';
+import { getWorkspaceMode } from '@/hooks/useWorkspaceLayout';
 
 describe('getWorkspaceMode', () => {
     it.each([

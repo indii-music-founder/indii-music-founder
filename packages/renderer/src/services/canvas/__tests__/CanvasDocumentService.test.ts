@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createDocFromImage } from '../CanvasDoc';
-import { readCanvasDocument, summarizeArtwork, newestArtworkFirst } from '../CanvasDocValidation';
+import { createDocFromImage } from '@/services/canvas/CanvasDoc';
+import { readCanvasDocument, summarizeArtwork, newestArtworkFirst } from '@/services/canvas/CanvasDocValidation';
 
 // Replaces the former fake-user/in-memory-Firestore checks with pure boundary checks.
 // Real save/load/list behavior is covered by the authenticated artwork acceptance workflow.

@@ -1,11 +1,11 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import PublicistDashboard from './PublicistDashboard';
-import { usePublicist } from './hooks/usePublicist';
+import PublicistDashboard from '@/modules/publicist/PublicistDashboard';
+import { usePublicist } from '@/modules/publicist/hooks/usePublicist';
 
 // Mock the usePublicist hook
-vi.mock('./hooks/usePublicist', () => ({
+vi.mock('@/modules/publicist/hooks/usePublicist', () => ({
     usePublicist: vi.fn(() => ({
         campaigns: [
             {

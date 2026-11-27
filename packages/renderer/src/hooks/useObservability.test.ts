@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useObservability } from './useObservability';
+import { useObservability } from '@/hooks/useObservability';
 
 describe('useObservability', () => {
   beforeEach(() => {

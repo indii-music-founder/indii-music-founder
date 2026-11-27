@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
-import { knowledgeBaseService, KnowledgeDoc } from '../services/KnowledgeBaseService';
+import { knowledgeBaseService, KnowledgeDoc } from '@/modules/knowledge/services/KnowledgeBaseService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AgentMessage } from '@/core/store/slices/agent';

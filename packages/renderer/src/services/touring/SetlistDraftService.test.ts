@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SetlistDraftInputSchema } from './SetlistDraftService';
+import { SetlistDraftInputSchema } from '@/services/touring/SetlistDraftService';
 
 const validDraft = {
     userId: 'user-1',

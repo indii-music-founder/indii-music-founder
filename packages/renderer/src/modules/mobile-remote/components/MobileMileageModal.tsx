@@ -8,14 +8,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Car, X, MapPin, DollarSign, ArrowRightLeft, Check, Receipt, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { triggerHaptic } from "../haptics";
+import { triggerHaptic } from "@/modules/mobile-remote/haptics";
 import { useStore } from "@/core/store";
 import { FinanceService } from "@/services/finance/FinanceService";
 import { auth } from "@/services/firebase";
 import { remoteRelayService } from "@/services/agent/RemoteRelayService";
 import { useToast } from "@/core/context/ToastContext";
 import { logger } from "@/utils/logger";
-import { businessMileageRate } from './mileageRate';
+import { businessMileageRate } from '@/modules/mobile-remote/components/mileageRate';
 
 
 const COMMON_DESTINATIONS = [

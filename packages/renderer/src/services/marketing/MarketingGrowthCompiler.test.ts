@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MarketingGrowthCompiler, MarketingGrowthInput } from './MarketingGrowthCompiler';
+import { MarketingGrowthCompiler, MarketingGrowthInput } from '@/services/marketing/MarketingGrowthCompiler';
 
 describe('MarketingGrowthCompiler', () => {
   it('should compile successfully and generate correct output', () => {

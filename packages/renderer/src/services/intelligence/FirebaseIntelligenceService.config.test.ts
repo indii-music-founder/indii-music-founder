@@ -1,4 +1,4 @@
-import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // HOISTED MOCKS
@@ -79,7 +79,7 @@ vi.mock('@/config/env', () => ({
     serverTimestamp: vi.fn(),
     env: { VITE_API_KEY: 'mock-key', appCheckKey: 'mock-key' }
 }));
-vi.mock('./billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     serverTimestamp: vi.fn(),
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
@@ -87,7 +87,7 @@ vi.mock('./billing/TokenUsageService', () => ({
         trackUsage: vi.fn().mockResolvedValue(undefined)
     }
 }));
-vi.mock('./context/CachedContextService', () => ({
+vi.mock('@/services/intelligence/context/CachedContextService', () => ({
     serverTimestamp: vi.fn(),
     CachedContextService: {
         shouldCache: vi.fn().mockReturnValue(false),
@@ -95,7 +95,7 @@ vi.mock('./context/CachedContextService', () => ({
         findCache: vi.fn()
     }
 }));
-vi.mock('./IntelligenceResponseCache', () => ({
+vi.mock('@/services/intelligence/IntelligenceResponseCache', () => ({
     serverTimestamp: vi.fn(),
     aiCache: { get: vi.fn(), set: vi.fn() }
 }));

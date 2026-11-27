@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { INITIAL_PROJECT, useVideoEditorStore } from './videoEditorStore';
+import { INITIAL_PROJECT, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { vi } from 'vitest';
 
 vi.unmock('@/modules/creative/video/store/videoEditorStore');

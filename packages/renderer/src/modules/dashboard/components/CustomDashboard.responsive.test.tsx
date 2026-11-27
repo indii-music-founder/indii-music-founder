@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Activity } from 'lucide-react';
-import { CustomDashboard } from './CustomDashboard';
+import { CustomDashboard } from '@/modules/dashboard/components/CustomDashboard';
 
-vi.mock('./CustomDashboardWidgets', () => ({
+vi.mock('@/modules/dashboard/components/CustomDashboardWidgets', () => ({
     STORAGE_KEY: 'test_custom_dashboard_widgets',
     loadWidgets: () => [{ id: 'widget-1', type: 'activity', order: 0 }],
     WIDGET_DEFINITIONS: {

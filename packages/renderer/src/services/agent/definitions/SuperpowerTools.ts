@@ -1,7 +1,7 @@
-import { FunctionDeclaration } from '../types';
-import { VALID_AGENT_IDS_LIST } from '../types';
-import { ARTIFACT_TOOL_DECLARATIONS } from '../tools/ArtifactTools';
-import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
+import { FunctionDeclaration } from '@/services/agent/types';
+import { VALID_AGENT_IDS_LIST } from '@/services/agent/types';
+import { ARTIFACT_TOOL_DECLARATIONS } from '@/services/agent/tools/ArtifactTools';
+import { PRINT_TOOL_DECLARATIONS } from '@/services/agent/definitions/PrintToolDeclarations';
 
 /**
  * SUPERPOWER_TOOLS defines the advanced cross-cutting capabilities available to all agents.

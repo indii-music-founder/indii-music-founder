@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import StudioWorkView from './StudioWorkView';
+import StudioWorkView from '@/modules/mobile-remote/components/StudioWorkView';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 
 const toastMocks = vi.hoisted(() => ({
@@ -14,14 +14,14 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => toastMocks,
 }));
 
-vi.mock('./AgentChat', () => ({
+vi.mock('@/modules/mobile-remote/components/AgentChat', () => ({
     default: () => <div data-testid="agent-chat-stub">Agent Chat Embedded</div>,
 }));
-vi.mock('./GenerationMonitor', async (importOriginal) => ({
-    ...await importOriginal<typeof import('./GenerationMonitor')>(),
+vi.mock('@/modules/mobile-remote/components/GenerationMonitor', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/modules/mobile-remote/components/GenerationMonitor')>(),
     default: ({ isPaired }: { isPaired: boolean }) => <div data-testid="generation-monitor">{isPaired ? 'Paired generator' : 'Offline generator'}</div>,
 }));
-vi.mock('./CommandPad', () => ({
+vi.mock('@/modules/mobile-remote/components/CommandPad', () => ({
     default: ({ isPaired }: { isPaired: boolean }) => <div data-testid="command-pad">{isPaired ? 'Paired actions' : 'Offline actions'}</div>,
 }));
 

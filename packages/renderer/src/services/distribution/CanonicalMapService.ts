@@ -1,5 +1,5 @@
 
-import { ExtendedGoldenMetadata } from '../metadata/types';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 
 /**

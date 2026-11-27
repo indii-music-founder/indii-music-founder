@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import CampaignDashboard from './CampaignDashboard';
+import CampaignDashboard from '@/modules/marketing/components/CampaignDashboard';
 
 // Mock dependencies
 const mockUseMarketing = vi.fn();
@@ -19,10 +19,10 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock child components to isolate the dashboard logic
-vi.mock('./MarketingSidebar', () => ({
+vi.mock('@/modules/marketing/components/MarketingSidebar', () => ({
     MarketingSidebar: () => <div data-testid="marketing-sidebar" />
 }));
-vi.mock('./MarketingToolbar', () => ({
+vi.mock('@/modules/marketing/components/MarketingToolbar', () => ({
     MarketingToolbar: () => <div data-testid="marketing-toolbar" />
 }));
 

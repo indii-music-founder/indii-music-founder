@@ -1,7 +1,7 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
-import type { AgentContext, AnyToolFunction } from '../types';
+import type { AgentContext, AnyToolFunction } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
 

@@ -1,9 +1,9 @@
 // useStore removed
 
 import { OrganizationService } from '@/services/OrganizationService';
-import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { wrapTool, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export const OrganizationTools = {

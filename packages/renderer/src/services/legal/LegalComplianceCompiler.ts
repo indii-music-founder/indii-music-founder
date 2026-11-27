@@ -6,12 +6,12 @@ import {
   type HarnessAgentBrief,
   type HarnessScore,
   createHarnessRun
-} from '../business-harness/types';
+} from '@/services/business-harness/types';
 
 import {
   type HarnessCompiler,
   type HarnessContext
-} from '../business-harness/HarnessCompiler';
+} from '@/services/business-harness/HarnessCompiler';
 
 export interface LegalReviewItem {
   id: string;

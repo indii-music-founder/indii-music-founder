@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { CampaignAsset, CampaignStatus, ScheduledPost } from '../types';
+import { CampaignAsset, CampaignStatus, ScheduledPost } from '@/modules/marketing/types';
 import { ArrowLeft, Calendar, LayoutGrid, List, Play, CheckCircle, AlertCircle, Clock, MoreVertical, Edit3, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import IntelligencePredictionPanel from './IntelligencePredictionPanel';
+import IntelligencePredictionPanel from '@/modules/marketing/components/IntelligencePredictionPanel';
 
 import { LucideIcon } from 'lucide-react';
 

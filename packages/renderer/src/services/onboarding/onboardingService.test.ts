@@ -1,11 +1,11 @@
 
-import { calculateProfileStatus, processFunctionCalls, externalizeOnboardingBrandAssets, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
-import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
+import { calculateProfileStatus, processFunctionCalls, externalizeOnboardingBrandAssets, runOnboardingConversation, OnboardingTools, determinePhase } from '@/services/onboarding/onboardingService';
+import type { UserProfile, ConversationFile } from '@/modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Intelligence Service
-vi.mock('../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: vi.fn()
     },

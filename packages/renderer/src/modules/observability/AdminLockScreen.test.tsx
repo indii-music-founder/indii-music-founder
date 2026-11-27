@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AdminLockScreen } from './AdminLockScreen';
+import { AdminLockScreen } from '@/modules/observability/AdminLockScreen';
 
 // Mock the useGodMode hook
 const mockUseGodMode = vi.fn();

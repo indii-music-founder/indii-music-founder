@@ -1,46 +1,46 @@
 import { create } from 'zustand';
 
-import { AppSlice, createAppSlice } from './slices/appSlice';
-export type { AppSlice } from './slices/appSlice';
+import { AppSlice, createAppSlice } from '@/core/store/slices/appSlice';
+export type { AppSlice } from '@/core/store/slices/appSlice';
 export { createAppSlice };
-import { ProfileSlice, clearProfileSubscriptionForAccountBoundary, createProfileSlice } from './slices/profileSlice';
-import { AgentSlice, createAgentSlice } from './slices/agent';
-import { CreativeSlice, createCreativeSlice } from './slices/creative';
-export type { CanvasImage, ShotItem, DesignVersion } from './slices/creative';
+import { ProfileSlice, clearProfileSubscriptionForAccountBoundary, createProfileSlice } from '@/core/store/slices/profileSlice';
+import { AgentSlice, createAgentSlice } from '@/core/store/slices/agent';
+import { CreativeSlice, createCreativeSlice } from '@/core/store/slices/creative';
+export type { CanvasImage, ShotItem, DesignVersion } from '@/core/store/slices/creative';
 export type { HistoryItem } from '@/core/types/history';
-import { WorkflowSlice, createWorkflowSlice } from './slices/workflowSlice';
-import { AuthSlice, createAuthSlice } from './slices/authSlice';
-import { FinanceSlice, createFinanceSlice } from './slices/financeSlice';
-import { DistributionSlice, createDistributionSlice } from './slices/distributionSlice';
-import { FileSystemSlice, createFileSystemSlice } from './slices/fileSystemSlice';
-import { createCanvasEditorSlice, CanvasEditorSlice } from './slices/creative/canvasEditorSlice';
-import { AudioIntelligenceSlice, createAudioIntelligenceSlice } from './slices/audioIntelligenceSlice';
-import { SubscriptionSlice, createSubscriptionSlice } from './slices/subscriptionSlice';
-import { SidecarSlice, createSidecarSlice } from './slices/sidecarSlice';
-import { SyncSlice, createSyncSlice } from './slices/syncSlice';
-import { AudioGenerationSlice, createAudioGenerationSlice } from './slices/audioGenerationSlice';
-import { UploadQueueSlice, createUploadQueueSlice } from './slices/uploadQueueSlice';
-import { AudioPlayerSlice, createAudioPlayerSlice } from './slices/audioPlayerSlice';
-import { BackgroundJobsSlice, createBackgroundJobsSlice } from './slices/backgroundJobsSlice';
-import { MemoryAgentSlice, createMemoryAgentSlice } from './slices/memoryAgentSlice';
-import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSlice';
-import { EmailSlice, createEmailSlice } from './slices/emailSlice';
-import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
-import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
-import { BoardroomSlice, ReferencedAsset, createBoardroomSlice, deduplicateBoardroomReferences } from './slices/boardroomSlice';
-import { RegistrationSlice, createRegistrationSlice } from './slices/registrationSlice';
-import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
-import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
-import { AgentMemoryState, createAgentMemorySlice } from './slices/agentMemorySlice';
-import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
-import { CRMSlice, createCRMSlice } from './slices/crmSlice';
-import { MapSlice, createMapSlice } from './slices/mapSlice';
-import { NotesSlice, Note, createNotesSlice } from './slices/notesSlice';
-import { AgentSwarmSlice, createAgentSwarmSlice } from './slices/agentSwarmSlice';
-export type { AgentSwarmSlice, AgentActionLog, CampaignMetrics } from './slices/agentSwarmSlice';
+import { WorkflowSlice, createWorkflowSlice } from '@/core/store/slices/workflowSlice';
+import { AuthSlice, createAuthSlice } from '@/core/store/slices/authSlice';
+import { FinanceSlice, createFinanceSlice } from '@/core/store/slices/financeSlice';
+import { DistributionSlice, createDistributionSlice } from '@/core/store/slices/distributionSlice';
+import { FileSystemSlice, createFileSystemSlice } from '@/core/store/slices/fileSystemSlice';
+import { createCanvasEditorSlice, CanvasEditorSlice } from '@/core/store/slices/creative/canvasEditorSlice';
+import { AudioIntelligenceSlice, createAudioIntelligenceSlice } from '@/core/store/slices/audioIntelligenceSlice';
+import { SubscriptionSlice, createSubscriptionSlice } from '@/core/store/slices/subscriptionSlice';
+import { SidecarSlice, createSidecarSlice } from '@/core/store/slices/sidecarSlice';
+import { SyncSlice, createSyncSlice } from '@/core/store/slices/syncSlice';
+import { AudioGenerationSlice, createAudioGenerationSlice } from '@/core/store/slices/audioGenerationSlice';
+import { UploadQueueSlice, createUploadQueueSlice } from '@/core/store/slices/uploadQueueSlice';
+import { AudioPlayerSlice, createAudioPlayerSlice } from '@/core/store/slices/audioPlayerSlice';
+import { BackgroundJobsSlice, createBackgroundJobsSlice } from '@/core/store/slices/backgroundJobsSlice';
+import { MemoryAgentSlice, createMemoryAgentSlice } from '@/core/store/slices/memoryAgentSlice';
+import { MarketplaceSlice, createMarketplaceSlice } from '@/core/store/slices/marketplaceSlice';
+import { EmailSlice, createEmailSlice } from '@/core/store/slices/emailSlice';
+import { AnalyticsSlice, createAnalyticsSlice } from '@/core/store/slices/analyticsSlice';
+import { AgentFeedbackSlice, createAgentFeedbackSlice } from '@/core/store/slices/agentFeedbackSlice';
+import { BoardroomSlice, ReferencedAsset, createBoardroomSlice, deduplicateBoardroomReferences } from '@/core/store/slices/boardroomSlice';
+import { RegistrationSlice, createRegistrationSlice } from '@/core/store/slices/registrationSlice';
+import { AgentPlanSlice, createAgentPlanSlice } from '@/core/store/slices/agentPlanSlice';
+import { AgentCanvasSlice, createAgentCanvasSlice } from '@/core/store/slices/agentCanvasSlice';
+import { AgentMemoryState, createAgentMemorySlice } from '@/core/store/slices/agentMemorySlice';
+import { HandoffSlice, createHandoffSlice } from '@/core/store/slices/handoffSlice';
+import { CRMSlice, createCRMSlice } from '@/core/store/slices/crmSlice';
+import { MapSlice, createMapSlice } from '@/core/store/slices/mapSlice';
+import { NotesSlice, Note, createNotesSlice } from '@/core/store/slices/notesSlice';
+import { AgentSwarmSlice, createAgentSwarmSlice } from '@/core/store/slices/agentSwarmSlice';
+export type { AgentSwarmSlice, AgentActionLog, CampaignMetrics } from '@/core/store/slices/agentSwarmSlice';
 import { createProjectCanvasSlice, type ProjectCanvasSlice } from '@/modules/project-canvas/store/projectCanvasSlice';
 export type { ProjectCanvasSlice };
-import { useLivingPlanSlice } from './slices/livingPlanSlice';
+import { useLivingPlanSlice } from '@/core/store/slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 import { isValidModule, type ModuleId } from '@/core/constants';
@@ -57,12 +57,12 @@ export {
     type AgentUISlice,
 };
 
-export type { AgentMessage, AgentThought } from './slices/agent';
+export type { AgentMessage, AgentThought } from '@/core/store/slices/agent';
 
 
-export type { StoreState } from './types';
+export type { StoreState } from '@/core/store/types';
 import { logger } from '@/utils/logger';
-import type { StoreState } from './types';
+import type { StoreState } from '@/core/store/types';
 
 type SafePersistedAppState = Pick<
     StoreState,
@@ -101,7 +101,7 @@ export function sanitizePersistedAppState(value: unknown): Partial<SafePersisted
 import { OrganizationService } from '@/services/OrganizationService';
 
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { SecureZustandStorage } from './adapters/SecureZustandStorage';
+import { SecureZustandStorage } from '@/core/store/adapters/SecureZustandStorage';
 
 export const useStore = create<StoreState>()(
     persist(

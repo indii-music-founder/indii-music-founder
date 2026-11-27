@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { EditorAssetLibrary } from './EditorAssetLibrary';
+import { EditorAssetLibrary } from '@/modules/creative/video/editor/components/EditorAssetLibrary';
 
 // ISSUE-923 regression: the asset library must include uploaded images and
 // uploaded audio (canonical type 'music'), not just generated history.

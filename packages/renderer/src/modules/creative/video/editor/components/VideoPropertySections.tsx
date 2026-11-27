@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoProject, VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { PanelSection, PropertyRow } from '@/components/studio/PropertiesPanel';
-import { KeyframeButton, StyledInput, StyledRange, StyledSelect, StyledTextArea } from './VideoPropertyInputs';
+import { KeyframeButton, StyledInput, StyledRange, StyledSelect, StyledTextArea } from '@/modules/creative/video/editor/components/VideoPropertyInputs';
 import { Image as ImageIcon } from 'lucide-react';
 
 // --- Project Settings Section ---

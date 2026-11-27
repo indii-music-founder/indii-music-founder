@@ -10,16 +10,16 @@
  * `rasterizeVectorText` and need the brand font).
  */
 
-import { artworkExportDimensions } from './ArtworkGeometry';
-import { renderPositionedArtworkLayer, renderArtworkDocument } from './ArtworkRenderService';
+import { artworkExportDimensions } from '@/services/canvas/ArtworkGeometry';
+import { renderPositionedArtworkLayer, renderArtworkDocument } from '@/services/canvas/ArtworkRenderService';
 import { readPsd, writePsd, type BlendMode, type Layer, type Psd } from 'ag-psd';
 import * as fabric from 'fabric';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { adjustmentsToFilters, type CanvasBlendMode, type CanvasDoc, type RasterLayer, type TextLayer } from './CanvasDoc';
-import { descriptorsToFabricFilters } from './fabricFilters';
-import { rasterizeTextLayerToRaster, type RenderedRaster } from './textLayerRaster';
+import { adjustmentsToFilters, type CanvasBlendMode, type CanvasDoc, type RasterLayer, type TextLayer } from '@/services/canvas/CanvasDoc';
+import { descriptorsToFabricFilters } from '@/services/canvas/fabricFilters';
+import { rasterizeTextLayerToRaster, type RenderedRaster } from '@/services/canvas/textLayerRaster';
 
-export type { RenderedRaster } from './textLayerRaster';
+export type { RenderedRaster } from '@/services/canvas/textLayerRaster';
 
 const CANVAS_BLEND_TO_PSD: Record<CanvasBlendMode, BlendMode> = {
     normal: 'normal',

@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { X, Clock, User, Phone, Mail, Save, Plus, Trash2, Calendar, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { ItineraryContact, ItineraryStop } from '../types';
-import { formatTouringDate } from '../itinerary';
+import type { ItineraryContact, ItineraryStop } from '@/modules/touring/types';
+import { formatTouringDate } from '@/modules/touring/itinerary';
 
 
 interface ScheduleItem {

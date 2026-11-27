@@ -1,4 +1,4 @@
-export * from './types';
-export * from './CreatorProtectionHarnessService';
-export * from './CreatorProtectionStorage';
+export * from '@/services/creator-protection/types';
+export * from '@/services/creator-protection/CreatorProtectionHarnessService';
+export * from '@/services/creator-protection/CreatorProtectionStorage';
 

@@ -2,9 +2,9 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CreativeStorageService } from '../creative/CreativeStorageService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 // Mocks
 const mocks = vi.hoisted(() => ({
@@ -28,7 +28,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../creative/CreativeStorageService', () => ({
+vi.mock('@/services/creative/CreativeStorageService', () => ({
     CreativeStorageService: {
         uploadReferenceMedia: mocks.uploadReferenceMedia
     }

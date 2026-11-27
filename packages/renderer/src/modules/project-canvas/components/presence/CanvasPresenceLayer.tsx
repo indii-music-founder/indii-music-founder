@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import type { CanvasPresenceState, ProjectCanvasBlock } from '../../types';
+import type { CanvasPresenceState, ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface CanvasPresenceLayerProps {
     collaborators: CanvasPresenceState[];

@@ -5,13 +5,13 @@ import { useToast } from '@/core/context/ToastContext';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Itinerary, ItineraryStop } from '../types';
-import { DaySheetModal } from './DaySheetModal';
+import type { Itinerary, ItineraryStop } from '@/modules/touring/types';
+import { DaySheetModal } from '@/modules/touring/components/DaySheetModal';
 import { ResendEmailService } from '@/services/email/ResendEmailService';
-import { TechnicalRiderGenerator } from './TechnicalRiderGenerator';
-import { VisaChecklist } from './VisaChecklist';
+import { TechnicalRiderGenerator } from '@/modules/touring/components/TechnicalRiderGenerator';
+import { VisaChecklist } from '@/modules/touring/components/VisaChecklist';
 import { logger } from '@/utils/logger';
-import { formatTouringDate } from '../itinerary';
+import { formatTouringDate } from '@/modules/touring/itinerary';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

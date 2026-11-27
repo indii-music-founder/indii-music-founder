@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TouringService } from './TouringService';
+import { TouringService } from '@/services/touring/TouringService';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock Firebase

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCatalogVisibilityState } from './CatalogVisibilityState';
+import { parseCatalogVisibilityState } from '@/modules/registration/services/CatalogVisibilityState';
 
 const hash = 'a'.repeat(64);
 const state = { userId: 'owner', masterHash: hash, lifecycle: 'ADMIN_LOCKED', ledgerReceiptId: 'receipt' };

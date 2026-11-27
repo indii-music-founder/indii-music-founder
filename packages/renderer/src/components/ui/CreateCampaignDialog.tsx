@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createCallable } from 'react-call';
-import { Modal } from './Modal';
+import { Modal } from '@/components/ui/Modal';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';

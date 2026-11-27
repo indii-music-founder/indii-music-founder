@@ -1,13 +1,13 @@
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
 
 import systemPrompt from '@agents/licensing/prompt.md?raw';
-import { licensingService } from "../../licensing/LicensingService";
-import { licenseScannerService } from "../../knowledge/LicenseScannerService";
+import { licensingService } from "@/services/licensing/LicensingService";
+import { licenseScannerService } from "@/services/knowledge/LicenseScannerService";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { LegalTools } from "../tools/LegalTools";
-import { UniversalTools } from "../tools/UniversalTools";
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { LegalTools } from "@/services/agent/tools/LegalTools";
+import { UniversalTools } from "@/services/agent/tools/UniversalTools";
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 const licensingRetrievalConfig = {

@@ -1,6 +1,6 @@
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import type { ReleaseHarnessResult } from './types';
+import type { ReleaseHarnessResult } from '@/services/release-harness/types';
 
 export async function saveReleaseHarnessRun(result: ReleaseHarnessResult): Promise<string> {
   const target = result.projectId

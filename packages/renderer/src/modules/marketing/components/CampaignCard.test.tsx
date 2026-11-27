@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CampaignCard from './CampaignCard';
-import { CampaignAsset, CampaignStatus } from '../types';
+import CampaignCard from '@/modules/marketing/components/CampaignCard';
+import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
 
 describe('CampaignCard', () => {
     const mockCampaign: CampaignAsset = {

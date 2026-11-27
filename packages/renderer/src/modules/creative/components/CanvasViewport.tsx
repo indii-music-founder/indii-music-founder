@@ -1,9 +1,9 @@
 import React from 'react';
 import { Wand2 } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
-import { CandidateReview, Candidate } from './CandidateReview';
-import { EndFrameSelector } from './EndFrameSelector';
-import { CreativeColor } from '../constants';
+import { CandidateReview, Candidate } from '@/modules/creative/components/CandidateReview';
+import { EndFrameSelector } from '@/modules/creative/components/EndFrameSelector';
+import { CreativeColor } from '@/modules/creative/constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 interface CanvasViewportProps {

@@ -5,7 +5,7 @@ import {
     dataUrlWithDpi,
     injectJpegDpi,
     injectPngDpi,
-} from '../dpiMetadata';
+} from '@/services/print/dpiMetadata';
 
 // ---------------------------------------------------------------------------
 // Fixtures — byte-exact, built in-test so the module is verified against

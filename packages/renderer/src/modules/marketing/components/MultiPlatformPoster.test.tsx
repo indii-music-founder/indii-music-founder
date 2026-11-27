@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import MultiPlatformPoster from './MultiPlatformPoster';
+import MultiPlatformPoster from '@/modules/marketing/components/MultiPlatformPoster';
 import { ToastProvider } from '@/core/context/ToastContext';
 import { socialAutoPosterService } from '@/services/marketing/SocialAutoPosterService';
 

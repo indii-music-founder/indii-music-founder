@@ -1,7 +1,7 @@
-import { AgentConfig } from "../types";
-import { AutonomousTools } from '../tools/AutonomousTools';
-import { MarketingTools } from '../tools/MarketingTools';
-import { UniversalTools } from '../tools/UniversalTools';
+import { AgentConfig } from "@/services/agent/types";
+import { AutonomousTools } from '@/services/agent/tools/AutonomousTools';
+import { MarketingTools } from '@/services/agent/tools/MarketingTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 
 
@@ -405,8 +405,8 @@ export const MarketingAgent: AgentConfig = {
 
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 // Freeze the schema to prevent cross-test contamination

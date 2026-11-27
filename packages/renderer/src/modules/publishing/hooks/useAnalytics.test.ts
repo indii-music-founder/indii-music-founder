@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAnalytics, usePayouts } from './useAnalytics';
+import { useAnalytics, usePayouts } from '@/modules/publishing/hooks/useAnalytics';
 import { useStore } from '@/core/store';
 import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 import { vi, describe, it, expect, beforeEach } from 'vitest';

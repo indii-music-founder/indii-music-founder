@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BlenderVideoPanel } from './BlenderVideoPanel';
+import { BlenderVideoPanel } from '@/modules/creative/video/components/BlenderVideoPanel';
 import { blenderService, FALLBACK_TEMPLATES } from '@/services/blender/BlenderService';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
 

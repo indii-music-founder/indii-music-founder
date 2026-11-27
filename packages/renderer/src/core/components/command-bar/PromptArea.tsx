@@ -19,15 +19,15 @@ import {
     PromptInputAction
 } from '@/components/ui/prompt-input';
 
-import { AttachmentList } from './AttachmentList';
-import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
-import { TalkButton } from './TalkButton';
+import { AttachmentList } from '@/core/components/command-bar/AttachmentList';
+import { TypeaheadMenu, type TypeaheadContext } from '@/core/components/command-bar/TypeaheadMenu';
+import { TalkButton } from '@/core/components/command-bar/TalkButton';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { AgentModePicker } from '@/components/AgentModePicker';
 import { ProductSkillRegistry } from '@/services/agent/skills/ProductSkillRegistry';
-import { LiveConversationButton } from './LiveConversationButton';
+import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 

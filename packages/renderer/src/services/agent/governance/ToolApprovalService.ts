@@ -38,14 +38,14 @@ import {
 } from 'firebase/firestore';
 import { db, auth, functions, appCheck } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { recordToolOutcome } from './ToolOutcomeAudit';
+import { recordToolOutcome } from '@/services/agent/governance/ToolOutcomeAudit';
 import { getToken } from 'firebase/app-check';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
-import type { ToolFunctionResult, ToolFunctionArgs } from '../types';
-import type { ToolRiskTier } from '../types';
-import { unconfirmedApprovalResult } from './ApprovalResultReceipt';
+import type { ToolFunctionResult, ToolFunctionArgs } from '@/services/agent/types';
+import type { ToolRiskTier } from '@/services/agent/types';
+import { unconfirmedApprovalResult } from '@/services/agent/governance/ApprovalResultReceipt';
 
 export interface PendingToolApproval {
     id?: string;
@@ -279,7 +279,7 @@ class ToolApprovalService {
             const candidate = snapshot.data() as PendingToolApproval;
             isComputerApproval = candidate.toolName.startsWith('computer_') && !candidate.bindingSessionId && !binding;
             if (isRecoverableBugReport(candidate)) {
-                const { TOOL_REGISTRY } = await import('../tools');
+                const { TOOL_REGISTRY } = await import('@/services/agent/tools');
                 reportBugHandler = TOOL_REGISTRY.report_bug;
                 if (!reportBugHandler) throw new Error('The registered bug-report handler is unavailable. The request remains pending.');
             }
@@ -337,7 +337,7 @@ class ToolApprovalService {
         try {
             requireApprovalOwner(uid);
             if (isComputerApproval) {
-                const { TOOL_REGISTRY } = await import('../tools');
+                const { TOOL_REGISTRY } = await import('@/services/agent/tools');
                 requireApprovalOwner(uid);
                 const toolFn = TOOL_REGISTRY[approval.toolName];
                 if (!toolFn) throw new Error(`Tool '${approval.toolName}' not found in registry`);

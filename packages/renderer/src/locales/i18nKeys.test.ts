@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import en from './en.json';
+import en from '@/locales/en.json';
 
 /**
  * ISSUE-1268: commit 51f1d34f8 replaced literal placeholder strings with t('module.key')

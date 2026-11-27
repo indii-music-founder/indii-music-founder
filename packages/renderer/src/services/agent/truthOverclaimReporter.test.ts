@@ -22,7 +22,7 @@ import {
   isOverclaimCooldownActive,
   reportOverclaimIfNeeded,
   resetOverclaimCooldownForTests,
-} from './truthOverclaimReporter';
+} from '@/services/agent/truthOverclaimReporter';
 
 describe('truthOverclaimReporter', () => {
   beforeEach(() => {

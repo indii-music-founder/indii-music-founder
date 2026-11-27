@@ -18,7 +18,7 @@ import {
     Calendar,
     User,
 } from 'lucide-react';
-import type { CanvasComment } from '../../types';
+import type { CanvasComment } from '@/modules/project-canvas/types';
 
 interface CanvasCommentModalProps {
     isOpen: boolean;

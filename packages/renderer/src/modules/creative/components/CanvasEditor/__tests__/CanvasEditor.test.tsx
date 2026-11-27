@@ -4,9 +4,9 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
-import { LayerList } from '../LayerList';
-import { AdjustPanel } from '../AdjustPanel';
-import { ExportBar } from '../ExportBar';
+import { LayerList } from '@/modules/creative/components/CanvasEditor/LayerList';
+import { AdjustPanel } from '@/modules/creative/components/CanvasEditor/AdjustPanel';
+import { ExportBar } from '@/modules/creative/components/CanvasEditor/ExportBar';
 import { createDocFromImage, NEUTRAL_ADJUSTMENTS } from '@/services/canvas/CanvasDoc';
 
 afterEach(cleanup);

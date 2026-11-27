@@ -25,7 +25,7 @@ vi.mock('@/core/store', () => {
     return { useStore: { getState: () => mockStore } };
 });
 
-import { VideoTools } from '../VideoTools';
+import { VideoTools } from '@/services/agent/tools/VideoTools';
 import { AssetVersionService } from '@/services/assets/AssetVersionService';
 
 const tool = (VideoTools as unknown as {

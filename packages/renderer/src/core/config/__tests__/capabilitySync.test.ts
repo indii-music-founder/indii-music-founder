@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INTELLIGENCE_CONFIG } from '../intelligence-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { NANO_BANANA_CAPABILITIES } from '@indii/shared';
 
 /**

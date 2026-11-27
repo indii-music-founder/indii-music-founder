@@ -1,4 +1,4 @@
-import { listHeadIds } from './departments';
+import { listHeadIds } from '@/services/agent/departments';
 import type {
     CapabilityKey,
     CapabilitySnapshot,

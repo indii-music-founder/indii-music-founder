@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
 import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
-import { buildAgentSessionState, type AgentMessage, type AgentSessionSlice } from './agentSessionSlice';
+import { buildAgentSessionState, type AgentMessage, type AgentSessionSlice } from '@/core/store/slices/agent/agentSessionSlice';
 
 describe('new session persistence ordering', () => {
     it('waits for creation and the first message before deleting the conversation', async () => {

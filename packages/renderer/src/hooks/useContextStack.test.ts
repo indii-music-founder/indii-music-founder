@@ -6,7 +6,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useContextStack } from './useContextStack';
+import { useContextStack } from '@/hooks/useContextStack';
 
 describe('useContextStack', () => {
   describe('Initial State', () => {

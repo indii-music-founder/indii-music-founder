@@ -1,4 +1,4 @@
-import { ContextPreparation, ContextPreparationTimeout } from './ContextPreparation';
+import { ContextPreparation, ContextPreparationTimeout } from '@/services/agent/components/ContextPreparation';
 
 /** Optional enrichment must leave time for required context and execution. */
 export async function readOptionalContext<T>(

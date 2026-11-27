@@ -5,9 +5,9 @@
  * a single call that returns a complete TrackReport.
  */
 
-import { viralScoreService } from './ViralScoreService';
-import { growthPatternService } from './GrowthPatternService';
-import type { TrackAnalytics, TrackReport, GrowthForecast } from './types';
+import { viralScoreService } from '@/services/analytics/ViralScoreService';
+import { growthPatternService } from '@/services/analytics/GrowthPatternService';
+import type { TrackAnalytics, TrackReport, GrowthForecast } from '@/services/analytics/types';
 
 export class AnalyticsEngine {
     /**

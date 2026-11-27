@@ -3,7 +3,7 @@ import {
     CampaignSchema,
     ContactSchema,
     PublicistStatsSchema
-} from './schema';
+} from '@/modules/publicist/schema';
 
 describe('Publicist Schemas', () => {
     describe('CampaignSchema', () => {

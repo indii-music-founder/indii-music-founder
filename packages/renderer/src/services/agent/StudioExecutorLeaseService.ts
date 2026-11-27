@@ -1,12 +1,12 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { SingleFlight } from '../remote/relayRequestControl';
+import { SingleFlight } from '@/services/remote/relayRequestControl';
 import {
     recordPresencePublishAttempt,
     recordPresencePublishFailure,
     recordPresencePublishSuccess,
-} from './studioRelayHealth';
+} from '@/services/agent/studioRelayHealth';
 
 const KEYCHAIN_ID = 'studio-executor-enrollment-v1';
 export const REMOTE_RELAY_PROTOCOL_VERSION = 1;

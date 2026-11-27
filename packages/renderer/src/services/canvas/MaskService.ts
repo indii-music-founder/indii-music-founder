@@ -1,6 +1,6 @@
 import { auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
-import type { CutoutInput } from './segmentation/GrabCut';
+import type { CutoutInput } from '@/services/canvas/segmentation/GrabCut';
 
 class CutoutWorkerUnavailable extends Error {}
 
@@ -30,7 +30,7 @@ export async function generateArtworkMask(input: CutoutInput, signal: AbortSigna
         // Let React show progress before the synchronous, full-resolution recovery pass.
         await new Promise<void>(resolve => setTimeout(resolve, 0));
         signal.throwIfAborted();
-        const { extractCutout } = await import('./segmentation/GrabCut');
+        const { extractCutout } = await import('@/services/canvas/segmentation/GrabCut');
         const mask = extractCutout({ ...input, pixels: rereadPixels() }, onProgress);
         signal.throwIfAborted();
         return mask;

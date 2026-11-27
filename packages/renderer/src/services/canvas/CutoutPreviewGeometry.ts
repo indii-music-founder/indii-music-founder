@@ -1,4 +1,4 @@
-import type { CutoutPoint, CutoutRectangle } from './segmentation/GrabCut';
+import type { CutoutPoint, CutoutRectangle } from '@/services/canvas/segmentation/GrabCut';
 
 /** Detect a collapsed initial selection before it replaces the artist photo. */
 export function cutoutRetainedFraction(mask: Uint8Array, width: number, height: number, rectangle: CutoutRectangle): number {

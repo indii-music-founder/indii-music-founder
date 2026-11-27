@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { PromptInput, PromptInputActions, PromptInputAction, PromptInputTextarea } from './prompt-input'
+import { PromptInput, PromptInputActions, PromptInputAction, PromptInputTextarea } from '@/components/ui/prompt-input'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 

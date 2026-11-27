@@ -6,7 +6,7 @@
  * McpToolDeclarations.test.ts); a mismatch makes the server reject the call
  * before any work runs (ISSUE-1706).
  */
-import type { FunctionDeclaration } from '../types';
+import type { FunctionDeclaration } from '@/services/agent/types';
 
 export const FETCH_BRAND_KIT_DECLARATION: FunctionDeclaration = {
     name: 'fetch_brand_kit',

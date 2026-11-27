@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BlenderTools } from '../BlenderTools';
+import { BlenderTools } from '@/services/agent/tools/BlenderTools';
 import { blenderService } from '@/services/blender/BlenderService';
 
 vi.mock('@/services/blender/BlenderService', () => ({

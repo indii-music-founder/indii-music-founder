@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ContractPDFService } from './ContractPDFService';
+import { ContractPDFService } from '@/services/legal/ContractPDFService';
 
 describe('ContractPDFService', () => {
     it('places ownership headers and each collaborator on distinct non-overlapping rows in the actual PDF', () => {

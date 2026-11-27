@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
-import { Product, StemFileManifestEntry, StemLabel } from './types';
+import { Product, StemFileManifestEntry, StemLabel } from '@/services/marketplace/types';
 import { logger } from '@/utils/logger';
 
 export class MarketplaceService {

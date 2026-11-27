@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createVisaPlanningEntry, loadVisaPlanningEntries } from './VisaPlanning';
+import { createVisaPlanningEntry, loadVisaPlanningEntries } from '@/modules/touring/components/VisaPlanning';
 
 describe('visa planning truth boundary', () => {
     beforeEach(() => localStorage.clear());

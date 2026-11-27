@@ -38,7 +38,7 @@ vi.mock('@/services/video/LocalVideoProjectRenderer', () => ({
     renderVideoProjectLocally: mocks.renderVideoProjectLocally,
 }));
 
-import { VideoProjectTools } from './VideoProjectTools';
+import { VideoProjectTools } from '@/services/agent/tools/VideoProjectTools';
 
 describe('VideoProjectTools.queue_video_render', () => {
     beforeEach(() => {

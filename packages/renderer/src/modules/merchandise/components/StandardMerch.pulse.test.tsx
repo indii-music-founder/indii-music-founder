@@ -2,11 +2,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
-import { StandardMerch } from './StandardMerch';
-import { useMerchandise } from '../hooks/useMerchandise';
+import { StandardMerch } from '@/modules/merchandise/components/StandardMerch';
+import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
 
 // Mock the hook
-vi.mock('../hooks/useMerchandise', () => ({
+vi.mock('@/modules/merchandise/hooks/useMerchandise', () => ({
     useMerchandise: vi.fn(),
 }));
 

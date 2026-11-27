@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { claimMilestone, isMilestoneSoundEnabled, setMilestoneSoundEnabled } from './milestones';
+import { claimMilestone, isMilestoneSoundEnabled, setMilestoneSoundEnabled } from '@/services/share/milestones';
 
 describe('claimMilestone', () => {
     afterEach(() => {

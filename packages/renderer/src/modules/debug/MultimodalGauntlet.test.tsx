@@ -40,9 +40,9 @@ vi.mock('@/components/ui/button', () => ({
 
 // ── Imports Under Test ───────────────────────────────────────────
 
-import MultimodalGauntlet from './MultimodalGauntlet';
-import { GauntletStep } from './components/GauntletStep';
-import { GauntletPreview } from './components/GauntletPreview';
+import MultimodalGauntlet from '@/modules/debug/MultimodalGauntlet';
+import { GauntletStep } from '@/modules/debug/components/GauntletStep';
+import { GauntletPreview } from '@/modules/debug/components/GauntletPreview';
 
 // ── Tests ────────────────────────────────────────────────────────
 

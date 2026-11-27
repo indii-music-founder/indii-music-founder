@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { SecurityTrustCompiler, SecurityTrustInput } from './SecurityTrustCompiler';
-import type { HarnessContext } from '../business-harness/HarnessCompiler';
+import { SecurityTrustCompiler, SecurityTrustInput } from '@/services/security/SecurityTrustCompiler';
+import type { HarnessContext } from '@/services/business-harness/HarnessCompiler';
 
 describe('SecurityTrustCompiler', () => {
   const compiler = new SecurityTrustCompiler();

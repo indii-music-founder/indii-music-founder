@@ -1,5 +1,5 @@
  
-import { BaseAgent } from '../BaseAgent';
+import { BaseAgent } from '@/services/agent/BaseAgent';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
@@ -9,7 +9,7 @@ import {
     AgentResponse,
     FunctionDeclaration,
     ToolDefinition,
-} from '../types';
+} from '@/services/agent/types';
 
 import systemPrompt from '@agents/conductor/prompt.md?raw';
 import { importWithRetry } from '@/utils/dynamicImport';
@@ -17,9 +17,9 @@ import {
     buildCapabilitySummary,
     getCapabilityHealth,
     isCapabilityQuestion,
-} from '../capabilityTruth';
-import { loadCapabilitySnapshot } from '../CapabilitySnapshotService';
-import { BOARDROOM_FONT_DOWNLOAD } from '../tools/BoardroomFontTools';
+} from '@/services/agent/capabilityTruth';
+import { loadCapabilitySnapshot } from '@/services/agent/CapabilitySnapshotService';
+import { BOARDROOM_FONT_DOWNLOAD } from '@/services/agent/tools/BoardroomFontTools';
 
 /**
  * GeneralistAgent (indii Conductor) - The primary orchestrator and fallback agent.
@@ -104,7 +104,7 @@ export class GeneralistAgent extends BaseAgent {
      * This must be called after instantiation by the registry.
      */
     async initialize() {
-        const { TOOL_REGISTRY } = await importWithRetry(() => import('../tools'));
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
         this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
 
@@ -128,7 +128,7 @@ export class GeneralistAgent extends BaseAgent {
             const registeredTools = this.authorizedTools.filter(
                 tool => typeof this.functions?.[tool] === 'function',
             );
-            const { agentRegistry } = await importWithRetry(() => import('../registry'));
+            const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
             const snapshot = await loadCapabilitySnapshot();
             return {
                 text: buildCapabilitySummary({

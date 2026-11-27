@@ -1,10 +1,10 @@
 import { render, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import VideoWorkflow from './VideoWorkflow';
+import VideoWorkflow from '@/modules/creative/video/VideoWorkflow';
 import { useStore } from '@/core/store';
-import { useVideoEditorStore } from './store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { ToastProvider } from '@/core/context/ToastContext';
-import { processJobUpdate } from './VideoWorkflow';
+import { processJobUpdate } from '@/modules/creative/video/VideoWorkflow';
 
 vi.mock('@/services/storage/resolveStorageUrl', () => ({
     resolveStorageUrl: vi.fn(async (uri: string) => {
@@ -37,7 +37,7 @@ vi.mock('@/core/store', () => {
 });
 
 // Mock Editor Store
-vi.mock('./store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockState = { 
         status: 'idle', 
         viewMode: 'director',
@@ -83,12 +83,12 @@ vi.mock('@/core/components/ErrorBoundary', () => ({
 }));
 
 // Mock FrameSelectionModal
-vi.mock('./components/FrameSelectionModal', () => ({
+vi.mock('@/modules/creative/video/components/FrameSelectionModal', () => ({
     default: () => null
 }));
 
 // Mock VideoStage
-vi.mock('./components/VideoStage', () => ({
+vi.mock('@/modules/creative/video/components/VideoStage', () => ({
     VideoStage: ({ jobStatus }: any) => <div data-testid="video-stage">Status: {jobStatus}</div>
 }));
 
@@ -100,7 +100,7 @@ vi.mock('../../services/WhiskService', () => ({
 }));
 
 // Mock Editor
-vi.mock('./editor/VideoEditor', () => ({
+vi.mock('@/modules/creative/video/editor/VideoEditor', () => ({
     VideoEditor: () => <div>Editor</div>
 }));
 
@@ -115,14 +115,14 @@ vi.mock('./components/DirectorPromptBar', () => ({
 }));
 
 // Mock DailiesStrip
-vi.mock('./components/DailiesStrip', () => ({
+vi.mock('@/modules/creative/video/components/DailiesStrip', () => ({
     DailiesStrip: () => <div data-testid="dailies-strip" />
 }));
 
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
-vi.mock('../../../services/video/VideoGenerationService', () => ({
+vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),

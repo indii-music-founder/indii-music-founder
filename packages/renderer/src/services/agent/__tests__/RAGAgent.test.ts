@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RAGAgent } from '../RAGAgent';
+import { RAGAgent } from '@/services/agent/RAGAgent';
 import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
-import { AgentConfig } from '../types';
+import { AgentConfig } from '@/services/agent/types';
 import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
 import { RateLimiter } from '@/services/intelligence/RateLimiter';
 

@@ -1,13 +1,13 @@
 import type { AgentResponse } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import type { PersonaId } from '@indii/shared';
-import { loadPersonaFaderValues, resolvePersonaFaderValues } from './PersonaFaderRepository';
+import { loadPersonaFaderValues, resolvePersonaFaderValues } from '@/services/persona/PersonaFaderRepository';
 import {
     getPersonaResponse,
     type InstrumentedPersonaResponseResult,
-} from './PersonaResponseService';
-import type { PersonaResponseMetadata } from './PersonaResponseMetadata';
-import { preserveCompletedResponse } from './preserveCompletedResponse';
+} from '@/services/persona/PersonaResponseService';
+import type { PersonaResponseMetadata } from '@/services/persona/PersonaResponseMetadata';
+import { preserveCompletedResponse } from '@/services/persona/preserveCompletedResponse';
 import { isTrivialInput } from '@/services/agent/utils/trivialInput';
 
 const AGENT_PERSONA_MAP: Readonly<Record<string, PersonaId>> = Object.freeze({

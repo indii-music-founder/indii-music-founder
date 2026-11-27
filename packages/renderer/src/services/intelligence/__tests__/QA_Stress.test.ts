@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CircuitBreaker, CircuitState } from '../utils/CircuitBreaker';
-import { RateLimiter } from '../RateLimiter';
+import { CircuitBreaker, CircuitState } from '@/services/intelligence/utils/CircuitBreaker';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
 
 describe('QA Stress Tests: Reliability & Stability', () => {
 

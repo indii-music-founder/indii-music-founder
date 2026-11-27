@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { toDateString, extractDatePart, splitFirst } from './dateUtils';
+import { toDateString, extractDatePart, splitFirst } from '@/utils/dateUtils';
 
 describe('dateUtils', () => {
     describe('toDateString', () => {

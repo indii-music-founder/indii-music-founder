@@ -34,7 +34,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mocks.toast,
 }));
 
-import { SessionIngestionPanel } from './SessionIngestionPanel';
+import { SessionIngestionPanel } from '@/modules/creative/video/components/SessionIngestionPanel';
 
 describe('SessionIngestionPanel (legacy structural-only; real upload unverified)', () => {
     beforeEach(() => {

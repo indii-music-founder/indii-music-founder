@@ -32,23 +32,23 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import ProfileSection from './settings-panel/ProfileSection';
-import WalletSection from './settings-panel/WalletSection';
-import PersonaFadersSection from './settings-panel/PersonaFadersSection';
-import MasterPlaybookSection from './settings-panel/MasterPlaybookSection';
-import ConnectionsSection from './settings-panel/ConnectionsSection';
-import NotificationsSection from './settings-panel/NotificationsSection';
-import AppearanceSection from './settings-panel/AppearanceSection';
-import SecuritySection from './settings-panel/SecuritySection';
-import DesktopSection from './settings-panel/DesktopSection';
-import RemoteSection from './settings-panel/RemoteSection';
-import AutomationSection from './settings-panel/AutomationSection';
+import ProfileSection from '@/modules/settings/settings-panel/ProfileSection';
+import WalletSection from '@/modules/settings/settings-panel/WalletSection';
+import PersonaFadersSection from '@/modules/settings/settings-panel/PersonaFadersSection';
+import MasterPlaybookSection from '@/modules/settings/settings-panel/MasterPlaybookSection';
+import ConnectionsSection from '@/modules/settings/settings-panel/ConnectionsSection';
+import NotificationsSection from '@/modules/settings/settings-panel/NotificationsSection';
+import AppearanceSection from '@/modules/settings/settings-panel/AppearanceSection';
+import SecuritySection from '@/modules/settings/settings-panel/SecuritySection';
+import DesktopSection from '@/modules/settings/settings-panel/DesktopSection';
+import RemoteSection from '@/modules/settings/settings-panel/RemoteSection';
+import AutomationSection from '@/modules/settings/settings-panel/AutomationSection';
 import {
     getRequestedSettingsSection,
     requestSettingsSection,
     SETTINGS_SECTION_REQUEST_EVENT,
     type SettingsSectionId,
-} from './SettingsNavigation';
+} from '@/modules/settings/SettingsNavigation';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { Sliders } from 'lucide-react';
 import { logger } from '@/utils/logger';

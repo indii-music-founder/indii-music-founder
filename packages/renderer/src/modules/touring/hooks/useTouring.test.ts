@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TouringService } from '@/services/touring/TouringService';
-import { useTouring } from './useTouring';
+import { useTouring } from '@/modules/touring/hooks/useTouring';
 
 const mocks = vi.hoisted(() => ({
     storeState: {

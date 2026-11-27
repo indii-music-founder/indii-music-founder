@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LocalAudioMetadataService } from './LocalAudioMetadataService';
+import { LocalAudioMetadataService } from '@/services/audio/LocalAudioMetadataService';
 
 const encoder = new TextEncoder();
 const ascii = (value: string) => encoder.encode(value);

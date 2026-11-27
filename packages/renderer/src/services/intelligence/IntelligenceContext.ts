@@ -10,8 +10,8 @@
  */
 
 
-import type { CircuitBreaker } from './utils/CircuitBreaker';
-import type { RateLimiter } from './RateLimiter';
+import type { CircuitBreaker } from '@/services/intelligence/utils/CircuitBreaker';
+import type { RateLimiter } from '@/services/intelligence/RateLimiter';
 import type {
     Content,
     GenerationConfig,
@@ -22,8 +22,8 @@ import type {
     StreamChunk,
 } from '@/shared/types/ai.dto';
 import type { AppException } from '@/shared/types/errors';
-import type { RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
-import type { ExtendedGenerativeModel } from './types';
+import type { RemoteIntelligenceConfig } from '@/services/intelligence/config/RemoteIntelligenceConfig';
+import type { ExtendedGenerativeModel } from '@/services/intelligence/types';
 
 type GenerateContentResult = WrappedResponse;
 

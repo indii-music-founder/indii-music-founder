@@ -1,6 +1,6 @@
 import { createCallable } from 'react-call';
-import { Modal } from './Modal';
-import { Button } from './button';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/button';
 import { useId, useState } from 'react';
 
 interface PromptProps {

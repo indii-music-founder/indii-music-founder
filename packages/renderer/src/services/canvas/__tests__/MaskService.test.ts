@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { generateArtworkMask } from '../MaskService';
+import { generateArtworkMask } from '@/services/canvas/MaskService';
 
 vi.mock('@/services/firebase', () => ({ auth: { currentUser: null } }));
 vi.mock('@/services/StorageService', () => ({ StorageService: {} }));

@@ -2,11 +2,11 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 // Import translation resources
-import enUS from './locales/en-US.json';
-import esES from './locales/es-ES.json';
-import frFR from './locales/fr-FR.json';
-import deDE from './locales/de-DE.json';
-import jaJP from './locales/ja-JP.json';
+import enUS from '@/config/locales/en-US.json';
+import esES from '@/config/locales/es-ES.json';
+import frFR from '@/config/locales/fr-FR.json';
+import deDE from '@/config/locales/de-DE.json';
+import jaJP from '@/config/locales/ja-JP.json';
 
 export type Language = 'en-US' | 'es-ES' | 'fr-FR' | 'de-DE' | 'ja-JP';
 

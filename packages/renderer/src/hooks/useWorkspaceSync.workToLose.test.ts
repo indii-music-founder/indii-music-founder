@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn() }, getWorkspaceSnapshot: vi.fn(), applyWorkspaceSnapshot: vi.fn(), resetStoreForWorkspaceBoundary: vi.fn() }));
 vi.mock('@/core/store/slices/livingPlanSlice', () => ({ useLivingPlanSlice: vi.fn() }));
 
-import { hasLocalWorkToLose } from './useWorkspaceSync';
+import { hasLocalWorkToLose } from '@/hooks/useWorkspaceSync';
 
 const note = (id: string, text = 'idea') => ({ id, title: id, content: text }) as never;
 

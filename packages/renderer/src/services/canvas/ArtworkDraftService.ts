@@ -1,5 +1,5 @@
-import type { CanvasDoc } from './CanvasDoc';
-import { normalizeCanvasDoc } from './CanvasDocValidation';
+import type { CanvasDoc } from '@/services/canvas/CanvasDoc';
+import { normalizeCanvasDoc } from '@/services/canvas/CanvasDocValidation';
 
 interface Draft { key: string; uid: string; document: CanvasDoc }
 let database: Promise<IDBDatabase> | null = null;

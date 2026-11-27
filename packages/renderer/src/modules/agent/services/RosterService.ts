@@ -1,7 +1,7 @@
 import { db } from '@/services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
-import { Venue } from '../types';
+import { Venue } from '@/modules/agent/types';
 import { useStore } from '@/core/store';
 
 // Validation Schema

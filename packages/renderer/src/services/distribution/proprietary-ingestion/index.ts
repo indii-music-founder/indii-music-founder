@@ -4,17 +4,17 @@
  */
 
 // Types
-export * from './types';
+export * from '@/services/distribution/proprietary-ingestion/types';
 
 // Parser
-export { IngestionParser } from './IngestionParser';
+export { IngestionParser } from '@/services/distribution/proprietary-ingestion/IngestionParser';
 
 // Services
-export { IngestionNotificationService, ingestionNotificationService } from './IngestionNotificationService';
-export { IngestionNotificationMapper } from './IngestionNotificationMapper';
-export { EarningsReportService, earningsReportService } from './EarningsReportService';
-export { IngestionValidator } from './IngestionValidator';
-export { MediaAssetDataService, mediaAssetDataService } from './MediaAssetDataService';
-export { RecordingInformationService, recordingInformationService } from './RecordingInformationService';
-export { EarningsReportProcessor, earningsProcessor } from './EarningsProcessor';
-export { IngestionIdentity } from './IngestionIdentity';
+export { IngestionNotificationService, ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+export { IngestionNotificationMapper } from '@/services/distribution/proprietary-ingestion/IngestionNotificationMapper';
+export { EarningsReportService, earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
+export { IngestionValidator } from '@/services/distribution/proprietary-ingestion/IngestionValidator';
+export { MediaAssetDataService, mediaAssetDataService } from '@/services/distribution/proprietary-ingestion/MediaAssetDataService';
+export { RecordingInformationService, recordingInformationService } from '@/services/distribution/proprietary-ingestion/RecordingInformationService';
+export { EarningsReportProcessor, earningsProcessor } from '@/services/distribution/proprietary-ingestion/EarningsProcessor';
+export { IngestionIdentity } from '@/services/distribution/proprietary-ingestion/IngestionIdentity';

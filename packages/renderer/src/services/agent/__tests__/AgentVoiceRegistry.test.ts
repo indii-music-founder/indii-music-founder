@@ -8,8 +8,8 @@ import {
     stripMarkdownForSpeech,
     loadPersistedVoiceOverrides,
     savePersistedVoiceOverrides,
-} from '../AgentVoiceRegistry';
-import { VALID_AGENT_IDS } from '../types';
+} from '@/services/agent/AgentVoiceRegistry';
+import { VALID_AGENT_IDS } from '@/services/agent/types';
 
 describe('AgentVoiceRegistry', () => {
     beforeEach(() => {

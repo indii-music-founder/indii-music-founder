@@ -13,13 +13,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
+import { AgentPromptBuilder } from '@/services/agent/builders/AgentPromptBuilder';
 import {
     TOOL_AUTHORIZATION,
     HUB_ONLY_TOOLS,
     SPOKE_AGENT_IDS,
     type GuardRailTestScenario,
-} from './AgentStressTest.harness';
+} from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Mocks
@@ -85,7 +85,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),

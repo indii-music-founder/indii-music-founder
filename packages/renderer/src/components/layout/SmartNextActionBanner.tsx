@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { judgeNextBestModule, NextBestModuleVerdict } from '@/config/typesafeJudgments';
-import { deriveNextActionFacts } from './nextActionFacts';
+import { deriveNextActionFacts } from '@/components/layout/nextActionFacts';
 import { MODULE_DISPLAY_NAMES, type ModuleId } from '@/core/constants';
 
 interface SmartNextActionBannerProps {

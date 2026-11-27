@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { ZodType } from 'zod';
-import { toolError } from '../../utils/ToolUtils';
+import { toolError } from '@/services/agent/utils/ToolUtils';
 
 /**
  * ToolValidator provides shared validation logic for agent tools.

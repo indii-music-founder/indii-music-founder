@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { DailyItemProps, arePropsEqual } from './DailyItem.utils';
+import { DailyItemProps, arePropsEqual } from '@/modules/creative/video/components/DailyItem.utils';
 
 export const DailyItem = React.memo<DailyItemProps>(({
     video,

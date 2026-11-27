@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { AutonomousGenerationDialog } from './AutonomousGenerationDialog';
+import { AutonomousGenerationDialog } from '@/modules/merchandise/components/AutonomousGenerationDialog';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

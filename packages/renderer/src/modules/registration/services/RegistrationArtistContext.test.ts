@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRegistrationArtistContext } from './RegistrationArtistContext';
+import { getRegistrationArtistContext } from '@/modules/registration/services/RegistrationArtistContext';
 
 describe('RegistrationArtistContext', () => {
   it('uses legacy context but requires confirmation for authoritative registrations', () => {

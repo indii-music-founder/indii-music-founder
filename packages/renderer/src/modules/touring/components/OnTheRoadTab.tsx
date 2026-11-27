@@ -5,8 +5,8 @@ import { motion } from 'motion/react';
 import { Navigation, Fuel, Clock, Crosshair, TrendingUp, Receipt } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, NearbyPlace, FuelLogistics } from '../types';
-import { getTotalMilesFromItinerary } from '../milesTracking';
+import { Itinerary, NearbyPlace, FuelLogistics } from '@/modules/touring/types';
+import { getTotalMilesFromItinerary } from '@/modules/touring/milesTracking';
 import { ExpenseManualEntryModal } from '@/modules/finance/components/ExpenseManualEntryModal';
 import type { Expense } from '@/services/finance/FinanceService';
 import { financeService } from '@/services/finance/FinanceService';
@@ -14,9 +14,9 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
-import { TourMap } from './TourMap';
+import { TourMap } from '@/modules/touring/components/TourMap';
 import { logger } from '@/utils/logger';
-import { findNextItineraryStop, formatTouringDate, toTouringDateOnly } from '../itinerary';
+import { findNextItineraryStop, formatTouringDate, toTouringDateOnly } from '@/modules/touring/itinerary';
 
 interface OnTheRoadTabProps {
     currentLocation: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MarketingSidebar } from './MarketingSidebar';
+import { MarketingSidebar } from '@/modules/marketing/components/MarketingSidebar';
 
 vi.mock('motion/react', () => ({
     motion: {

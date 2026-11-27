@@ -68,7 +68,7 @@ describe('VoiceService.startDictation', () => {
     });
 
     const loadService = async () => {
-        const mod = await import('./VoiceService');
+        const mod = await import('@/services/intelligence/VoiceService');
         return new mod.VoiceService();
     };
 

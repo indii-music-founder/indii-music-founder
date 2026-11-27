@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useVideoProjectPersistence } from './useVideoProjectPersistence';
+import { useVideoProjectPersistence } from '@/modules/creative/video/editor/hooks/useVideoProjectPersistence';
 import { useVideoEditorStore, blankProjectForId, INITIAL_PROJECT } from '@/modules/creative/video/store/videoEditorStore';
 import { useStore } from '@/core/store';
 import * as PersistenceService from '@/modules/creative/video/services/VideoProjectPersistenceService';

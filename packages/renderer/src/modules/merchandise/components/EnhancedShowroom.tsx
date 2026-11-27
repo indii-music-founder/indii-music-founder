@@ -6,9 +6,9 @@ import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import ManufacturingPanel from './ManufacturingPanel';
-import { THEMES } from '../themes';
-import { PRODUCT_TYPE_MAPPING } from '../types';
+import ManufacturingPanel from '@/modules/merchandise/components/ManufacturingPanel';
+import { THEMES } from '@/modules/merchandise/themes';
+import { PRODUCT_TYPE_MAPPING } from '@/modules/merchandise/types';
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {

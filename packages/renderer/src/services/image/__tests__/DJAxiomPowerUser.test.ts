@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ImageGeneration } from '../ImageGenerationService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 // --- Required mocks (same pattern as the existing test) ---
 vi.mock('@/services/firebase', () => ({

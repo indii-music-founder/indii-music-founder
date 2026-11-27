@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { earningsReportService } from './EarningsReportService';
+import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
 import { DISTRIBUTORS } from '@/core/config/distributors';
-import type { EarningsReportReport } from './types/dsr';
+import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('EarningsReportService Fee Calculation', () => {

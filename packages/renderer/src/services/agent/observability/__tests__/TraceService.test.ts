@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TraceService } from '../TraceService';
+import { TraceService } from '@/services/agent/observability/TraceService';
 import { setDoc, getDoc, updateDoc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
 
 // Mock Firebase

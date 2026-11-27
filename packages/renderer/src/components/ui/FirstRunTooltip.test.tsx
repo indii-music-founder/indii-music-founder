@@ -1,6 +1,6 @@
 import { act, fireEvent, render, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { FirstRunTooltip, resetAllTips, useFirstRunTip } from './FirstRunTooltip';
+import { FirstRunTooltip, resetAllTips, useFirstRunTip } from '@/components/ui/FirstRunTooltip';
 
 afterEach(() => {
     vi.useRealTimers();

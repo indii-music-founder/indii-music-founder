@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GmailProvider } from '../GmailProvider';
-import { OutlookProvider } from '../OutlookProvider';
+import { GmailProvider } from '@/services/email/GmailProvider';
+import { OutlookProvider } from '@/services/email/OutlookProvider';
 
 vi.stubGlobal('fetch', vi.fn());
 

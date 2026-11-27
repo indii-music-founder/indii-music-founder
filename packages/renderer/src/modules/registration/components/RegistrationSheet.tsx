@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Music2, Info, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { CatalogTrack, OrgId, TrackRegistrationState, SubmissionResult } from '../types';
-import { ORG_ADAPTERS } from '../adapters';
-import { OrgStatusCard } from './OrgStatusCard';
-import { RegistrationForm } from './RegistrationForm';
-import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
+import type { CatalogTrack, OrgId, TrackRegistrationState, SubmissionResult } from '@/modules/registration/types';
+import { ORG_ADAPTERS } from '@/modules/registration/adapters';
+import { OrgStatusCard } from '@/modules/registration/components/OrgStatusCard';
+import { RegistrationForm } from '@/modules/registration/components/RegistrationForm';
+import { RightsRegistrationWalkthroughModal } from '@/modules/registration/components/RightsRegistrationWalkthroughModal';
 
 interface RegistrationSheetProps {
   track: CatalogTrack | null;

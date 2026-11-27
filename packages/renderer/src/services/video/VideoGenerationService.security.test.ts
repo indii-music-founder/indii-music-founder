@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoGeneration } from './VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 

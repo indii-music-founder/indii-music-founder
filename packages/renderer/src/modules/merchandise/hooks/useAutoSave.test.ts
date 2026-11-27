@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import * as fabric from 'fabric';
-import { useAutoSave } from './useAutoSave';
+import { useAutoSave } from '@/modules/merchandise/hooks/useAutoSave';
 import { useStore } from '@/core/store';
 
 // Structural regression coverage only: Firebase and account context below are

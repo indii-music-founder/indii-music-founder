@@ -1,7 +1,7 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
-import { WikiDocument } from './WikiStorageAdapter';
+import { WikiDocument } from '@/services/agent/memory/WikiStorageAdapter';
 
 export interface LintResult {
     passed: boolean;

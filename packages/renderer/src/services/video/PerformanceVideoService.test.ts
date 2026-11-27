@@ -29,7 +29,7 @@ const mockGenerateVideo = vi.fn();
 const mockWaitForJob = vi.fn();
 const mockWaitForTerminalReceipt = vi.fn();
 
-vi.mock('./VideoGenerationService', () => ({
+vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: unknown[]) => mockGenerateVideo(...args),
         waitForJob: (...args: unknown[]) => mockWaitForJob(...args),
@@ -48,7 +48,7 @@ vi.mock('@/services/audio/AudioAnalysisReceiptService', () => ({
     },
 }));
 
-import { performanceVideoService, sonicProfileFromAnalysisReceipt } from './PerformanceVideoService';
+import { performanceVideoService, sonicProfileFromAnalysisReceipt } from '@/services/video/PerformanceVideoService';
 
 const SONIC_PROFILE = {
     bpm: 120,

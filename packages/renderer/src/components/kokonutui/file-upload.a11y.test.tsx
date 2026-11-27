@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import FileUpload from './file-upload';
+import FileUpload from '@/components/kokonutui/file-upload';
 
 expect.extend(toHaveNoViolations);
 

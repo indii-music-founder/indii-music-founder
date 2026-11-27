@@ -1,12 +1,12 @@
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
-import { AudioWaveform } from './AudioWaveform';
-import { NLETrackScrubCanvas } from './NLETrackScrubCanvas';
-import { getKeyframeColor } from '../utils/keyframeUtils';
-import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
+import { VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { AudioWaveform } from '@/modules/creative/video/editor/components/AudioWaveform';
+import { NLETrackScrubCanvas } from '@/modules/creative/video/editor/components/NLETrackScrubCanvas';
+import { getKeyframeColor } from '@/modules/creative/video/editor/utils/keyframeUtils';
+import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '@/modules/creative/video/editor/constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
-import { ClipDragType } from '../hooks/useTimelineDrag';
+import { ClipDragType } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 const XIcon = ({ size = 16 }: { size?: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

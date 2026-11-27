@@ -1,7 +1,7 @@
 import React from 'react';
 import { Zap, GitBranch } from 'lucide-react';
 import type { WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
-import type { SavedWorkflow } from '../types';
+import type { SavedWorkflow } from '@/modules/workflow/types';
 
 interface SystemProtocolsWidgetProps {
     protocols: WorkflowDefinition[];

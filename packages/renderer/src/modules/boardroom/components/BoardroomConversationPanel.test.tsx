@@ -54,7 +54,7 @@ import { useStore } from '@/core/store';
 import {
     BOARDROOM_MESSAGE_BATCH_SIZE,
     BoardroomConversationPanel,
-} from './BoardroomConversationPanel';
+} from '@/modules/boardroom/components/BoardroomConversationPanel';
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 

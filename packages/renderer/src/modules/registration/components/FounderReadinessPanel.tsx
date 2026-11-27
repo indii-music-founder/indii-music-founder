@@ -8,11 +8,11 @@
 
 import React, { useState } from 'react';
 import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save, Sparkles, Compass } from 'lucide-react';
-import type { FounderPrerequisite, FounderPrerequisiteId } from '../types';
+import type { FounderPrerequisite, FounderPrerequisiteId } from '@/modules/registration/types';
 import type { PortalTarget } from '@indii/shared';
 import { logger } from '@/utils/logger';
-import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
-import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports, serializePrerequisiteReports, reportPrerequisite, editPrerequisite, type PrerequisiteReports } from '../prerequisiteReports';
+import { RightsRegistrationWalkthroughModal } from '@/modules/registration/components/RightsRegistrationWalkthroughModal';
+import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports, serializePrerequisiteReports, reportPrerequisite, editPrerequisite, type PrerequisiteReports } from '@/modules/registration/prerequisiteReports';
 
 const COPILOT_PORTAL_MAP: Partial<Record<FounderPrerequisiteId, PortalTarget>> = {
   usco_org: 'loc_copyright',

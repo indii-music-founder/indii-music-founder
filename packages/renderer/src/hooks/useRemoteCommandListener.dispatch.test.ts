@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // addNote/addAttachmentToNote behavior that save_media_note depends on.
 vi.unmock('@/core/store');
 
-const { saveCaptureNoteDirectly } = await import('./useRemoteCommandListener');
+const { saveCaptureNoteDirectly } = await import('@/hooks/useRemoteCommandListener');
 const { useStore } = await import('@/core/store');
 
 describe('saveCaptureNoteDirectly', () => {

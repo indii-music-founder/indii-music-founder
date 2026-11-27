@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exportMultiplierFor, MAX_CANVAS_EXPORT_SIDE, nativeExportRegion } from './canvasUtils';
+import { exportMultiplierFor, MAX_CANVAS_EXPORT_SIDE, nativeExportRegion } from '@/lib/canvasUtils';
 
 describe('exportMultiplierFor (ISSUE-1708)', () => {
     it('restores native resolution: a 3000px image shown at 0.2125 scale on a 1276px canvas exports ~3000px', () => {

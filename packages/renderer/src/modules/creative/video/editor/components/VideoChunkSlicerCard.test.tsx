@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoChunkSlicerCard } from './VideoChunkSlicerCard';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoChunkSlicerCard } from '@/modules/creative/video/editor/components/VideoChunkSlicerCard';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 const mockAddClip = vi.fn();
 const mockProject = {
@@ -15,7 +15,7 @@ const mockProject = {
     clips: [],
 };
 
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn((selector) => {
         const state = {
             addClip: mockAddClip,

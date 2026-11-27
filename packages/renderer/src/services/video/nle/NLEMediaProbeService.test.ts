@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NLEMediaProbeService } from './NLEMediaProbeService';
+import { NLEMediaProbeService } from '@/services/video/nle/NLEMediaProbeService';
 import type { FfprobeRawStream, FfprobeRawFrame } from '@indii/video-compiler';
 
 describe('NLEMediaProbeService (Renderer Client Service)', () => {

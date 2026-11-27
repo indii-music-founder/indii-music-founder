@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Contact } from '../types';
+import { Contact } from '@/modules/publicist/types';
 import { User, Star, Sparkles } from 'lucide-react';
 
 interface ContactListProps {

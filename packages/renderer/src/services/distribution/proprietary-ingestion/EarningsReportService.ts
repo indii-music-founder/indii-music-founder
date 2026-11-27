@@ -1,5 +1,5 @@
-import { IngestionParser } from './IngestionParser';
-import type { EarningsReportReport, RoyaltyCalculation } from './types/dsr';
+import { IngestionParser } from '@/services/distribution/proprietary-ingestion/IngestionParser';
+import type { EarningsReportReport, RoyaltyCalculation } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DISTRIBUTORS } from '@/core/config/distributors';
 import { DistributorService } from '@/services/distribution/DistributorService';

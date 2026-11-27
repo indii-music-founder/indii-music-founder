@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapAssessmentToProfile, hydrateProfileWithAssessment } from './passportHydrationService';
+import { mapAssessmentToProfile, hydrateProfileWithAssessment } from '@/services/onboarding/passportHydrationService';
 import type { UserProfile } from '@/types/User';
 import type { ProspectAssessment } from '@indii/shared';
 

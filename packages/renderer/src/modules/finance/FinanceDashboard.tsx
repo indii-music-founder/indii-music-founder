@@ -1,21 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { EarningsDashboard } from './components/EarningsDashboard';
-import { ExpenseTracker } from './components/ExpenseTracker';
-import { MerchandiseDashboard } from './components/MerchandiseDashboard';
-import { RoyaltiesPrediction } from './components/RoyaltiesPrediction';
-import { MultiCurrencyLedger } from './components/MultiCurrencyLedger';
-import { StripeConnectOnboarding } from './components/StripeConnectOnboarding';
-import { TaxFormCollection } from './components/TaxFormCollection';
-import { AnomalyDetector } from './components/AnomalyDetector';
-import { AuditLogsPanel } from './components/AuditLogsPanel';
-import { BudgetVsActuals } from './components/BudgetVsActuals';
-import { SplitSheetEscrow } from './components/SplitSheetEscrow';
-import { ReceiptOCR } from './components/ReceiptOCR';
-import { LabelDealRecoupment } from './components/LabelDealRecoupment';
-import { RevenueView } from './components/RevenueView';
-import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
-import { useFinance } from './hooks/useFinance';
-import { FormatFoundryModule } from './components/FormatFoundryModule';
+import { EarningsDashboard } from '@/modules/finance/components/EarningsDashboard';
+import { ExpenseTracker } from '@/modules/finance/components/ExpenseTracker';
+import { MerchandiseDashboard } from '@/modules/finance/components/MerchandiseDashboard';
+import { RoyaltiesPrediction } from '@/modules/finance/components/RoyaltiesPrediction';
+import { MultiCurrencyLedger } from '@/modules/finance/components/MultiCurrencyLedger';
+import { StripeConnectOnboarding } from '@/modules/finance/components/StripeConnectOnboarding';
+import { TaxFormCollection } from '@/modules/finance/components/TaxFormCollection';
+import { AnomalyDetector } from '@/modules/finance/components/AnomalyDetector';
+import { AuditLogsPanel } from '@/modules/finance/components/AuditLogsPanel';
+import { BudgetVsActuals } from '@/modules/finance/components/BudgetVsActuals';
+import { SplitSheetEscrow } from '@/modules/finance/components/SplitSheetEscrow';
+import { ReceiptOCR } from '@/modules/finance/components/ReceiptOCR';
+import { LabelDealRecoupment } from '@/modules/finance/components/LabelDealRecoupment';
+import { RevenueView } from '@/modules/finance/components/RevenueView';
+import { HiddenCostHarnessPanel } from '@/modules/finance/components/HiddenCostHarnessPanel';
+import { useFinance } from '@/modules/finance/hooks/useFinance';
+import { FormatFoundryModule } from '@/modules/finance/components/FormatFoundryModule';
 import { useStore } from '@/core/store';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
@@ -30,7 +30,7 @@ import {
     FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles, Search
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
-import { sumPaidExpenses, type Expense } from './schemas';
+import { sumPaidExpenses, type Expense } from '@/modules/finance/schemas';
 
 /* ================================================================== */
 /*  Finance Dashboard — Three-Panel Layout                             */

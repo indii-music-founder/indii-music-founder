@@ -1,6 +1,6 @@
 
 import { doc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
-import { FirestoreService } from './FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 import { Project } from '@/core/store/slices/appSlice';
 import { db } from '@/services/firebase';
 import { isDemoUserId } from '@/utils/authGuards';
@@ -18,7 +18,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
         // If it's the personal workspace, we MUST filter by userId to satisfy security rules
         let userId: string | undefined;
         if (orgId === 'org-default' || orgId === 'personal') {
-            const { auth } = await import('./firebase');
+            const { auth } = await import('@/services/firebase');
             if (auth.currentUser) {
                 userId = auth.currentUser.uid;
                 constraints.push(where('userId', '==', userId));
@@ -42,7 +42,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
     async createProject(name: string, type: Project['type'], orgId: string): Promise<Project> {
         if (!orgId) throw new Error("No organization selected");
 
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         const user = auth.currentUser;
         if (!user) throw new Error("User must be logged in to create a project");
 
@@ -93,7 +93,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
     private inboxCreationPromise: Promise<Project> | null = null;
 
     async ensureInbox(userId: string): Promise<Project> {
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         const isCurrentAnonymousUser = auth.currentUser?.uid === userId && auth.currentUser?.isAnonymous;
         if (isDemoUserId(userId) || isCurrentAnonymousUser) {
             throw new Error('A real authenticated user ID is required to create or load an inbox project.');

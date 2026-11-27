@@ -6,7 +6,7 @@ import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { firebaseConfig } from '@/config/env';
-import { assertMcpTransportDestination, resolveMcpEndpoint } from './mcpEndpoint';
+import { assertMcpTransportDestination, resolveMcpEndpoint } from '@/services/agent/harness/mcpEndpoint';
 
 
 class McpClientService {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PromptAdditiveTracker } from '../PromptAdditiveTracker';
+import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
 
 describe('PromptAdditiveTracker', () => {
     beforeEach(() => {

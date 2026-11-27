@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readModuleDeepLink } from './moduleDeepLink';
+import { readModuleDeepLink } from '@/utils/moduleDeepLink';
 
 describe('readModuleDeepLink', () => {
     it('resolves a valid module id', () => {

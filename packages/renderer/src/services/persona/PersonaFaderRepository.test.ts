@@ -25,7 +25,7 @@ import {
     resolvePersonaFaderValues,
     savePersonaFaderValues,
     resetPersonaFaderValues,
-} from './PersonaFaderRepository';
+} from '@/services/persona/PersonaFaderRepository';
 
 describe('PersonaFaderRepository', () => {
     beforeEach(() => {

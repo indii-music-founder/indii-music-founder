@@ -1,4 +1,4 @@
-import { AgentCard } from '../AgentCard.schema';
+import { AgentCard } from '@/services/agent/a2a/AgentCard.schema';
 
 export const FinanceAccountingCard: AgentCard = {
     schemaVersion: '1.0.0',

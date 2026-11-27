@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { recordingInformationService } from './RecordingInformationService';
-import { MOCK_METADATA } from './IngestionNotificationService.test';
+import { recordingInformationService } from '@/services/distribution/proprietary-ingestion/RecordingInformationService';
+import { MOCK_METADATA } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService.test';
 
 describe('RecordingInformationService', () => {
     it('should generate a valid RecordingInformation object from metadata', () => {

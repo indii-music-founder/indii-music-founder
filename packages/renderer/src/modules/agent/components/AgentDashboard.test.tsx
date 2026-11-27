@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import AgentDashboard from './AgentDashboard';
+import AgentDashboard from '@/modules/agent/components/AgentDashboard';
 
 // Mock dependencies
 vi.mock('@/services/marketing/MarketingService', () => ({
@@ -10,13 +10,13 @@ vi.mock('@/services/marketing/MarketingService', () => ({
     }
 }));
 
-vi.mock('../services/VenueScoutService', () => ({
+vi.mock('@/modules/agent/services/VenueScoutService', () => ({
     VenueScoutService: {
         searchVenues: vi.fn(),
     }
 }));
 
-vi.mock('../store/AgentStore', () => ({
+vi.mock('@/modules/agent/store/AgentStore', () => ({
     useAgentStore: vi.fn(() => ({
         venues: [],
         isScanning: false,
@@ -29,16 +29,16 @@ vi.mock('@/core/components/MobileOnlyWarning', () => ({
     MobileOnlyWarning: () => <div>Mobile Warning</div>
 }));
 
-vi.mock('./ScoutMapVisualization', () => ({
+vi.mock('@/modules/agent/components/ScoutMapVisualization', () => ({
     ScoutMapVisualization: () => <div>Map Visualization</div>
 }));
 
-vi.mock('./VenueCard', () => ({
+vi.mock('@/modules/agent/components/VenueCard', () => ({
     VenueCard: () => <div>VenueCard</div>
 }));
 
 // Mock the new sub-components to isolate AgentDashboard logic
-vi.mock('./AgentSidebar', () => ({
+vi.mock('@/modules/agent/components/AgentSidebar', () => ({
     AgentSidebar: ({ setActiveTab }: { setActiveTab: (t: string) => void }) => (
         <div data-testid="agent-sidebar">
             <button onClick={() => setActiveTab('scout')} title="The Scout">The Scout Tab</button>
@@ -48,7 +48,7 @@ vi.mock('./AgentSidebar', () => ({
     )
 }));
 
-vi.mock('./AgentToolbar', () => ({
+vi.mock('@/modules/agent/components/AgentToolbar', () => ({
     AgentToolbar: ({ left, right }: any) => (
         <div data-testid="agent-toolbar">
             {left}
@@ -57,7 +57,7 @@ vi.mock('./AgentToolbar', () => ({
     )
 }));
 
-vi.mock('./ScoutControls', () => ({
+vi.mock('@/modules/agent/components/ScoutControls', () => ({
     ScoutControls: () => <div data-testid="scout-controls">Scout Controls</div>
 }));
 

@@ -4,8 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { tourGeoService } from '../services/TourGeoService';
-import type { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
+import { tourGeoService } from '@/modules/touring/services/TourGeoService';
+import type { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '@/modules/touring/types';
 
 export function useTourGeo() {
     const [geoState, setGeoState] = useState(tourGeoService.getState());

@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
-import { formatTimecode } from '../utils/timelineUtils';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { formatTimecode } from '@/modules/creative/video/editor/utils/timelineUtils';
 
 export interface TimelineTimecodeProps {
     className?: string;

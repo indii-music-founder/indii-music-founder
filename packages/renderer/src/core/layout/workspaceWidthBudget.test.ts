@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRightPanelLayout } from './workspaceWidthBudget';
+import { getRightPanelLayout } from '@/core/layout/workspaceWidthBudget';
 
 describe('getRightPanelLayout', () => {
     it('honors the preferred width when there is room for the workspace and chat', () => {

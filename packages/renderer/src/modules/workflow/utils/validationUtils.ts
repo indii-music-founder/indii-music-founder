@@ -1,6 +1,6 @@
 import { Node } from 'reactflow';
-import type { PortDefinition } from '../services/nodeRegistry';
-import { getJobDefinition } from '../services/nodeRegistry';
+import type { PortDefinition } from '@/modules/workflow/services/nodeRegistry';
+import { getJobDefinition } from '@/modules/workflow/services/nodeRegistry';
 
 export const getHandleType = (node: Node, handleId: string | null, isSource: boolean): string => {
     if (!handleId) return 'ANY';

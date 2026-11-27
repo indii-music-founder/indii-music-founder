@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CostEstimatorWidget, formatEstimatedRunCost } from './CustomDashboardWidgets';
+import { CostEstimatorWidget, formatEstimatedRunCost } from '@/modules/dashboard/components/CustomDashboardWidgets';
 
 describe('CostEstimatorWidget currency formatting', () => {
     it('formats standard costs to 2 decimal places so $1.60 does not read as $1.600', () => {

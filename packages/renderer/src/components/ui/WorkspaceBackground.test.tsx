@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { WorkspaceBackground } from './WorkspaceBackground';
+import { WorkspaceBackground } from '@/components/ui/WorkspaceBackground';
 
 describe('WorkspaceBackground', () => {
     it('isolates the covered workspace and preserves the draft across mode changes', () => {

@@ -10,7 +10,7 @@
  * 4. Never stores base64 media payloads in canvas documents.
  */
 
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 import type { CanvasRelationshipType } from '@/modules/project-canvas/types';

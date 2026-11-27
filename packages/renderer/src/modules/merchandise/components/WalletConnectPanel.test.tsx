@@ -8,7 +8,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { error: vi.fn() },
 }));
 
-import { WalletConnectPanel } from './WalletConnectPanel';
+import { WalletConnectPanel } from '@/modules/merchandise/components/WalletConnectPanel';
 
 describe('WalletConnectPanel', () => {
     beforeEach(() => {

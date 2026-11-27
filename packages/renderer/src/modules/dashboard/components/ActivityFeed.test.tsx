@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
-import ActivityFeed from './ActivityFeed';
+import ActivityFeed from '@/modules/dashboard/components/ActivityFeed';
 
 vi.mock('@/core/store', () => ({
     useStore: (select: (state: { agentHistory: []; sessions: [] }) => unknown) =>

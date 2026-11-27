@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SectionCard } from './SectionCard';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 describe('SectionCard', () => {
     it('returns focus to the disclosure when its caller closes a focused panel', () => {

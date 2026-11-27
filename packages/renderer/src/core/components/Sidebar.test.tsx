@@ -1,18 +1,18 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import Sidebar from './Sidebar';
-import { useStore } from '../store';
+import Sidebar from '@/core/components/Sidebar';
+import { useStore } from '@/core/store';
 
 // Mock dependencies
-vi.mock('../store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: vi.fn(),
 }));
 
-vi.mock('./sidebar/ProjectList', () => ({
+vi.mock('@/core/components/sidebar/ProjectList', () => ({
     ProjectList: () => <div data-testid="project-list">Project List</div>,
 }));
 
-vi.mock('../theme/moduleColors', () => ({
+vi.mock('@/core/theme/moduleColors', () => ({
     getColorForModule: () => ({
         cssVar: '--color-test',
         text: 'text-test',

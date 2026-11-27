@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { PromptArea as PromptAreaType } from './PromptArea';
+import type { PromptArea as PromptAreaType } from '@/core/components/command-bar/PromptArea';
 
 // --- MOCKS ---
 
@@ -81,7 +81,7 @@ describe('PromptArea Error Resilience', () => {
     }));
 
     // Import Component
-    const module = await import('./PromptArea');
+    const module = await import('@/core/components/command-bar/PromptArea');
     PromptArea = module.PromptArea;
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { buildCreativeHandoffState } from '../creativeHandoffSlice';
+import { buildCreativeHandoffState } from '@/core/store/slices/creative/creativeHandoffSlice';
 import { HistoryItem } from '@/core/types/history';
 import { StageHandoffPayload } from '@/types/handoff';
 

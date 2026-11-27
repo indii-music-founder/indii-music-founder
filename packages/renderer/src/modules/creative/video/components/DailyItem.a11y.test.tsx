@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { DailyItem } from './DailyItem';
+import { DailyItem } from '@/modules/creative/video/components/DailyItem';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 expect.extend(toHaveNoViolations);

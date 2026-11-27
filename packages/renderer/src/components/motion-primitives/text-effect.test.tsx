@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TextEffect } from './text-effect';
+import { TextEffect } from '@/components/motion-primitives/text-effect';
 
 const reducedMotion = vi.hoisted(() => vi.fn(() => false));
 vi.mock('motion/react', async importOriginal => ({

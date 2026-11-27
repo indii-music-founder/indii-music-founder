@@ -8,7 +8,7 @@ const firestoreMocks = vi.hoisted(() => ({
 vi.mock('@/services/firebase', () => ({ db: { project: 'test' } }));
 vi.mock('firebase/firestore', () => firestoreMocks);
 
-import { loadRegistrationCatalog } from './RegistrationCatalog';
+import { loadRegistrationCatalog } from '@/modules/registration/services/RegistrationCatalog';
 
 describe('loadRegistrationCatalog', () => {
     beforeEach(() => vi.clearAllMocks());

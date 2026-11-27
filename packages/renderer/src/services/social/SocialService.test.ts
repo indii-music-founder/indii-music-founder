@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SocialService } from './SocialService';
+import { SocialService } from '@/services/social/SocialService';
 
 // --- Mocks ---
 

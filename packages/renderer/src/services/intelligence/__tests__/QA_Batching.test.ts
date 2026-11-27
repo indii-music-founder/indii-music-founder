@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
-import { RequestBatcher } from '../../../utils/RequestBatcher';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
+import { RequestBatcher } from '@/utils/RequestBatcher';
 
 const mockEmbedContent = vi.fn();
 const _mockBatchEmbedContents = vi.fn();
@@ -37,7 +37,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../appcheck', () => ({
+vi.mock('@/services/intelligence/appcheck', () => ({
     isAppCheckConfigured: vi.fn(() => true),
     isAppCheckError: vi.fn(() => false)
 }));

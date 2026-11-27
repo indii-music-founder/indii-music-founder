@@ -1,5 +1,5 @@
 
-import { AgentContext } from './types';
+import { AgentContext } from '@/services/agent/types';
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { fileSystemService } from '@/services/FileSystemService';

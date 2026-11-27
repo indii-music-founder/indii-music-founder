@@ -1,5 +1,5 @@
 
-import DistributionDashboard from './DistributionDashboard';
+import DistributionDashboard from '@/modules/distribution/DistributionDashboard';
 import { logger } from '@/utils/logger';
 
 // Simple dry-run verification to ensure components mount and render without crashing

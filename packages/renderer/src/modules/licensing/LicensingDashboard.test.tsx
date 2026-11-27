@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import LicensingDashboard from './LicensingDashboard';
-import { useLicensing } from './hooks/useLicensing';
+import LicensingDashboard from '@/modules/licensing/LicensingDashboard';
+import { useLicensing } from '@/modules/licensing/hooks/useLicensing';
 import { LicenseRequest } from '@/services/licensing/types';
 
 // Mock the hook
-vi.mock('./hooks/useLicensing');
+vi.mock('@/modules/licensing/hooks/useLicensing');
 vi.mock('@/core/store', () => ({
     useStore: () => ({
         currentModule: 'licensing',

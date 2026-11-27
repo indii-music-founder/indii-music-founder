@@ -42,7 +42,7 @@ vi.mock('@/modules/finance/FinanceDashboard', () => ({
 vi.mock('@/core/components/LoadingFallbacks', () => ({ LoadingFallback: () => null }));
 vi.mock('@/config/typesafeJudgments', () => ({ judgeCrashTriage: async () => null }));
 
-import { BoardroomModulePreview } from './BoardroomModulePreview';
+import { BoardroomModulePreview } from '@/modules/boardroom/components/BoardroomModulePreview';
 
 describe('BoardroomModulePreview render isolation', () => {
     beforeEach(() => {

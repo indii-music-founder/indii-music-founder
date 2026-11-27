@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import WaveMesh from './WaveMesh';
+import WaveMesh from '@/components/shared/WaveMesh';
 
 /**
  * CanvasRenderer — Lazy-loaded Canvas wrapper for Three.js rendering

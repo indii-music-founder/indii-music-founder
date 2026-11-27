@@ -1,6 +1,6 @@
-import type { AgentContext, AgentGraph, AgentResponse, ToolFunctionResult } from '../types';
-import { DEPARTMENTS, getDepartmentOf, isHead } from '../departments';
-import { isCapabilityQuestion } from '../capabilityTruth';
+import type { AgentContext, AgentGraph, AgentResponse, ToolFunctionResult } from '@/services/agent/types';
+import { DEPARTMENTS, getDepartmentOf, isHead } from '@/services/agent/departments';
+import { isCapabilityQuestion } from '@/services/agent/capabilityTruth';
 
 const SHORT_CONFIRMATION_PATTERN = /^(?:yes|yep|yeah|sure|ok|okay|go ahead|do it|proceed|approve|approved|continue|start|sounds good|looks good|let['’]s do it)[.!?, ]*$/i;
 const PLACEHOLDER_MODEL_TEXT_PATTERN = /^(?:\*\((?:Reviewing|Understanding)[^)]*\)\*|Indii is coordinating \d+ participant)/i;

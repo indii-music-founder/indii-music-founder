@@ -1,9 +1,9 @@
 import { logger } from '@/utils/logger';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { livingPlanService, PlanDraft, LivingPlan } from '../LivingPlanService';
+import { livingPlanService, PlanDraft, LivingPlan } from '@/services/agent/LivingPlanService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
-import { AgentContext, ToolFunctionResult } from '../types';
+import { AgentContext, ToolFunctionResult } from '@/services/agent/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { z } from 'zod';
 import { importWithRetry } from '@/utils/dynamicImport';

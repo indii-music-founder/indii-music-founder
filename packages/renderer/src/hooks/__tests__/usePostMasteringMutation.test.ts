@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { usePostMasteringMutation } from '../usePostMasteringMutation';
+import { usePostMasteringMutation } from '@/hooks/usePostMasteringMutation';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 

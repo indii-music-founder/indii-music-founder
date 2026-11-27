@@ -6,14 +6,14 @@ import type { FieldContact } from '@/types/contacts';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import { exportContactToIPhone } from '@/utils/vcard';
 import { useToast } from '@/core/context/ToastContext';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { Timestamp } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
-import ArtistShareCardModal from './ArtistShareCardModal';
+import ArtistShareCardModal from '@/modules/mobile-remote/components/ArtistShareCardModal';
 import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
 type FeedFilter = 'all' | 'contacts' | 'media' | 'memos';
 

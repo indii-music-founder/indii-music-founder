@@ -1,5 +1,5 @@
 import { render, screen, act, fireEvent } from '@testing-library/react'
-import { Button } from './button'
+import { Button } from '@/components/ui/button'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import React, { useState } from 'react'
 

@@ -37,7 +37,7 @@ vi.mock('@/core/store', () => ({
     useStore: (selector: (s: { user: unknown }) => unknown) => selector({ user: MOCK_USER }),
 }));
 
-import { SplitSheetEscrow } from './SplitSheetEscrow';
+import { SplitSheetEscrow } from '@/modules/finance/components/SplitSheetEscrow';
 
 const ESCROW_DOC = {
     id: 'escrow-1',

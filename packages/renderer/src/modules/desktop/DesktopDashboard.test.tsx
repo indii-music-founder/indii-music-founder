@@ -21,8 +21,8 @@ vi.mock('motion/react', () => ({
 
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 
-import DesktopDashboard from './DesktopDashboard';
-import { SettingCard } from './components/SettingCard';
+import DesktopDashboard from '@/modules/desktop/DesktopDashboard';
+import { SettingCard } from '@/modules/desktop/components/SettingCard';
 
 describe('DesktopDashboard', () => {
     beforeEach(() => {

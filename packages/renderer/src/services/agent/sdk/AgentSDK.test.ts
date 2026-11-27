@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAgent } from './AgentBuilder';
-import { PromptService } from './PromptService';
+import { createAgent } from '@/services/agent/sdk/AgentBuilder';
+import { PromptService } from '@/services/agent/sdk/PromptService';
 import { MembershipService } from '@/services/MembershipService';
-import { AgentTestHarness } from './test/AgentTestHarness';
+import { AgentTestHarness } from '@/services/agent/sdk/test/AgentTestHarness';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';

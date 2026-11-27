@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { ConversationHistoryList } from './ConversationHistoryList';
+import { ConversationHistoryList } from '@/core/components/ConversationHistoryList';
 import { useStore } from '@/core/store';
 
 expect.extend(toHaveNoViolations);

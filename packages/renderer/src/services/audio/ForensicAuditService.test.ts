@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ForensicAuditService } from './ForensicAuditService';
+import { ForensicAuditService } from '@/services/audio/ForensicAuditService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LicensingService } from './LicensingService';
+import { LicensingService } from '@/services/licensing/LicensingService';
 // --- Mocks ---
 
 const {

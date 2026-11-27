@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BoardroomBrowserView } from './BoardroomBrowserView';
+import { BoardroomBrowserView } from '@/modules/boardroom/components/BoardroomBrowserView';
 
 const mocks = vi.hoisted(() => ({ judge: vi.fn(), add: vi.fn(), navigate: vi.fn(), success: vi.fn(), error: vi.fn(), info: vi.fn(), url: 'https://artists.spotify.com' }));
 vi.mock('@/config/typesafeJudgments', () => ({ judgeBoardroomWebpageSemantics: mocks.judge }));

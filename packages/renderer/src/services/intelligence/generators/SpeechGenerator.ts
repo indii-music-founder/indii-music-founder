@@ -8,7 +8,7 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
-import type { IntelligenceContext } from '../IntelligenceContext';
+import type { IntelligenceContext } from '@/services/intelligence/IntelligenceContext';
 import type { GenerateSpeechResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';

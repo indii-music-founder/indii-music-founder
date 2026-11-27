@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { AnalyticsEngine } from './AnalyticsEngine';
-import { growthPatternService } from './GrowthPatternService';
-import { viralScoreService } from './ViralScoreService';
-import type { StreamDataPoint, TrackAnalytics } from './types';
+import { AnalyticsEngine } from '@/services/analytics/AnalyticsEngine';
+import { growthPatternService } from '@/services/analytics/GrowthPatternService';
+import { viralScoreService } from '@/services/analytics/ViralScoreService';
+import type { StreamDataPoint, TrackAnalytics } from '@/services/analytics/types';
 
 function point(day: number, streams: number): StreamDataPoint {
     return {

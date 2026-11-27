@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import BrandCompliancePanel from '../BrandCompliancePanel';
+import BrandCompliancePanel from '@/modules/creative/components/BrandCompliancePanel';
 import { scanAsset } from '@/services/brand/BrandComplianceService';
 import { useStore } from '@/core/store';
 

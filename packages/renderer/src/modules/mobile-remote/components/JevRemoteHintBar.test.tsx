@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 import type { MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
 
 const sampleJudgment: MobileRemoteIntentJudgment = {

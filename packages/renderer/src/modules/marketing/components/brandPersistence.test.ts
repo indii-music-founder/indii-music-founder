@@ -5,7 +5,7 @@ const docMock = vi.hoisted(() => vi.fn((_db: unknown, ...path: string[]) => ({ p
 vi.mock('firebase/firestore', () => ({ doc: docMock, updateDoc }));
 vi.mock('@/services/firebase', () => ({ db: {} }));
 
-import { persistUserUpdates } from './brandPersistence';
+import { persistUserUpdates } from '@/modules/marketing/components/brandPersistence';
 
 describe('persistUserUpdates', () => {
     beforeEach(() => vi.clearAllMocks());

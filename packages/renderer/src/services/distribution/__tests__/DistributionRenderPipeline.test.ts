@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RENDER_PROFILES, validateProfile, getProfile } from '../RenderProfiles';
+import { RENDER_PROFILES, validateProfile, getProfile } from '@/services/distribution/RenderProfiles';
 import {
     validateMasterForProfile,
     mmToPx,
     bleedEdgePx,
     renderDistributionBundle,
     UPSAMPLE_MAX_RATIO
-} from '../DistributionRenderPipeline';
+} from '@/services/distribution/DistributionRenderPipeline';
 
 describe('profile table (I1.1)', () => {
     it('every registered profile passes its own validator', () => {

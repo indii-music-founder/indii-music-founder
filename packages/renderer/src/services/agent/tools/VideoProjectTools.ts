@@ -2,8 +2,8 @@ import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorS
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 import { resolveTreatment, VIDEO_TREATMENT_PRESETS, type VideoTreatmentPresetId } from '@/services/video/treatmentPresets';
 
-import type { AnyToolFunction } from '../types';
-import { toolError, toolSuccess, wrapTool } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
+import { toolError, toolSuccess, wrapTool } from '@/services/agent/utils/ToolUtils';
 
 import type { IndiiBackground, IndiiSeam, IndiiVideoClip } from '@indii/shared';
 

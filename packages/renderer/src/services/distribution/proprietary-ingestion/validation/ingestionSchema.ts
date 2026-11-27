@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type {
     ContributorRole,
-} from '../types/common';
+} from '@/services/distribution/proprietary-ingestion/types/common';
 
 /**
  * Ingestion Zod Schemas

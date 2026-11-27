@@ -10,7 +10,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingest: vi.fn(),
         ingestWithReceipt: vi.fn(),
@@ -25,10 +25,10 @@ vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
 }));
 
 const bank = vi.hoisted(() => ({ addMemory: vi.fn() }));
-vi.mock('../../memory/MemoryBankService', () => ({ memoryBankService: { addMemory: bank.addMemory } }));
-import { MemoryTools } from '../MemoryTools';
+vi.mock('@/services/agent/memory/MemoryBankService', () => ({ memoryBankService: { addMemory: bank.addMemory } }));
+import { MemoryTools } from '@/services/agent/tools/MemoryTools';
 import { useStore } from '@/core/store';
-import { alwaysOnMemoryEngine } from '../../memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 
 describe('MemoryTools', () => {
     const mockStoreState = {

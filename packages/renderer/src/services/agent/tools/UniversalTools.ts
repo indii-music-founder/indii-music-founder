@@ -1,7 +1,7 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { WebResearchTools } from './WebResearchTools';
+import { WebResearchTools } from '@/services/agent/tools/WebResearchTools';
 
 /**
  * Universal Tools
@@ -99,7 +99,7 @@ export const UniversalTools = {
      * Can be linked to request_approval.
      */
     payment_gate: wrapTool('payment_gate', async (args: { amount: number; vendor: string; reason: string }) => {
-        const { CoreTools } = await importWithRetry(() => import('./CoreTools'));
+        const { CoreTools } = await importWithRetry(() => import('@/services/agent/tools/CoreTools'));
         const content = `Authorize payment of $${args.amount} to ${args.vendor} for: ${args.reason}`;
         return CoreTools.request_approval!({ content, type: 'payment' }, undefined, undefined);
     }),
@@ -129,7 +129,7 @@ export const UniversalTools = {
 
             // 2. Query AutonomousIntelligence
             const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
-            const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
+            const { getFineTunedModel } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
             const systemPrompt = `You are a PRO registry data analyst. Analyze ONLY the provided search context from ASCAP, BMI, SESAC, PRS, GEMA, or MLC official websites. Return work details ONLY if present in the search context: work title, ISWC, writer names, publisher names, split percentages, society affiliations. If search context is empty or does not contain the requested work, return "not_found". Never use internal knowledge or guesses for registry data - all returned data must be sourced from the provided search context.`;
             const prompt = `Society Requested: ${society}\nSearch Query: ${args.query}\n\nOfficial Search Context:\n${searchContext || 'No live web search context available - cannot perform lookup without official source.'}`;
@@ -223,7 +223,7 @@ export const UniversalTools = {
 
             // 3. Query the content using the legal/licensing agent intelligence
             const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
-            const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
+            const { getFineTunedModel } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
             const systemPrompt = `You are the Legal Counsel for indii. Analyze the provided contract/document content. Support your answers with exact quotes and clause citations where applicable. Always include the disclaimer: "I am an AI, not a lawyer. This is for informational purposes only."`;
             const prompt = `Document Title/Source: ${fileName}\n\nDocument Content:\n${docContent}\n\nUser Query: ${args.query}`;

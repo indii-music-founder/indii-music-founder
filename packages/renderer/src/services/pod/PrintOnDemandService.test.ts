@@ -37,10 +37,10 @@ import {
     type PODOrderItem,
     type PODShippingAddress,
     type PODOrder,
-} from './PrintOnDemandService';
+} from '@/services/pod/PrintOnDemandService';
 
 // We need to import the service class dynamically to pick up mocks
-let PrintOnDemandService: typeof import('./PrintOnDemandService').PrintOnDemandService;
+let PrintOnDemandService: typeof import('@/services/pod/PrintOnDemandService').PrintOnDemandService;
 
 describe('PrintOnDemandService', () => {
     const testAddress: PODShippingAddress = {
@@ -57,7 +57,7 @@ describe('PrintOnDemandService', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         // Re-import to get fresh instance
-        const module = await import('./PrintOnDemandService');
+        const module = await import('@/services/pod/PrintOnDemandService');
         PrintOnDemandService = module.PrintOnDemandService;
     });
 

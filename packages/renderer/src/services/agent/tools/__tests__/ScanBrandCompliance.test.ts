@@ -39,7 +39,7 @@ vi.mock('@/services/brand/BrandComplianceService', () => ({
     scanAsset: (...args: unknown[]) => mockScanAsset(...args),
 }));
 
-import { BrandTools } from '../BrandTools';
+import { BrandTools } from '@/services/agent/tools/BrandTools';
 
 const tool = BrandTools.scan_brand_compliance!;
 

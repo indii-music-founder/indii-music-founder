@@ -17,7 +17,7 @@ vi.mock('@/core/store', () => {
     return { useStore: { getState: () => mockStore } };
 });
 
-import { DirectorTools } from '../DirectorTools';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 import { FontLibrary } from '@/services/typography/FontLibrary';
 
 const tool = (DirectorTools as unknown as {

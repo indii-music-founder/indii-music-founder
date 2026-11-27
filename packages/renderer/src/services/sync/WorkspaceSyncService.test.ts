@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { normalizeWorkspaceScope, workspaceSyncService, type WorkspaceSnapshot } from './WorkspaceSyncService';
+import { normalizeWorkspaceScope, workspaceSyncService, type WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({

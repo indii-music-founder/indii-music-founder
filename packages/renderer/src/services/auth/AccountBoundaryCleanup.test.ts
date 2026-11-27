@@ -22,7 +22,7 @@ vi.mock('@/services/security/ExecApprovalService', () => ({
     execApprovalService: { bindAccount },
 }));
 
-import { enforceAccountBoundaryCleanup } from './AccountBoundaryCleanup';
+import { enforceAccountBoundaryCleanup } from '@/services/auth/AccountBoundaryCleanup';
 
 describe('enforceAccountBoundaryCleanup', () => {
     beforeEach(() => {

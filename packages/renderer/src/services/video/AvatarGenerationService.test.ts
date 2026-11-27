@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { avatarGenerationService } from './AvatarGenerationService';
+import { avatarGenerationService } from '@/services/video/AvatarGenerationService';
 
 describe('AvatarGenerationService', () => {
     it('fails honestly because avatar generation is not deployed', async () => {

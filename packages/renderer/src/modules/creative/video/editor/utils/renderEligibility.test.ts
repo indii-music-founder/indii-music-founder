@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { VideoProject } from '../../store/videoEditorStore';
-import { cloudRenderEligibilityError } from './renderEligibility';
+import type { VideoProject } from '@/modules/creative/video/store/videoEditorStore';
+import { cloudRenderEligibilityError } from '@/modules/creative/video/editor/utils/renderEligibility';
 
 const project = (clips: VideoProject['clips']): VideoProject => ({
     id: 'project-1', name: 'Test', fps: 30, durationInFrames: 150, width: 1920, height: 1080,

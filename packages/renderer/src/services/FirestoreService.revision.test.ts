@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDocFromServer, runTransaction, type DocumentSnapshot, type Transaction } from 'firebase/firestore';
-import { FirestoreService } from './FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 
 vi.mock('@/utils/e2eMode', () => ({ isFirebaseE2EMockEnabled: () => false }));
 

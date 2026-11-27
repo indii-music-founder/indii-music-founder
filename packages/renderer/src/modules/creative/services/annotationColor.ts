@@ -1,4 +1,4 @@
-import { STUDIO_COLORS, type CreativeColor } from '../constants';
+import { STUDIO_COLORS, type CreativeColor } from '@/modules/creative/constants';
 
 /** Recover region identity from saved metadata, or old brush/shape color values. */
 export function annotationColor(object: { data?: { colorId?: string }; stroke?: unknown; fill?: unknown }): CreativeColor | undefined {

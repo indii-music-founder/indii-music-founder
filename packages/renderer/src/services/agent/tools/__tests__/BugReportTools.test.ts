@@ -48,7 +48,7 @@ vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
   },
 }));
 
-import { BugReportTools } from '../BugReportTools';
+import { BugReportTools } from '@/services/agent/tools/BugReportTools';
 
 describe('BugReportTools.report_bug honesty gate', () => {
   beforeEach(() => {

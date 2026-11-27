@@ -4,7 +4,7 @@ import { uploadBytes, deleteObject, getDownloadURL } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import { ResendEmailService } from '@/services/email/ResendEmailService';
-import { TaxFormService } from './TaxFormService';
+import { TaxFormService } from '@/services/finance/TaxFormService';
 
 vi.mock('@/services/email/ResendEmailService', () => ({
     ResendEmailService: {

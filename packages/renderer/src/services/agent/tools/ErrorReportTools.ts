@@ -17,7 +17,7 @@
 import { auth, db } from '@/services/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 
 // Type alias (not interface) so the object literal type carries an implicit
 // index signature and satisfies wrapTool's `TArgs extends ToolFunctionArgs`.

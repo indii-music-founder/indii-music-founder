@@ -1,7 +1,7 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
-import type { IdentityProtectionProfile, CreatorProtectionRun, CreatorProtectionReadinessOutput } from './types';
-import { creatorProtectionHarnessService } from './CreatorProtectionHarnessService';
+import type { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
+import type { IdentityProtectionProfile, CreatorProtectionRun, CreatorProtectionReadinessOutput } from '@/services/creator-protection/types';
+import { creatorProtectionHarnessService } from '@/services/creator-protection/CreatorProtectionHarnessService';
 import type { UserProfile } from '@/types/User';
 
 export interface CreatorProtectionInput {

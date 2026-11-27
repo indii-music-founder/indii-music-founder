@@ -23,7 +23,7 @@ vi.mock('@/services/creative/CreativeStorageService', () => ({
 }));
 
 const { mockGenerateCompositeImage } = vi.hoisted(() => ({ mockGenerateCompositeImage: vi.fn() }));
-vi.mock('./ImageGenerationService', () => ({
+vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: { generateImages: mockGenerateCompositeImage }
 }));
 
@@ -48,7 +48,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Mock FirebaseIntelligenceService
-vi.mock('../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
@@ -89,7 +89,7 @@ vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
 }));
 
 // Mock IntelligenceImagePromptService
-vi.mock('./IntelligenceImagePromptService', () => ({
+vi.mock('@/services/image/IntelligenceImagePromptService', () => ({
     IntelligenceImagePromptService: {
         build: (opts: any) => opts.userPrompt,
     },
@@ -108,7 +108,7 @@ describe('EditingService', () => {
             return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
         });
         // Dynamic import to get fresh module each time
-        const mod = await import('./EditingService');
+        const mod = await import('@/services/image/EditingService');
         EditingService = new mod.EditingService();
     });
 

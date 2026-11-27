@@ -1,6 +1,6 @@
 import React from 'react';
 import { Crown, ShieldCheck } from 'lucide-react';
-import { useMerchandise } from '../hooks/useMerchandise';
+import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
 import { AlertDialog } from '@/components/ui/AlertDialog';
 
 export const ProMerch: React.FC = () => {

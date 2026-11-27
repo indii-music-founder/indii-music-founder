@@ -12,7 +12,7 @@
  * Unstoppable: https://docs.unstoppabledomains.com/
  */
 
-import { ethereumService } from './EthereumService';
+import { ethereumService } from '@/services/web3/EthereumService';
 import { logger } from '@/utils/logger';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import namehash from 'eth-ens-namehash';

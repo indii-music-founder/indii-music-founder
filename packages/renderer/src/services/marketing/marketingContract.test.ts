@@ -92,7 +92,7 @@ describe('Marketing Client-Backend Callable Contract (ISSUE-1435)', () => {
             vi.fn().mockRejectedValue(new Error('functions/unavailable')) as unknown as ReturnType<typeof httpsCallable>,
         );
 
-        const { adAutomationService } = await import('./AdAutomationService');
+        const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
         const insights = await adAutomationService.getAdInsights('ad-test-unhandled');
         expect(insights.available).toBe(false);
         if (insights.available === false) {

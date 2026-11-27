@@ -2,7 +2,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { DateRange, ValidationResult } from '@/services/distribution/proprietary-ingestion/types/common';
 import {
     BaseDistributorAdapter
-} from './BaseDistributorAdapter';
+} from '@/services/distribution/adapters/BaseDistributorAdapter';
 import {
     type DistributorId,
     type DistributorRequirements,
@@ -10,9 +10,9 @@ import {
     type ReleaseResult,
     type ReleaseStatus,
     type DistributorEarnings,
-} from '../types/distributor';
-import { earningsService } from '../EarningsService';
-import { distributionStore } from '../DistributionPersistenceService';
+} from '@/services/distribution/types/distributor';
+import { earningsService } from '@/services/distribution/EarningsService';
+import { distributionStore } from '@/services/distribution/DistributionPersistenceService';
 import { logger } from '@/utils/logger';
 
 export class SymphonicAdapter extends BaseDistributorAdapter {

@@ -55,7 +55,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 // IMPORTS (after mocks)
 // ============================================================================
 
-import { coreVaultService, ALL_VAULT_CATEGORIES } from '../CoreVaultService';
+import { coreVaultService, ALL_VAULT_CATEGORIES } from '@/services/agent/memory/CoreVaultService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDoc, setDoc, updateDoc } from 'firebase/firestore';
 

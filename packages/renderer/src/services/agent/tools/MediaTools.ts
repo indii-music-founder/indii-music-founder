@@ -2,9 +2,9 @@
 import type { HistoryItem } from '@/core/types/history';
 import { Editing } from '@/services/image/EditingService';
 import { PLATFORM_DIMENSIONS } from '@/services/image/CanvasBatchService';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 

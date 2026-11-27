@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QCVisualizer } from '../QCVisualizer';
+import { QCVisualizer } from '@/modules/distribution/components/QCVisualizer';
 import { distributionService } from '@/services/distribution/DistributionService';
 import React from 'react';
 

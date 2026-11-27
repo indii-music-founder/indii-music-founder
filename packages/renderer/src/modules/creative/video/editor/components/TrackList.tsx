@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
-import { TimelineTrack } from './TimelineTrack';
-import { ClipDragType } from '../hooks/useTimelineDrag';
+import { VideoTrack, VideoClip } from '@/modules/creative/video/store/videoEditorStore';
+import { TimelineTrack } from '@/modules/creative/video/editor/components/TimelineTrack';
+import { ClipDragType } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 export interface TrackListProps {
     tracks: VideoTrack[];

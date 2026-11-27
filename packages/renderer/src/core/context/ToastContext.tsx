@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Toast, ToastMessage, ToastType } from '../components/Toast';
+import { Toast, ToastMessage, ToastType } from '@/core/components/Toast';
 import { v4 as uuidv4 } from 'uuid';
-import { events } from '../events';
-import { usePresentMode } from '../presentMode';
+import { events } from '@/core/events';
+import { usePresentMode } from '@/core/presentMode';
 import { Z_LAYER } from '@/core/zLayers';
 
 /** Alert data from system events */

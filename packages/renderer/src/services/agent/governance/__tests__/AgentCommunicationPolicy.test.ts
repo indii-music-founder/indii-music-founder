@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateAgentCommunication } from '../AgentCommunicationPolicy';
+import { validateAgentCommunication } from '@/services/agent/governance/AgentCommunicationPolicy';
 
 describe('AgentCommunicationPolicy', () => {
     it('allows a manager to assign work only to its own employee', () => {

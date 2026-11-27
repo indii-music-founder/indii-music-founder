@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { CharacterLibrary } from '../CharacterLibrary';
+import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 
 const mockUseStore = vi.fn();
 

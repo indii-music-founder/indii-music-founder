@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SecurityAgent } from './SecurityAgent';
+import { SecurityAgent } from '@/services/agent/definitions/SecurityAgent';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock AutonomousIntelligence

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import UnifiedAssetLibrary from './UnifiedAssetLibrary';
+import UnifiedAssetLibrary from '@/modules/marketing/components/UnifiedAssetLibrary';
 import { writeCreativeAssetDrag, CREATIVE_ASSET_MIME } from '@/services/creative/CreativeAssetDragService';
 import type { HistoryItem } from '@/core/types/history';
 

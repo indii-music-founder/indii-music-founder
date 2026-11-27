@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Shield, Download, ExternalLink, Save, BookOpen, CheckCircle, Info } from 'lucide-react';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractPDFService } from '@/services/legal/ContractPDFService';
-import { ContractStatus } from '../types';
+import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 
 interface CopyrightRegistrationModalProps {

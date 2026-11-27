@@ -1,4 +1,4 @@
-import type { FounderPrerequisiteId } from './types';
+import type { FounderPrerequisiteId } from '@/modules/registration/types';
 
 export const PREREQUISITE_STORAGE_KEY = 'indii_founder_readiness_prerequisites_v1';
 

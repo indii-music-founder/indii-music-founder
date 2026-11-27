@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
-import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
+import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '@/core/store/slices/creative/creativeHistorySlice';
 import type { StoreState } from '@/core/store';
 
 const { createFileNodeMock, storeStateMock } = vi.hoisted(() => {

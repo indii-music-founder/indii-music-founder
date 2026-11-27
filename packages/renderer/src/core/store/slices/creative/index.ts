@@ -13,19 +13,19 @@ import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 
 // Sub-module imports
-import { CreativeHistorySlice, buildCreativeHistoryState } from './creativeHistorySlice';
-import { CreativeControlsSlice, buildCreativeControlsState } from './creativeControlsSlice';
-import { DesignHistorySlice, buildDesignHistoryState } from './designHistorySlice';
-import { CreativeHandoffSlice, buildCreativeHandoffState } from './creativeHandoffSlice';
+import { CreativeHistorySlice, buildCreativeHistoryState } from '@/core/store/slices/creative/creativeHistorySlice';
+import { CreativeControlsSlice, buildCreativeControlsState } from '@/core/store/slices/creative/creativeControlsSlice';
+import { DesignHistorySlice, buildDesignHistoryState } from '@/core/store/slices/creative/designHistorySlice';
+import { CreativeHandoffSlice, buildCreativeHandoffState } from '@/core/store/slices/creative/creativeHandoffSlice';
 
 // Combined interface for the root store
 export interface CreativeSlice extends CreativeHistorySlice, CreativeControlsSlice, DesignHistorySlice, CreativeHandoffSlice {}
 
 // Type re-exports for backward compatibility
 export type { HistoryItem };
-export type { CanvasImage } from './creativeHistorySlice';
-export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, SavedPrompt } from './creativeControlsSlice';
-export type { DesignVersion } from './designHistorySlice';
+export type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
+export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, SavedPrompt } from '@/core/store/slices/creative/creativeControlsSlice';
+export type { DesignVersion } from '@/core/store/slices/creative/designHistorySlice';
 export type { CreativeStage, HandoffRole, StageHandoffPayload } from '@/types/handoff';
 
 import type { StoreState } from '@/core/store/types';

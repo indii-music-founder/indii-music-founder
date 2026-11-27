@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { writeAuditLog, verifyAuditChain } from './auditLogChain';
+import { writeAuditLog, verifyAuditChain } from '@/lib/auditLogChain';
 
 const {
     mockDoc,

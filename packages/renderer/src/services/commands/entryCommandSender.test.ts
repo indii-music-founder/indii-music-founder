@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { displaySenderId } from './entryCommandSender';
+import { displaySenderId } from '@/services/commands/entryCommandSender';
 
 describe('displaySenderId', () => {
     it('shows built-in and save-command replies as the Conductor', () => {

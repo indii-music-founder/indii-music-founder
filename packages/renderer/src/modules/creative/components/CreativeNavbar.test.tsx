@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CreativeNavbar from './CreativeNavbar';
+import CreativeNavbar from '@/modules/creative/components/CreativeNavbar';
 import { useStore } from '@/core/store';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
@@ -58,7 +58,7 @@ vi.mock('motion/react', () => ({
 }));
 
 // Mock child components to simplify testing
-vi.mock('./IntelligencePromptBuilder', () => ({
+vi.mock('@/modules/creative/components/IntelligencePromptBuilder', () => ({
     default: ({ onAddTag, currentPrompt, onSetPrompt }: { onAddTag: (tag: string) => void; currentPrompt: string; onSetPrompt: (prompt: string) => void }) => (
         <div data-testid="prompt-builder">
             <span>Current Prompt: {currentPrompt}</span>
@@ -68,7 +68,7 @@ vi.mock('./IntelligencePromptBuilder', () => ({
     )
 }));
 
-vi.mock('./BrandAssetsDrawer', () => ({
+vi.mock('@/modules/creative/components/BrandAssetsDrawer', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
         <div data-testid="brand-assets-drawer">
             <button onClick={onClose}>Close Drawer</button>
@@ -76,7 +76,7 @@ vi.mock('./BrandAssetsDrawer', () => ({
     )
 }));
 
-vi.mock('./HistoryDrawer', () => ({
+vi.mock('@/modules/creative/components/HistoryDrawer', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
         <div data-testid="history-drawer">
             <button onClick={onClose}>Close History</button>
@@ -84,7 +84,7 @@ vi.mock('./HistoryDrawer', () => ({
     )
 }));
 
-vi.mock('./AgentCapabilityRegistry', () => ({
+vi.mock('@/modules/creative/components/AgentCapabilityRegistry', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
         <div data-testid="agent-capability-registry">
             <button onClick={onClose}>Close Roster Registry</button>

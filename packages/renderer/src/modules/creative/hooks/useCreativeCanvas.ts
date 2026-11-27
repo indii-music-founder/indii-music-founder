@@ -3,15 +3,15 @@ import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } fr
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import { STUDIO_COLORS, CreativeColor } from '../constants';
-import { canvasOps, type CanvasTextProperties } from '../services/CanvasOperationsService';
-import { VideoDirector } from '../services/VideoDirector';
+import { STUDIO_COLORS, CreativeColor } from '@/modules/creative/constants';
+import { canvasOps, type CanvasTextProperties } from '@/modules/creative/services/CanvasOperationsService';
+import { VideoDirector } from '@/modules/creative/services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
 import { maskedTextCandidates } from '@/services/image/maskedTextEdit';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
-import { buildReferenceRolePrompt, compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
+import { buildReferenceRolePrompt, compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '@/modules/creative/services/creativeManifest';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { creativeSessionService } from '@/services/creative/CreativeSessionService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
@@ -22,7 +22,7 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { buildAssetStorageUri, resolveStorageUri } from '@/services/storage/storageUri';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
-import type { Candidate } from '../components/CandidateReview';
+import type { Candidate } from '@/modules/creative/components/CandidateReview';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(

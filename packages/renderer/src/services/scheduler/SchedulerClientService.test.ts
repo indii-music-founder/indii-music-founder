@@ -34,8 +34,8 @@ const mockSchedulerAPI = {
 vi.stubGlobal('electronAPI', { scheduler: mockSchedulerAPI });
 
 // ─── Now import (isElectron will be true) ────────────────────────────────────
-import { SchedulerClientService } from './SchedulerClientService';
-import type { ScheduledTask, SchedulerStatus, SchedulerTickEvent } from './types';
+import { SchedulerClientService } from '@/services/scheduler/SchedulerClientService';
+import type { ScheduledTask, SchedulerStatus, SchedulerTickEvent } from '@/services/scheduler/types';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import type { BusinessActivityEvent, HarnessCostLine, HarnessRun } from './types';
+import type { BusinessActivityEvent, HarnessCostLine, HarnessRun } from '@/services/business-harness/types';
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined)) as T;

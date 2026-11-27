@@ -30,38 +30,38 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'user-1' } },
 }));
 
-vi.mock('./ContextResolver', () => ({
+vi.mock('@/services/agent/components/ContextResolver', () => ({
     ContextResolver: class {
         resolveContext = mocks.resolveContext;
     },
 }));
 
-vi.mock('./HistoryManager', () => ({
+vi.mock('@/services/agent/components/HistoryManager', () => ({
     HistoryManager: class {
         getCompiledHistory = mocks.getCompiledHistory;
     },
 }));
 
-vi.mock('../memory/BigBrainEngine', () => ({
+vi.mock('@/services/agent/memory/BigBrainEngine', () => ({
     bigBrainEngine: {
         assembleContext: mocks.assembleContext,
         formatForPrompt: mocks.formatForPrompt,
     },
 }));
 
-vi.mock('../memory/AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         retrieve: mocks.retrieveFallback,
     },
 }));
 
-vi.mock('../LivingPlanService', () => ({
+vi.mock('@/services/agent/LivingPlanService', () => ({
     livingPlanService: {
         getPlansForProject: mocks.getPlansForProject,
     },
 }));
 
-vi.mock('../skills/ProductSkillRegistry', () => ({
+vi.mock('@/services/agent/skills/ProductSkillRegistry', () => ({
     ProductSkillRegistry: {
         searchProductSkillByIntentAsync: mocks.searchProductSkillByIntentAsync,
         getSkillForModule: mocks.getSkillForModule,
@@ -69,21 +69,21 @@ vi.mock('../skills/ProductSkillRegistry', () => ({
     },
 }));
 
-vi.mock('../skills/ArtistDirectiveService', () => ({
+vi.mock('@/services/agent/skills/ArtistDirectiveService', () => ({
     artistDirectiveService: {
         getDirective: mocks.getDirective,
         formatDirectiveForPrompt: mocks.formatDirectiveForPrompt,
     },
 }));
 
-vi.mock('../tools/IdeaParking', () => ({
+vi.mock('@/services/agent/tools/IdeaParking', () => ({
     IdeaParkingService: {
         shouldAskForDialUpgrade: vi.fn(() => false),
         clearAmbitionPromptFlag: vi.fn(),
     },
 }));
 
-import { ContextPipeline } from './ContextPipeline';
+import { ContextPipeline } from '@/services/agent/components/ContextPipeline';
 
 describe('ContextPipeline parallelism and timeout hygiene', () => {
     beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inspectImageMetadata, physicalImageSize } from './inspectImageMetadata';
+import { inspectImageMetadata, physicalImageSize } from '@/services/media/inspectImageMetadata';
 import { injectPngDpi } from '@/services/print/dpiMetadata';
 
 // Byte-format checks only; these are not persisted assets or customer journeys.

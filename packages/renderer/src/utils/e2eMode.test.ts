@@ -4,7 +4,7 @@ import {
     isFirebaseE2EMockEnabled,
     getE2EMockUser,
     getE2ELocalStorageValue
-} from './e2eMode';
+} from '@/utils/e2eMode';
 
 describe('e2eMode utilities', () => {
     beforeEach(() => {

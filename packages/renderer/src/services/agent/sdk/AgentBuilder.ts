@@ -4,7 +4,7 @@ import {
     AnyToolFunction,
     ValidAgentId,
     AgentCategory,
-} from '../types';
+} from '@/services/agent/types';
 
 /**
  * A builder class for creating AgentConfig objects with a fluent API.

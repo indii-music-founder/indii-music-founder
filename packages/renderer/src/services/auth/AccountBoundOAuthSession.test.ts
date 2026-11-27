@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     beginAccountBoundOAuthSession,
     requireAccountBoundOAuthSession,
-} from './AccountBoundOAuthSession';
+} from '@/services/auth/AccountBoundOAuthSession';
 
 describe('AccountBoundOAuthSession', () => {
     beforeEach(() => {

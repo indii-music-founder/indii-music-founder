@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { create } from 'zustand';
-import { buildCreativeControlsState } from '../creativeControlsSlice';
+import { buildCreativeControlsState } from '@/core/store/slices/creative/creativeControlsSlice';
 
 describe('creativeControlsSlice — view-mode navigation history (ISSUE-1375)', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     let useStore: any;
 
     beforeEach(() => {

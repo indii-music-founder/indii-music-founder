@@ -1,5 +1,5 @@
-import { extractCutout, type CutoutInput } from './GrabCut';
-import license from './PHOTOCRAFT-LICENSE.txt?raw';
+import { extractCutout, type CutoutInput } from '@/services/canvas/segmentation/GrabCut';
+import license from '@/services/canvas/segmentation/PHOTOCRAFT-LICENSE.txt?raw';
 
 self.onmessage = (event: MessageEvent<CutoutInput | { kind: 'license' }>) => {
     // Keep the selected source license in the distributed worker bundle.

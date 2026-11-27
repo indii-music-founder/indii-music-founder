@@ -5,11 +5,11 @@ import { importWithRetry } from '@/utils/dynamicImport';
 it('should debug tools and GeneralistAgent', async () => {
     try {
         console.log('Attempting to import tools.ts...');
-        const tools = await importWithRetry(() => import('../tools'));
+        const tools = await importWithRetry(() => import('@/services/agent/tools'));
         console.log('Imported tools successfully. Tool count:', Object.keys(tools.TOOL_REGISTRY).length);
         
         // Try to initialize GeneralistAgent now
-        const { GeneralistAgent } = await importWithRetry(() => import('./GeneralistAgent'));
+        const { GeneralistAgent } = await importWithRetry(() => import('@/services/agent/specialists/GeneralistAgent'));
         const agent = new GeneralistAgent();
         console.log('Instantiating GeneralistAgent...');
         await agent.initialize();

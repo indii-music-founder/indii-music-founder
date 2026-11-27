@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FanEnrichment } from '@/services/marketing/FanEnrichmentService';
-import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '../types';
+import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '@/modules/marketing/types';
 import { logger } from '@/utils/logger';
 import { toDateString } from '@/utils/dateUtils';
 

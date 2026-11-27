@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import FinanceDashboard from './FinanceDashboard';
+import FinanceDashboard from '@/modules/finance/FinanceDashboard';
 
 const mockUseStore = vi.fn();
 
@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-vi.mock('./hooks/useFinance', () => ({
+vi.mock('@/modules/finance/hooks/useFinance', () => ({
     useFinance: () => ({
         overview: null,
         loading: false,

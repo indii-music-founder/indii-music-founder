@@ -20,7 +20,7 @@ vi.mock('@hyperframes/player', () => {
     return { HyperframesPlayer: TestHyperframesPlayer };
 });
 
-import { VideoPreview } from './VideoPreview';
+import { VideoPreview } from '@/modules/creative/video/editor/components/VideoPreview';
 
 const project = (withClip = true): IndiiVideoProject => ({
     id: 'project-1', name: 'Project', width: 1920, height: 1080, fps: 30,

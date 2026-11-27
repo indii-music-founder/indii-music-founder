@@ -1,5 +1,5 @@
 import { WhiskState } from '@/core/store/slices/creative';
-import { ImageGeneration } from './image/ImageGenerationService';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { logger } from '@/utils/logger';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 

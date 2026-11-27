@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CompletedRenderReceipt, IndiiVideoProject } from '@indii/shared';
 
-import { renderVideoProjectLocally } from './LocalVideoProjectRenderer';
+import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 
 const project = (): IndiiVideoProject => ({
     id: 'project-1',

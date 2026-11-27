@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { KnowledgeChat } from './KnowledgeChat';
-import { knowledgeBaseService } from '../services/KnowledgeBaseService';
+import { KnowledgeChat } from '@/modules/knowledge/components/KnowledgeChat';
+import { knowledgeBaseService } from '@/modules/knowledge/services/KnowledgeBaseService';
 import { useStore } from '@/core/store';
 
 // Mock the service
-vi.mock('../services/KnowledgeBaseService', () => ({
+vi.mock('@/modules/knowledge/services/KnowledgeBaseService', () => ({
     knowledgeBaseService: {
         chatStream: vi.fn(),
     }

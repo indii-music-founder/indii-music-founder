@@ -1,7 +1,7 @@
 import React from 'react';
 import { Film } from 'lucide-react';
 import { HistoryItem } from '@/core/store/slices/creative';
-import { DailyItem } from './DailyItem';
+import { DailyItem } from '@/modules/creative/video/components/DailyItem';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
 interface DailiesStripProps {

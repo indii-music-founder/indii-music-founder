@@ -1,14 +1,14 @@
-import { AgentConfig } from "../types";
-import { VideoTools } from '../tools/VideoTools';
-import { UniversalTools } from '../tools/UniversalTools';
+import { AgentConfig } from "@/services/agent/types";
+import { VideoTools } from '@/services/agent/tools/VideoTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import systemPrompt from '@agents/video/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { StorageTools } from '../tools/StorageTools';
-import { VideoProjectTools } from '../tools/VideoProjectTools';
-import { EditorTools } from '../tools/EditorTools';
-import { BlenderTools } from '../tools/BlenderTools';
-import { DirectorTools } from '../tools/DirectorTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { StorageTools } from '@/services/agent/tools/StorageTools';
+import { VideoProjectTools } from '@/services/agent/tools/VideoProjectTools';
+import { EditorTools } from '@/services/agent/tools/EditorTools';
+import { BlenderTools } from '@/services/agent/tools/BlenderTools';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 
 
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeDisabledThinkingConfig, resolveModelThinkingConfig } from './thinkingConfig';
+import { normalizeDisabledThinkingConfig, resolveModelThinkingConfig } from '@/services/intelligence/generators/thinkingConfig';
 
 describe('disabled thinking configuration', () => {
     it.each([true, false, undefined])('disables summaries for zero budget with preference %s', (includeThoughts) => {

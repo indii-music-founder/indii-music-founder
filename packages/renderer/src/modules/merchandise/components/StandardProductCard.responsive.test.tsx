@@ -2,8 +2,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
-import { StandardProductCard } from './StandardProductCard';
-import { MerchProduct } from '../types';
+import { StandardProductCard } from '@/modules/merchandise/components/StandardProductCard';
+import { MerchProduct } from '@/modules/merchandise/types';
 
 // Mock dependencies
 // (No external dependencies to mock for this dumb component)

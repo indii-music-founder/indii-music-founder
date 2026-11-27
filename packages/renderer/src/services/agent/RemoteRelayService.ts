@@ -728,7 +728,7 @@ class RemoteRelayService {
 
         try {
             if (isFirebaseE2EMockEnabled()) return;
-            const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+            const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
             await studioExecutorLeaseService.completeCommand(commandId);
         } catch (error) {
             logger.error('[RemoteRelay] markCommandCompleted failed:', error);
@@ -906,7 +906,7 @@ class RemoteRelayService {
         // Firestore rejects undefined values (no ignoreUndefinedProperties) —
         // every optional field must be added conditionally, never spread in
         // unconditionally like boardroomMessageId previously was.
-        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
         await studioExecutorLeaseService.publishResponse(response);
         logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images, ${videoUrls?.length || 0} videos)`);
     }
@@ -916,7 +916,7 @@ class RemoteRelayService {
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
         if (isFirebaseE2EMockEnabled()) return;
-        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
         await studioExecutorLeaseService.publishPresence(state);
     }
 
@@ -927,7 +927,7 @@ class RemoteRelayService {
      */
     async releaseStudioPresence(studioInstanceId: string): Promise<void> {
         if (isFirebaseE2EMockEnabled()) return;
-        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
         await studioExecutorLeaseService.releasePresence(studioInstanceId);
     }
 

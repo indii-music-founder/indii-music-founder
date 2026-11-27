@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useStore } from '@/core/store';
-import type { BugReportType } from './BugReportDialog';
+import type { BugReportType } from '@/modules/debug/BugReportDialog';
 
 /**
  * Hook to open the bug report dialog from any component

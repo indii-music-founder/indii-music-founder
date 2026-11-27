@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { IngestionNotificationMapper } from './IngestionNotificationMapper';
+import { IngestionNotificationMapper } from '@/services/distribution/proprietary-ingestion/IngestionNotificationMapper';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { Deal } from './types/ern';
+import { Deal } from '@/services/distribution/proprietary-ingestion/types/ern';
 
 const MOCK_METADATA_BASE: ExtendedGoldenMetadata = {
     ...INITIAL_METADATA,

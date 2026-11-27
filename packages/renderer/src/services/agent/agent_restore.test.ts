@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi } from 'vitest';
-import { TOOL_REGISTRY } from './tools';
-import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
-import type { ToolFunctionResult } from './types';
+import { TOOL_REGISTRY } from '@/services/agent/tools';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import type { ToolFunctionResult } from '@/services/agent/types';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -27,7 +27,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     }
 }));
 
-vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingestWithReceipt: vi.fn().mockResolvedValue({ status: 'stored', memoryId: 'registry-memory', summary: 'Memory processed' }),
         queryFromServer: vi.fn().mockResolvedValue('Retrieved synthesized answer')

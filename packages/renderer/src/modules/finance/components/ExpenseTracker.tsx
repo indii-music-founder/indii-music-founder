@@ -2,12 +2,12 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { AlertCircle, DollarSign, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { useFinance } from '../hooks/useFinance';
+import { useFinance } from '@/modules/finance/hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ExpenseItem } from './ExpenseItem';
-import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
+import { ExpenseItem } from '@/modules/finance/components/ExpenseItem';
+import { ExpenseManualEntryModal } from '@/modules/finance/components/ExpenseManualEntryModal';
 import { isPaidExpense } from '@/modules/finance/schemas';
 import { EmptyState } from '@/components/shared/EmptyState';
 

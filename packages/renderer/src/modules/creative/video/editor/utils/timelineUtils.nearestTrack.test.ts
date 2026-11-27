@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nearestTrackIdByY } from './timelineUtils';
+import { nearestTrackIdByY } from '@/modules/creative/video/editor/utils/timelineUtils';
 
 const tracks = [{ id: 't1' }, { id: 't2' }, { id: 't3' }];
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useBugReport } from './useBugReport';
+import { useBugReport } from '@/modules/debug/useBugReport';
 
 /**
  * Keyboard shortcut hook for bug reporting

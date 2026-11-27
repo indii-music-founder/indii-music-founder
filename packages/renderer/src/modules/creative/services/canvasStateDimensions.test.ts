@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from './canvasStateDimensions';
+import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from '@/modules/creative/services/canvasStateDimensions';
 
 // Pure layout checks; no account, provider, or persisted product data is simulated.
 describe('saved canvas dimensions', () => {

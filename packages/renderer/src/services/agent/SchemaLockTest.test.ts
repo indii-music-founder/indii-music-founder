@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { BrandAgent } from './definitions/BrandAgent';
-import { agentRegistry } from './registry';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
+import { agentRegistry } from '@/services/agent/registry';
 
 describe('Agent Schema Lock Proof', () => {
     it('should be frozen and not allow mutations', () => {

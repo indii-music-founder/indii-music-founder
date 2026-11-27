@@ -1,12 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AgentDashboard from './AgentDashboard';
-import { VenueScoutService } from '../services/VenueScoutService';
+import AgentDashboard from '@/modules/agent/components/AgentDashboard';
+import { VenueScoutService } from '@/modules/agent/services/VenueScoutService';
 
 // --- MOCKS ---
 
 // Mock VenueScoutService
-vi.mock('../services/VenueScoutService', () => ({
+vi.mock('@/modules/agent/services/VenueScoutService', () => ({
     VenueScoutService: {
         searchVenues: vi.fn(),
     }
@@ -37,7 +37,7 @@ const { mockSetScanning, mockAddVenue, defaultStoreState } = vi.hoisted(() => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-vi.mock('../store/AgentStore', async (importOriginal) => {
+vi.mock('@/modules/agent/store/AgentStore', async (importOriginal) => {
     // We can access imports dynamically inside the factory if we need to,
     // or just rely on the fact that vi.mock runs after hoisted. 
     // The issue was `createMockStore` imported at the top level is undefined 
@@ -62,24 +62,24 @@ const MockScoutMapVisualization = (props: any) => {
     return <div data-testid="mock-map-viz">Map Status: {props.status}</div>;
 };
 
-vi.mock('./ScoutMapVisualization', () => ({
+vi.mock('@/modules/agent/components/ScoutMapVisualization', () => ({
     ScoutMapVisualization: (props: any) => <MockScoutMapVisualization {...props} />
 }));
 
-vi.mock('./VenueCard', () => ({
+vi.mock('@/modules/agent/components/VenueCard', () => ({
     VenueCard: ({ venue }: any) => <div data-testid="venue-card">{venue.name}</div>
 }));
 
 // Mock Layout Components
-vi.mock('./AgentSidebar', () => ({
+vi.mock('@/modules/agent/components/AgentSidebar', () => ({
     AgentSidebar: () => <div data-testid="sidebar">Sidebar</div>
 }));
 
-vi.mock('./AgentToolbar', () => ({
+vi.mock('@/modules/agent/components/AgentToolbar', () => ({
     AgentToolbar: ({ left }: any) => <div>{left}</div>
 }));
 
-vi.mock('./ScoutControls', () => ({
+vi.mock('@/modules/agent/components/ScoutControls', () => ({
     ScoutControls: ({ handleScan, isScanning }: any) => (
         <button
             onClick={handleScan}

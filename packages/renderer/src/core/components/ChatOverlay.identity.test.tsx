@@ -40,20 +40,20 @@ vi.mock('motion/react', () => ({
 vi.mock('react-virtuoso', () => ({
     Virtuoso: () => <div data-testid="virtuoso" />,
 }));
-vi.mock('./chat/ChatMessage', () => ({
+vi.mock('@/core/components/chat/ChatMessage', () => ({
     MessageItem: () => <div data-testid="message-item" />,
 }));
-vi.mock('./command-bar/PromptArea', () => ({
+vi.mock('@/core/components/command-bar/PromptArea', () => ({
     PromptArea: () => <div data-testid="prompt-area" />,
 }));
 vi.mock('@/core/components/ErrorBoundary', () => ({
     ErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
-vi.mock('./AgentSwitcherStrip', () => ({
+vi.mock('@/core/components/AgentSwitcherStrip', () => ({
     AgentSwitcherStrip: () => <div data-testid="agent-switcher" />,
 }));
 
-import ChatOverlay from './ChatOverlay';
+import ChatOverlay from '@/core/components/ChatOverlay';
 
 describe('ChatOverlay clean active header and minimize behavior', () => {
     it('renders the clean indii Direct header and minimizes cleanly', () => {

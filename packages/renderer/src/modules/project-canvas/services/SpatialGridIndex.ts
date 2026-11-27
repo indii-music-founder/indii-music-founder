@@ -17,7 +17,7 @@ import type {
     ProjectCanvasBlock,
     CanvasViewportBounds,
     CanvasClusterSummary,
-} from '../types';
+} from '@/modules/project-canvas/types';
 
 export interface SpatialGridIndexOptions {
     cellSize?: number;

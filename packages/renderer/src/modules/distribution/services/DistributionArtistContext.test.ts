@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDistributionArtistContext } from './DistributionArtistContext';
+import { getDistributionArtistContext } from '@/modules/distribution/services/DistributionArtistContext';
 
 describe('DistributionArtistContext', () => {
   it('reuses distributor context without duplicating the profile model', () => {

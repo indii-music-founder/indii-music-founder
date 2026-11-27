@@ -3,7 +3,7 @@ import { auth } from '@/services/firebase';
 import type { AgentDispatchTask } from '@/services/agent/RemoteRelayService';
 import { CanvasDocumentService } from '@/services/canvas/CanvasDocumentService';
 import { createDocFromImage } from '@/services/canvas/CanvasDoc';
-import { editorImportPlan } from './editorImportPlan';
+import { editorImportPlan } from '@/services/remote/editorImportPlan';
 import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 
 /** Open an uploaded capture in the paired desktop executor, never on the controller. */

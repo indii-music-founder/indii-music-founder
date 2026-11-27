@@ -1,8 +1,8 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 

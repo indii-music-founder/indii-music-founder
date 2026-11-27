@@ -5,13 +5,13 @@ import {
     getWorkflowFromStorage,
     getAllWorkflowsFromStorage,
     syncWorkflows
-} from './repository';
+} from '@/services/storage/repository';
 import { openDB } from 'idb';
 import { setDoc, doc, getDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 
 // Mock dependencies
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'test-user-123' } },
     storage: {},

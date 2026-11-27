@@ -1,4 +1,4 @@
-import { renderStartupFallback } from './startupFallback';
+import { renderStartupFallback } from '@/startupFallback';
 
 const BOOT_TIMEOUT_MS = 12000;
 

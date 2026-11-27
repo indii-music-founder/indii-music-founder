@@ -6,7 +6,7 @@ vi.mock('@/services/image/ImageGenerationService', () => ({
 
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { AppErrorCode } from '@/shared/types/errors';
-import { generateImageDirectly } from './DirectImageGenerator';
+import { generateImageDirectly } from '@/services/intelligence/generators/DirectImageGenerator';
 
 describe('generateImageDirectly', () => {
     it('delegates through the canonical reservation and Storage-result service', async () => {

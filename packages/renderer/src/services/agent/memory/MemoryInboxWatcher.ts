@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { alwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import {
     ALL_SUPPORTED_EXTENSIONS,
     SUPPORTED_TEXT_EXTENSIONS,

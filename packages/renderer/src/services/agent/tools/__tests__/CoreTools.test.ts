@@ -10,7 +10,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         get: vi.fn(),
         getAsync: vi.fn(),
@@ -18,10 +18,10 @@ vi.mock('../../registry', () => ({
     }
 }));
 
-import { CoreTools } from '../CoreTools';
+import { CoreTools } from '@/services/agent/tools/CoreTools';
 import { useStore } from '@/core/store';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { agentRegistry } from '../../registry';
+import { agentRegistry } from '@/services/agent/registry';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';

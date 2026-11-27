@@ -1,26 +1,26 @@
-import { SavedArtworkPanel } from './components/CanvasEditor/SavedArtworkPanel';
+import { SavedArtworkPanel } from '@/modules/creative/components/CanvasEditor/SavedArtworkPanel';
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Sparkles } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import CreativeNavbar from './components/CreativeNavbar';
-import InfiniteCanvas from './components/InfiniteCanvas';
-import AutonomousLab from './components/AutonomousLab';
-import VideoWorkflow from './video/VideoWorkflow';
-import CreativeCanvas from './components/CreativeCanvas';
+import CreativeNavbar from '@/modules/creative/components/CreativeNavbar';
+import InfiniteCanvas from '@/modules/creative/components/InfiniteCanvas';
+import AutonomousLab from '@/modules/creative/components/AutonomousLab';
+import VideoWorkflow from '@/modules/creative/video/VideoWorkflow';
+import CreativeCanvas from '@/modules/creative/components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
-import DirectGenerationTab from './components/DirectGenerationTab';
-import ShowroomUI from './components/ShowroomUI';
-import { CanvasEditor } from './components/CanvasEditor/CanvasEditor';
-import { CanvasEditorPortal } from './components/CanvasEditorPortal';
+import DirectGenerationTab from '@/modules/creative/components/DirectGenerationTab';
+import ShowroomUI from '@/modules/creative/components/ShowroomUI';
+import { CanvasEditor } from '@/modules/creative/components/CanvasEditor/CanvasEditor';
+import { CanvasEditorPortal } from '@/modules/creative/components/CanvasEditorPortal';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
-import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
+import { awaitCompletedPlpVideoVariant } from '@/modules/creative/plpVideoVariant';
 import {
     completePlpSlot,
     createPlpBatch,
@@ -31,13 +31,13 @@ import {
     queuePlpSlot,
     type PlpBatch,
     type PlpVariantResult,
-} from './plpBatch';
+} from '@/modules/creative/plpBatch';
 import { buildDistributorContext, validateImageForDistributor } from '@/services/onboarding/DistributorContext';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
-import CreativeClipboard from './components/CreativeClipboard';
-import OmniWorkflow from './video/OmniWorkflow';
-import PlpBatchStatus from './components/PlpBatchStatus';
+import CreativeClipboard from '@/modules/creative/components/CreativeClipboard';
+import OmniWorkflow from '@/modules/creative/video/OmniWorkflow';
+import PlpBatchStatus from '@/modules/creative/components/PlpBatchStatus';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
 /**

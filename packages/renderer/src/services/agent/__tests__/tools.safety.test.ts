@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TOOL_REGISTRY } from '../tools';
+import { TOOL_REGISTRY } from '@/services/agent/tools';
 
 describe('🛡️ Tool Safety: Forbidden Registry Keys', () => {
     const DANGEROUS_TOOLS = [

@@ -1,6 +1,6 @@
-import { downloadBoardroomFont } from '../boardroomBrowserResearch';
-import type { FunctionDeclaration } from '../types';
-import { toolError, toolSuccess, wrapTool } from '../utils/ToolUtils';
+import { downloadBoardroomFont } from '@/services/agent/boardroomBrowserResearch';
+import type { FunctionDeclaration } from '@/services/agent/types';
+import { toolError, toolSuccess, wrapTool } from '@/services/agent/utils/ToolUtils';
 
 export const BOARDROOM_FONT_DOWNLOAD: FunctionDeclaration = {
     name: 'boardroom_download_google_font',

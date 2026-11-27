@@ -3,7 +3,7 @@ import { X, ImagePlus, Upload, Film, ArrowRightLeft, Camera } from 'lucide-react
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import { PhotoSourcePanel } from './PhotoSourcePanel';
+import { PhotoSourcePanel } from '@/modules/creative/components/PhotoSourcePanel';
 import { CloudStorageService } from '@/services/CloudStorageService';
 
 export type IngredientMode = 'reference' | 'base_video' | 'transition';

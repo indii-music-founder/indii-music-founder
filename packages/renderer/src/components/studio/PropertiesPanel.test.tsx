@@ -1,6 +1,6 @@
 
 import { render, screen } from '@testing-library/react';
-import { PanelSection } from './PropertiesPanel';
+import { PanelSection } from '@/components/studio/PropertiesPanel';
 import { describe, it, expect } from 'vitest';
 
 describe('PanelSection', () => {

@@ -1,5 +1,5 @@
 import { CloudStorageService } from '@/services/CloudStorageService';
-import { applyMaskedPixels, maskContextCrop } from './scopedEditPixels';
+import { applyMaskedPixels, maskContextCrop } from '@/services/image/scopedEditPixels';
 
 type InlineImage = { mimeType: string; data: string };
 function inlineImage(canvas: HTMLCanvasElement): InlineImage {

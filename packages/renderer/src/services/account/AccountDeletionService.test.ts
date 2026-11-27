@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { deleteUserAccount } from './AccountDeletionService';
+import { deleteUserAccount } from '@/services/account/AccountDeletionService';
 
 // ============================================================================
 // Mocks

@@ -3,9 +3,9 @@ import { Instrument,
   InstrumentResult,
   InstrumentRegistryEntry,
   InstrumentFilter
-} from './InstrumentTypes';
-import { ImageGenerationInstrument } from './ImageGenerationInstrument';
-import { VideoGenerationInstrument } from './VideoGenerationInstrument';
+} from '@/services/agent/instruments/InstrumentTypes';
+import { ImageGenerationInstrument } from '@/services/agent/instruments/ImageGenerationInstrument';
+import { VideoGenerationInstrument } from '@/services/agent/instruments/VideoGenerationInstrument';
 import { CacheService } from '@/services/cache/CacheService';
 import { db, functions } from '@/services/firebase';
 import { collection, getDocs } from 'firebase/firestore';

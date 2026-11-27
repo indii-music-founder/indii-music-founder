@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { FormField } from './FormField';
+import { FormField } from '@/components/ui/FormField';
 
 describe('FormField relationships', () => {
     it('keeps a child description and invalid state while adding hint and error', () => {

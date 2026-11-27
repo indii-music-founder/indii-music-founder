@@ -131,7 +131,7 @@ import {
     TRANSIENT_ADOPT_MIN,
     TRANSIENT_REJECT_MAX,
     FOUNDRY_COLUMN_MIN_CONFIDENCE,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 
 const SKILLS = [
     { id: 'digital_distribution', name: 'Digital Distribution', description: 'DSP ingestion, DDEX, ISRC allocation.' },

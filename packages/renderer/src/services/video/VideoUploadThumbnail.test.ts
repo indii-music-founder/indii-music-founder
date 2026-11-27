@@ -7,12 +7,12 @@ vi.mock('firebase/storage', () => ({
     uploadBytesResumable: vi.fn(),
 }));
 
-vi.mock('../firebase', () => ({ storage: {} }));
+vi.mock('@/services/firebase', () => ({ storage: {} }));
 vi.mock('@/core/logger/Logger', () => ({
     Logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { VideoUploadService } from './VideoUploadService';
+import { VideoUploadService } from '@/services/video/VideoUploadService';
 
 describe('VideoUploadService thumbnail lifecycle', () => {
     let video: HTMLVideoElement;

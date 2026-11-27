@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 describe.skip('DistributionAgent Integration', () => {
     let distributionAgent: any;

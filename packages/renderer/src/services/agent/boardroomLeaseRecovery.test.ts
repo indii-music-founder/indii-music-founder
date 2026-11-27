@@ -5,7 +5,7 @@ import {
     endBoardroomLeaseRun,
     releaseOrphanedBoardroomLease,
     resetBoardroomLeaseMemoryForTests,
-} from './boardroomLeaseRecovery';
+} from '@/services/agent/boardroomLeaseRecovery';
 
 const LEASE = '55555555-5555-4555-8555-555555555555';
 

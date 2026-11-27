@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import InboxTab from './InboxTab';
+import InboxTab from '@/modules/agent/components/InboxTab';
 import { useStore } from '@/core/store';
 import { EmailService } from '@/services/email/EmailService';
 import type { EmailAccount, EmailMessage } from '@/services/email/types';

@@ -1,9 +1,9 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OrganizationService } from './OrganizationService';
+import { OrganizationService } from '@/services/OrganizationService';
 
 // Mock Firebase
-vi.mock('./firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
     db: {},
     auth: {

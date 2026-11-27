@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import ShowroomUI from './ShowroomUI';
+import ShowroomUI from '@/modules/creative/components/ShowroomUI';
 import { useToast } from '@/core/context/ToastContext';
 
 // ISSUE-959 regression: showroom intake must reject unsupported types, read

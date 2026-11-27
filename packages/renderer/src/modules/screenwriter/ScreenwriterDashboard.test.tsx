@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ScreenwriterDashboard, { screenwriterDraftStorageKey } from './ScreenwriterDashboard';
+import ScreenwriterDashboard, { screenwriterDraftStorageKey } from '@/modules/screenwriter/ScreenwriterDashboard';
 import { useStore } from '@/core/store';
 import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 

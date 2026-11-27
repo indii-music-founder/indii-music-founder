@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { TOOL_RISK_REGISTRY, getToolRiskTier } from '../../ToolRiskRegistry';
-import { CreativeAgent } from '../CreativeAgent';
-import { VideoAgent } from '../VideoAgent';
+import { TOOL_RISK_REGISTRY, getToolRiskTier } from '@/services/agent/ToolRiskRegistry';
+import { CreativeAgent } from '@/services/agent/definitions/CreativeAgent';
+import { VideoAgent } from '@/services/agent/definitions/VideoAgent';
 
 describe('Editor Bridge Agent Wiring & Risk Registry (ISSUE-1416)', () => {
     describe('TOOL_RISK_REGISTRY configuration', () => {

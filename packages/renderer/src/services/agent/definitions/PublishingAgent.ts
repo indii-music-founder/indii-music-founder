@@ -1,13 +1,13 @@
-import { AgentConfig } from "../types";
+import { AgentConfig } from "@/services/agent/types";
 import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Schema } from '@/shared/types/ai.dto';
-import { PublishingTools } from '../tools/PublishingTools';
-import { CatalogAdminTools } from '../tools/CatalogAdminTools';
-import { UniversalTools } from '../tools/UniversalTools';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { PublishingTools } from '@/services/agent/tools/PublishingTools';
+import { CatalogAdminTools } from '@/services/agent/tools/CatalogAdminTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 

@@ -32,7 +32,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     },
 }));
 
-import { ShortFormReelService } from './ShortFormReelService';
+import { ShortFormReelService } from '@/services/marketing/ShortFormReelService';
 
 describe('ShortFormReelService', () => {
     beforeEach(() => {

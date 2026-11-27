@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fabric from 'fabric';
 import { renderHook } from '@testing-library/react';
-import { useCanvasControls } from '../DesignCanvas';
+import { useCanvasControls } from '@/modules/merchandise/components/DesignCanvas';
 
 // Mock fabric
 vi.mock('fabric', () => {

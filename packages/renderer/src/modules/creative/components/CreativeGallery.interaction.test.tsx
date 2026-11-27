@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CreativeGallery from './CreativeGallery';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveBoardroomBrowserEndpoint } from './boardroomBrowserEndpoint';
+import { resolveBoardroomBrowserEndpoint } from '@/modules/boardroom/components/boardroomBrowserEndpoint';
 
 describe('resolveBoardroomBrowserEndpoint', () => {
     it('keeps the hosted browser disabled unless explicitly enabled', () => {

@@ -20,7 +20,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { PresencePublishGate } from './relayRequestControl';
+import { PresencePublishGate } from '@/services/remote/relayRequestControl';
 import type { RemoteCommand } from '@/services/agent/RemoteRelayService';
 import {
     HEARTBEAT_INTERVAL_MS,
@@ -29,7 +29,7 @@ import {
     RELAY_CLEANUP_INTERVAL_MS,
     type ExecutorCoreDeps,
     type ParsedRemoteCommand,
-} from './studioExecutorContracts';
+} from '@/services/remote/studioExecutorContracts';
 
 const QUEUED_NOTICE =
     '⏳ Queued — your desktop Studio was mid-task. This message will run there when the current task finishes; its reply will appear in the desktop app.';
@@ -253,7 +253,7 @@ export class StudioExecutorCore {
                     opts?.boardroomMessageId,
                     opts?.videoUrls
                 );
-            }) as Parameters<import('./studioExecutorContracts').StudioExecutionAdapter['executeCommand']>[0]['respond'];
+            }) as Parameters<import('@/services/remote/studioExecutorContracts').StudioExecutionAdapter['executeCommand']>[0]['respond'];
 
             let result: { relays: Array<{ text: string; agentId?: string; boardroomMessageId?: string; imageUrls?: string[]; videoUrls?: string[] }>; queuedBehindActiveRun: boolean };
             if (parsed.kind === 'chat') {

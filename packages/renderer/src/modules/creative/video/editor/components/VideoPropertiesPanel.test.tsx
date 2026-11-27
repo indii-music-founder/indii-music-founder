@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { VideoPropertiesPanel } from './VideoPropertiesPanel';
-import { VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { VideoPropertiesPanel } from '@/modules/creative/video/editor/components/VideoPropertiesPanel';
+import { VideoProject, VideoClip } from '@/modules/creative/video/store/videoEditorStore';
 import { vi } from 'vitest';
 
 // Mock Toast
@@ -13,7 +13,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock Video Editor Store
-vi.mock('../../store/videoEditorStore', async (importOriginal) => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => {
     const actual = await importOriginal<any>();
     return {
         ...actual,

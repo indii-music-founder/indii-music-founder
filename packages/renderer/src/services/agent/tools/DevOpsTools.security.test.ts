@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DevOpsTools } from './DevOpsTools';
+import { DevOpsTools } from '@/services/agent/tools/DevOpsTools';
 
 // 1. Hoist mocks so they can be referenced inside vi.mock factories
 const { requestApprovalMock, httpsCallableMock } = vi.hoisted(() => ({

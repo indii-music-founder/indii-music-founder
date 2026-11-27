@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
-import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '../constants';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '@/modules/creative/video/editor/constants';
 
 export interface PlayheadProps {
     trackHeaderOffset?: number;

@@ -1,6 +1,6 @@
 import { Canvas, FabricImage, type FabricObject } from 'fabric';
-import type { BaseLayer, CanvasDoc, CanvasLayer } from './CanvasDoc';
-import { artworkTransform } from './ArtworkGeometry';
+import type { BaseLayer, CanvasDoc, CanvasLayer } from '@/services/canvas/CanvasDoc';
+import { artworkTransform } from '@/services/canvas/ArtworkGeometry';
 
 /** Serialize Fabric's asynchronous disposal, including React Strict Mode remounts. */
 export class ArtworkCanvasSession {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cutoutRetainedFraction, cutoutSourcePoint, cutoutZoomOffset } from '../CutoutPreviewGeometry';
+import { cutoutRetainedFraction, cutoutSourcePoint, cutoutZoomOffset } from '@/services/canvas/CutoutPreviewGeometry';
 
 describe('cutout preview geometry (pure coordinates)', () => {
     it('spots a mask that retained only fragments of the selected artist', () => {

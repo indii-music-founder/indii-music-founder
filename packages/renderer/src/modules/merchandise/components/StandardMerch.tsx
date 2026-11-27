@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tag, Star, AlertTriangle } from 'lucide-react';
-import { useMerchandise } from '../hooks/useMerchandise';
-import { StandardProductCard } from './StandardProductCard';
+import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
+import { StandardProductCard } from '@/modules/merchandise/components/StandardProductCard';
 import { DeptLoader } from '@/components/ui/DeptLoader';
 
 

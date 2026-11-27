@@ -14,9 +14,9 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore';
-import { Directive } from '../directive/DirectiveTypes';
+import { Directive } from '@/services/directive/DirectiveTypes';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
-import { RouterCallContext } from './a2a/transport/A2ATransport';
+import { RouterCallContext } from '@/services/agent/a2a/transport/A2ATransport';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 
@@ -340,7 +340,7 @@ export class LivingPlanService {
     const plan = await this.getPlan(projectId, planId);
     if (!plan || !plan.draft.steps) return;
 
-    const { a2aClient } = await importWithRetry(() => import('./a2a/A2AClient'));
+    const { a2aClient } = await importWithRetry(() => import('@/services/agent/a2a/A2AClient'));
     const steps = plan.draft.steps;
     const completed = new Set<string>();
     const pending = new Set(steps.map(s => s.id));

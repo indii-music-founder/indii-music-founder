@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, Loader2, RefreshCw, AlertTriangle, Lightbulb, ThumbsUp, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
-import { CampaignAsset, EngagementPrediction } from '../types';
+import { CampaignAsset, EngagementPrediction } from '@/modules/marketing/types';
 import { logger } from '@/utils/logger';
 
 interface IntelligencePredictionPanelProps {

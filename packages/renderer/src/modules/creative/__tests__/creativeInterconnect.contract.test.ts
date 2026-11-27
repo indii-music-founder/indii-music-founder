@@ -322,7 +322,7 @@ describe('VideoDirector.triggerAnimation — image → video payload contract', 
     });
 
     it('data-URI images are canonicalized before the generation callable', async () => {
-        const { VideoDirector } = await import('../services/VideoDirector');
+        const { VideoDirector } = await import('@/modules/creative/services/VideoDirector');
         await VideoDirector.triggerAnimation({
             ...magicEditItem,
             url: 'data:image/webp;base64,QUJD',
@@ -333,14 +333,14 @@ describe('VideoDirector.triggerAnimation — image → video payload contract', 
     });
 
     it('remote URLs are canonicalized instead of being sent to a backend fetcher', async () => {
-        const { VideoDirector } = await import('../services/VideoDirector');
+        const { VideoDirector } = await import('@/modules/creative/services/VideoDirector');
         await VideoDirector.triggerAnimation(videoDirectorItem);
         const payload = capturedPayloads[0] as any;
         expect(payload.firstFrame).toBe('gs://indii-music-founder.firebasestorage.app/creative/u1/reference.png');
     });
 
     it('persists storageUri when a generated video is saved to history', async () => {
-        const { VideoDirector } = await import('../services/VideoDirector');
+        const { VideoDirector } = await import('@/modules/creative/services/VideoDirector');
         await VideoDirector.processGeneratedVideo(videoDirectorItem.url, 'animated cover');
         expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
             storageUri: 'gs://x/video.mp4',
@@ -348,7 +348,7 @@ describe('VideoDirector.triggerAnimation — image → video payload contract', 
     });
 
     it('contract: aspect ratio crosses the image→video boundary', async () => {
-        const { VideoDirector } = await import('../services/VideoDirector');
+        const { VideoDirector } = await import('@/modules/creative/services/VideoDirector');
         await VideoDirector.triggerAnimation(magicEditItem, { aspectRatio: '1:1' }); // a 1:1 canvas export
         const payload = capturedPayloads[0] as any;
         expect(payload.options).toEqual({ aspectRatio: '9:16' });

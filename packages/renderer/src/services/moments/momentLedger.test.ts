@@ -5,7 +5,7 @@ import {
     markCelebrated,
     nextUncelebratedThreshold,
     presaveThresholdKey,
-} from './momentLedger';
+} from '@/services/moments/momentLedger';
 
 describe('momentLedger', () => {
     beforeEach(() => {

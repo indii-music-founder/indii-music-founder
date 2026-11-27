@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AssetSpotlight from './AssetSpotlight';
+import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
 
 /**
  * ISSUE-752: "Discuss" used to only prefill commandBarInput with a text

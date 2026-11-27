@@ -5,7 +5,7 @@ import {
     creativeAssetPayloadToHistoryItem,
     readCreativeAssetDrag,
     writeCreativeAssetDrag,
-} from './CreativeAssetDragService';
+} from '@/services/creative/CreativeAssetDragService';
 
 function createDataTransfer(): DataTransfer {
     const values = new Map<string, string>();

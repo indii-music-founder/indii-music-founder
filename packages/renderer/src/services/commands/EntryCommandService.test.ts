@@ -70,8 +70,8 @@ vi.mock('@/services/business-harness/MerchPodHarnessService', () => ({
   },
 }));
 
-vi.mock('./EntryCommandSyncService', async () => {
-  const registry = await vi.importActual<typeof import('./EntryCommandRegistry')>('./EntryCommandRegistry');
+vi.mock('@/services/commands/EntryCommandSyncService', async () => {
+  const registry = await vi.importActual<typeof import('@/services/commands/EntryCommandRegistry')>('@/services/commands/EntryCommandRegistry');
   return {
     entryCommandSyncService: {
       hydrateCustomCommands: vi.fn(async () => registry.getCustomEntryCommands()),
@@ -80,9 +80,9 @@ vi.mock('./EntryCommandSyncService', async () => {
   };
 });
 
-import { entryCommandService } from './EntryCommandService';
-import { clearCustomEntryCommands, resolveEntryCommand } from './EntryCommandRegistry';
-import { entryCommandSyncService } from './EntryCommandSyncService';
+import { entryCommandService } from '@/services/commands/EntryCommandService';
+import { clearCustomEntryCommands, resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
+import { entryCommandSyncService } from '@/services/commands/EntryCommandSyncService';
 import { FieldContactService } from '@/services/contacts/FieldContactService';
 import { merchPodHarnessService } from '@/services/business-harness/MerchPodHarnessService';
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import {
     collection,
     query,
@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
-import { backendEmbedTexts } from './backendEmbeddings';
+import { backendEmbedTexts } from '@/services/agent/memory/backendEmbeddings';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,

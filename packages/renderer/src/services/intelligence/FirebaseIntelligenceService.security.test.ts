@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
 
 // Mock Dependencies
@@ -56,12 +56,12 @@ vi.mock('@/config/env', () => ({
     env: { apiKey: 'test-key', appCheckKey: 'test-app-check-key' }
 }));
 
-vi.mock('./appcheck', () => ({
+vi.mock('@/services/intelligence/appcheck', () => ({
     isAppCheckConfigured: () => true,
     isAppCheckError: vi.fn()
 }));
 
-vi.mock('./billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(true),

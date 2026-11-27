@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useNLEPlayback } from './useNLEPlayback';
-import { NLEFrameRenderer } from './NLEFrameRenderer';
+import { useNLEPlayback } from '@/services/video/nle/useNLEPlayback';
+import { NLEFrameRenderer } from '@/services/video/nle/NLEFrameRenderer';
 
 // Structural transport checks. Media decoding is verified separately with encoded files.
 import type { IndiiVideoProject } from '@indii/shared';

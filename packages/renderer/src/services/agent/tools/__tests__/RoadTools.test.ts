@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RoadTools } from '../RoadTools';
+import { RoadTools } from '@/services/agent/tools/RoadTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {

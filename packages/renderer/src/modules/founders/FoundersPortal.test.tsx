@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { useStore } from '@/core/store';
 import { httpsCallable } from 'firebase/functions';
-import FoundersPortal from './FoundersPortal';
+import FoundersPortal from '@/modules/founders/FoundersPortal';
 
 // Mock Framer Motion
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {

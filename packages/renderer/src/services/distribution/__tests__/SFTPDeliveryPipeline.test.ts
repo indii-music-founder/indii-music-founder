@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SFTPTransporter } from '../transport/SFTPTransporter';
+import { SFTPTransporter } from '@/services/distribution/transport/SFTPTransporter';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { IngestionMetadata } from '@/types/distribution';
 

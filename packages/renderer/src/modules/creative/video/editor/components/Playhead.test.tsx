@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Playhead } from './Playhead';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
-import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '../constants';
+import { Playhead } from '@/modules/creative/video/editor/components/Playhead';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '@/modules/creative/video/editor/constants';
 
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
 }));
 

@@ -12,22 +12,22 @@ import {
     judgeBoardroomWebpageSemantics,
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
-import { resolveBoardroomBrowserEndpoint } from './boardroomBrowserEndpoint';
-import { BoardroomBrowserToolbar } from './BoardroomBrowserToolbar';
+import { resolveBoardroomBrowserEndpoint } from '@/modules/boardroom/components/boardroomBrowserEndpoint';
+import { BoardroomBrowserToolbar } from '@/modules/boardroom/components/BoardroomBrowserToolbar';
 import {
     BOARDROOM_BOOKMARKS,
     BoardroomBrowserBookmarks,
     matchesBookmark,
-} from './BoardroomBrowserBookmarks';
-import { BoardroomBrowserFrameBlockedCard } from './BoardroomBrowserFrameBlockedCard';
-import { BoardroomBrowserReader } from './BoardroomBrowserReader';
+} from '@/modules/boardroom/components/BoardroomBrowserBookmarks';
+import { BoardroomBrowserFrameBlockedCard } from '@/modules/boardroom/components/BoardroomBrowserFrameBlockedCard';
+import { BoardroomBrowserReader } from '@/modules/boardroom/components/BoardroomBrowserReader';
 
 interface BoardroomBrowserViewProps {
     isVisible?: boolean;
 }
 
-const BoardroomHostedBrowser = lazy(() => import('./BoardroomHostedBrowser'));
-const BoardroomWebSearch = lazy(() => import('./BoardroomWebSearch'));
+const BoardroomHostedBrowser = lazy(() => import('@/modules/boardroom/components/BoardroomHostedBrowser'));
+const BoardroomWebSearch = lazy(() => import('@/modules/boardroom/components/BoardroomWebSearch'));
 const hostedEndpoint = resolveBoardroomBrowserEndpoint({
     enabled: import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true',
     configuredEndpoint: import.meta.env.VITE_BOARDROOM_BROWSER_URL,

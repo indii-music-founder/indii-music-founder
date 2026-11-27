@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { DailyItem } from './DailyItem';
+import { DailyItem } from '@/modules/creative/video/components/DailyItem';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 const mockVideo: HistoryItem = {

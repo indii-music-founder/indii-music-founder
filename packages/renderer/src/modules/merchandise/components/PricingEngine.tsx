@@ -6,8 +6,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, CheckCircle2, Sparkles, Info } from 'lucide-react';
-import { MerchProduct } from '../types';
-import { usePricingConfig, PricingConfig } from '../hooks/usePricingConfig';
+import { MerchProduct } from '@/modules/merchandise/types';
+import { usePricingConfig, PricingConfig } from '@/modules/merchandise/hooks/usePricingConfig';
 
 interface PricedProduct extends MerchProduct {
     suggestedPrice: number;

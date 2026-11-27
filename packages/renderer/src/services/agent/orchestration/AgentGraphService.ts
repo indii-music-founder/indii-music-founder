@@ -5,11 +5,11 @@ import {
     GraphNode,
     GraphExecutionState,
     AgentContext,
-} from '../types';
-import { agentGraphStateService } from './AgentGraphStateService';
-import { agentService } from '../AgentService';
-import { AgentEventBus } from '../governance/AgentEventBus';
-import { memoryBankService } from '../memory/MemoryBankService';
+} from '@/services/agent/types';
+import { agentGraphStateService } from '@/services/agent/orchestration/AgentGraphStateService';
+import { agentService } from '@/services/agent/AgentService';
+import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 

@@ -29,7 +29,7 @@
 import { functions as firebaseFunctions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
-import type { PlatformData, StreamDataPoint } from './types';
+import type { PlatformData, StreamDataPoint } from '@/services/analytics/types';
 import * as Sentry from '@sentry/react';
 import { logger } from '@/utils/logger';
 import {

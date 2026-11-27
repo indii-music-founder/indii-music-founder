@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { AgentConfig } from '../types';
+import { AgentConfig } from '@/services/agent/types';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 /**

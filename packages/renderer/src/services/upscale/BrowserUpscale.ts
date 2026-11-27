@@ -1,6 +1,6 @@
 /** Tiled, on-device super-resolution. No generation, quota, or artwork prompt. */
-import { runPrintStage } from './runPrintStage';
-import { enhancedTilePixels } from './enhancedTilePixels';
+import { runPrintStage } from '@/services/upscale/runPrintStage';
+import { enhancedTilePixels } from '@/services/upscale/enhancedTilePixels';
 const MAX_OUTPUT_PIXELS = 80_000_000;
 const PATCH = 128;
 const PADDING = 12;

@@ -1,5 +1,5 @@
-import type { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { estimateSemanticCallTokens, reportedSemanticTokens } from '../governance/SemanticCallBudget';
+import type { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { estimateSemanticCallTokens, reportedSemanticTokens } from '@/services/agent/governance/SemanticCallBudget';
 import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
@@ -162,7 +162,7 @@ export class JevGuardrailService {
       // readiness claim it cannot back — auto-file the critique through the
       // bug pipeline so truthfulness reports originate from the product.
       if (result.flags.includes('claims_verified_readiness_without_evidence')) {
-        void import('../truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+        void import('@/services/agent/truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
           reportOverclaimIfNeeded({
             snippet: input.text,
             source: 'jev_guardrail',

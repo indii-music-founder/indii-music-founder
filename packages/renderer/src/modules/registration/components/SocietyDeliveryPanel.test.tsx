@@ -2,7 +2,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
-import { SocietyDeliveryPanel } from './SocietyDeliveryPanel';
+import { SocietyDeliveryPanel } from '@/modules/registration/components/SocietyDeliveryPanel';
 const operation = vi.hoisted(() => vi.fn());
 vi.mock('@/services/rights/HostedRightsService', () => ({ rightsOperation: operation }));
 const run = async (task: () => Promise<void>) => task();

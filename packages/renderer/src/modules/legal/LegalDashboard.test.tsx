@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import LegalDashboard from './LegalDashboard';
+import LegalDashboard from '@/modules/legal/LegalDashboard';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
@@ -57,7 +57,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 }));
 
 // Mock MyContracts since it's now the default tab and has Firebase dependencies
-vi.mock('./components/MyContracts', () => ({
+vi.mock('@/modules/legal/components/MyContracts', () => ({
     MyContracts: ({ onNewContract: _ }: { onNewContract?: () => void }) => <div data-testid="my-contracts">My Contracts Mock</div>,
 }));
 

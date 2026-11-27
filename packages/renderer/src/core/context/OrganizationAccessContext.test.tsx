@@ -36,7 +36,7 @@ vi.mock('@/utils/logger', () => ({
 import {
     OrganizationAccessProvider,
     useOrganizationAccess,
-} from './OrganizationAccessContext';
+} from '@/core/context/OrganizationAccessContext';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
     <OrganizationAccessProvider>{children}</OrganizationAccessProvider>

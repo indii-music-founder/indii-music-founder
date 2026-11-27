@@ -20,7 +20,7 @@ import { useStore } from '@/core/store';
 import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
 import { auth } from '@/services/firebase';
 import type { SavedWorkflow } from '@/modules/workflow/types';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 type NewCanvasBlockInput = Partial<Omit<ProjectCanvasBlock, 'id' | 'canvasId' | 'projectId' | 'createdAt' | 'updatedAt'>>;
 

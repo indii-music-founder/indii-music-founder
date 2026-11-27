@@ -1,22 +1,22 @@
-import { AgentContext } from '../types';
+import { AgentContext } from '@/services/agent/types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
-import { TraceService } from '../observability/TraceService';
+import { TraceService } from '@/services/agent/observability/TraceService';
 import { auth } from '@/services/firebase';
 
-import { agentRegistry } from '../registry';
-import { graphDecompositionService } from '../orchestration/GraphDecompositionService';
-import { AgentGraph } from '../types';
+import { agentRegistry } from '@/services/agent/registry';
+import { graphDecompositionService } from '@/services/agent/orchestration/GraphDecompositionService';
+import { AgentGraph } from '@/services/agent/types';
 
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { parseBoardroomIntentDecision } from '@/config/boardroomIntentPolicy';
 import { refineInjectionRisk, judgeOrchestrationComplexity, judgeBoardroomIntent, judgeSpecialistAgentRoute, BOARDROOM_INTENT_QUESTION, BOARDROOM_INTENT_MIN_CONFIDENCE, type BoardroomIntent } from '@/config/typesafeJudgments';
 
-import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { TokenEstimator } from '../governance/TokenEstimator';
-import { navigateToModule } from '../tools/navigationOutcome';
-import { extractConfirmedProposalContext } from '../orchestration/BoardroomActionPlan';
+import { executionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { TokenEstimator } from '@/services/agent/governance/TokenEstimator';
+import { navigateToModule } from '@/services/agent/tools/navigationOutcome';
+import { extractConfirmedProposalContext } from '@/services/agent/orchestration/BoardroomActionPlan';
 
 type SecurityGateVerdict = { shouldBlock: boolean; detectedPatterns: string[] };
 type CachedSecurityGate = { query: string; verdict: SecurityGateVerdict };

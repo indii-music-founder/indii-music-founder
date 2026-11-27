@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FinanceTools } from './tools/FinanceTools';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 
 describe.skip('Finance Agent Integration', () => {
     it('should audit distribution for a valid distributor', async () => {

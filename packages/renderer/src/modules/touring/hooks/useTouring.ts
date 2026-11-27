@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
-import { Itinerary, ItineraryStop, EmergencyContact } from '../types';
-import { normalizeItinerary } from '../itinerary';
+import { Itinerary, ItineraryStop, EmergencyContact } from '@/modules/touring/types';
+import { normalizeItinerary } from '@/modules/touring/itinerary';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';

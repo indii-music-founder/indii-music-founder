@@ -6,14 +6,14 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { TOOL_REGISTRY, BASE_TOOLS } from './tools';
-import { agentRegistry } from './registry';
-import { AGENT_CONFIGS } from './agentConfig';
-import { VALID_AGENT_IDS } from './types';
-import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
-import { TOOL_RISK_REGISTRY, resolveToolRiskMetadata } from './ToolRiskRegistry';
-import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
-import { createTool } from './utils/ZodUtils';
+import { TOOL_REGISTRY, BASE_TOOLS } from '@/services/agent/tools';
+import { agentRegistry } from '@/services/agent/registry';
+import { AGENT_CONFIGS } from '@/services/agent/agentConfig';
+import { VALID_AGENT_IDS } from '@/services/agent/types';
+import { ToolPoolAssembler } from '@/services/agent/governance/ToolPoolAssembler';
+import { TOOL_RISK_REGISTRY, resolveToolRiskMetadata } from '@/services/agent/ToolRiskRegistry';
+import { SUPERPOWER_TOOLS } from '@/services/agent/definitions/SuperpowerTools';
+import { createTool } from '@/services/agent/utils/ZodUtils';
 import { z } from 'zod';
 
 // Mock dependencies

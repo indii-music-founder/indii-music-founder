@@ -1,4 +1,4 @@
-import type { SemanticCallAdmission } from '../governance/SemanticCallBudget';
+import type { SemanticCallAdmission } from '@/services/agent/governance/SemanticCallBudget';
 import { v4 as uuidv4 } from 'uuid';
 import { 
     AgentLoopDefinition, 
@@ -9,17 +9,17 @@ import {
     AgentLoopActionCheckpointSchema,
     AgentLoopExecutionSchema,
 } from '@indii/shared';
-import { AgentContext } from '../types';
+import { AgentContext } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 import { useStore } from '@/core/store';
-import { maestroBatchingService } from '../MaestroBatchingService';
+import { maestroBatchingService } from '@/services/agent/MaestroBatchingService';
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { FirestoreService } from '../../FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 import { heuristicTransientError, judgeTransientError } from '@/config/typesafeJudgments';
-import { TokenEstimator } from '../governance/TokenEstimator';
-import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { TokenEstimator } from '@/services/agent/governance/TokenEstimator';
+import { executionTokenBudget, type ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 class ExecutionTokenBudgetExceeded extends Error {}
 class ExecutionBudgetCheckpointFailed extends Error {}

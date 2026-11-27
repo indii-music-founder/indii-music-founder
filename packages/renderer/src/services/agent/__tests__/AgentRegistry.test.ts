@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { AgentRegistry } from '../registry';
-import { SpecializedAgent } from '../types';
+import { AgentRegistry } from '@/services/agent/registry';
+import { SpecializedAgent } from '@/services/agent/types';
 
 describe('AgentRegistry', () => {
     it('should lazy load an agent', async () => {

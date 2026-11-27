@@ -1,4 +1,4 @@
-import { APPROVED_MODELS, INTELLIGENCE_MODELS } from './intelligence-models';
+import { APPROVED_MODELS, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export const AI_MODELS = {
     ...APPROVED_MODELS,

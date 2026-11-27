@@ -1,5 +1,5 @@
 import React from 'react';
-import { MerchProduct } from '../types';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { ArrowRight, Palette } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';

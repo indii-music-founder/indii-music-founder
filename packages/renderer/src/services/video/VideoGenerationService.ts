@@ -6,7 +6,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
  
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
-import { getVideoConstraints } from '../onboarding/DistributorContext';
+import { getVideoConstraints } from '@/services/onboarding/DistributorContext';
 import {
     GenerateVideoSchema,
     normalizeVideoDuration,

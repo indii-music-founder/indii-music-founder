@@ -2,10 +2,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import MerchStudio from './MerchStudio';
+import MerchStudio from '@/modules/merchandise/MerchStudio';
 
-vi.mock('./MerchDashboard', () => ({ default: () => <h1>Merchandise dashboard</h1> }));
-vi.mock('./MerchDesigner', () => ({ default: () => <h1>Merchandise designer</h1> }));
+vi.mock('@/modules/merchandise/MerchDashboard', () => ({ default: () => <h1>Merchandise dashboard</h1> }));
+vi.mock('@/modules/merchandise/MerchDesigner', () => ({ default: () => <h1>Merchandise designer</h1> }));
 
 function NavigationFixture({ destination }: { destination: string }) {
     const navigate = useNavigate();

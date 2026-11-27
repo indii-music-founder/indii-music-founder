@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DistributorService } from './DistributorService';
-import { distributionStore } from './DistributionPersistenceService';
-import { currencyConversionService } from './CurrencyConversionService';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { distributionStore } from '@/services/distribution/DistributionPersistenceService';
+import { currencyConversionService } from '@/services/distribution/CurrencyConversionService';
 import { useStore } from '@/core/store';
-import { DistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
+import { DistributorAdapter, DistributorEarnings, DateRange } from '@/services/distribution/types/distributor';
 
 // Mock CurrencyConversionService
-vi.mock('./CurrencyConversionService', () => ({
+vi.mock('@/services/distribution/CurrencyConversionService', () => ({
   currencyConversionService: {
     convert: vi.fn(),
   }
 }));
 
 // Mock DistributionPersistenceService
-vi.mock('./DistributionPersistenceService', () => ({
+vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
   distributionStore: {
     createDeployment: vi.fn(),
     updateDeploymentStatus: vi.fn(),

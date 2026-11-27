@@ -1,1 +1,1 @@
-export { default as OnboardingPage } from './pages/OnboardingPage';
+export { default as OnboardingPage } from '@/modules/onboarding/pages/OnboardingPage';

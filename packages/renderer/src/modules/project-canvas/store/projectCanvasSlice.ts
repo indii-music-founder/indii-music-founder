@@ -16,8 +16,8 @@ import type {
     ProjectCanvasEdge,
     CanvasViewport,
     CanvasRelationshipType,
-} from '../types';
-import { ProjectCanvasPersistence } from '../services/ProjectCanvasPersistence';
+} from '@/modules/project-canvas/types';
+import { ProjectCanvasPersistence } from '@/modules/project-canvas/services/ProjectCanvasPersistence';
 
 export type CanvasToolType =
     | 'select'

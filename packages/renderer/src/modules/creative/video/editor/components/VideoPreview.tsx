@@ -5,14 +5,14 @@ import type { HyperframesPlayer } from '@hyperframes/player';
 import { logger } from '@/utils/logger';
 import type { IndiiVideoProject } from '@indii/shared';
 
-import { useCompiledVideoPreview } from '../hooks/useCompiledVideoPreview';
+import { useCompiledVideoPreview } from '@/modules/creative/video/editor/hooks/useCompiledVideoPreview';
 import {
     attachPreviewElement,
     detachPreviewElement,
     previewPause,
     previewSeekToFrame,
     type PreviewTransportElement,
-} from '../previewTransport';
+} from '@/modules/creative/video/editor/previewTransport';
 import { useNLEPlayback } from '@/services/video/nle';
 
 export interface VideoPreviewProps {
@@ -240,7 +240,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
                                 ScreenControl.requestPermission().then(() => {
                                     const mode = ScreenControl.openProjectorWindow('/video-popout', 1);
                                     logger.info('[preview] pop-out opened via ' + mode);
-                                    import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                                    import('@/modules/creative/video/store/videoEditorStore').then(({ useVideoEditorStore }) => {
                                         useVideoEditorStore.getState().setIsPopoutActive(true);
                                     }).catch((err) => logger.error('Failed to load video editor store for pop-out:', err));
                                 }).catch((err) => logger.error('Screen control permission request failed:', err));

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CompatibilityDriftMonitor } from '../CompatibilityDriftMonitor';
-import { FormatForensicsEngine } from '../FormatForensicsEngine';
+import { CompatibilityDriftMonitor } from '@/services/foundry/CompatibilityDriftMonitor';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 describe('CompatibilityDriftMonitor', () => {

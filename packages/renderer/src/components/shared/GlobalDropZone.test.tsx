@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
-import { GlobalDropZone } from './GlobalDropZone';
+import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 
 const store = vi.hoisted(() => ({
     addUploadedAudio: vi.fn(async () => true),

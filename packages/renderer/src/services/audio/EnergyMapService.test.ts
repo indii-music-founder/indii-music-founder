@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { EnergyMapService } from './EnergyMapService';
+import { EnergyMapService } from '@/services/audio/EnergyMapService';
 
 describe('EnergyMapService', () => {
     it('rejects raw browser masters instead of base64-encoding them for Gemini', async () => {

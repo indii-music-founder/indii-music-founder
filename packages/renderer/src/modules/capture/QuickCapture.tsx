@@ -10,7 +10,7 @@ import type { StoreState } from '@/core/store';
 import { FieldContactService } from '@/services/contacts/FieldContactService';
 import type { FieldContactRole, CaptureLocation } from '@/types/contacts';
 import { logger } from '@/utils/logger';
-import { ContactFormFields } from './components/ContactFormFields';
+import { ContactFormFields } from '@/modules/capture/components/ContactFormFields';
 
 // ============================================================================
 // QuickCapture — Fast contact capture with automatic metadata

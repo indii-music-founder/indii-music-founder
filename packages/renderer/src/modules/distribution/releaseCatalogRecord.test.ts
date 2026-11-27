@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildReleaseCatalogRecord, type ReleaseCatalogInput } from './releaseCatalogRecord';
+import { buildReleaseCatalogRecord, type ReleaseCatalogInput } from '@/modules/distribution/releaseCatalogRecord';
 
 const INPUT: ReleaseCatalogInput = {
     ownerId: 'user-1',

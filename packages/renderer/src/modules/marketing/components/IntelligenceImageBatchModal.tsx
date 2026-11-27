@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ImageIcon, Loader2, Check, AlertCircle, RefreshCw, Play } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
-import { CampaignAsset, ScheduledPost, BatchImageProgress } from '../types';
+import { CampaignAsset, ScheduledPost, BatchImageProgress } from '@/modules/marketing/types';
 import { logger } from '@/utils/logger';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 

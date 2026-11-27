@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { create } from 'zustand';
-import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { throttle } from '@/lib/throttle';
-import { isClipCompatibleWithTrack } from '../utils/timelineUtils';
+import { isClipCompatibleWithTrack } from '@/modules/creative/video/editor/utils/timelineUtils';
 
 const PIXELS_PER_FRAME = 2;
 const SNAP_THRESHOLD_PX = 6;

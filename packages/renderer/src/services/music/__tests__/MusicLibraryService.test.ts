@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { musicLibraryService } from '../MusicLibraryService';
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { auth } from '@/services/firebase';
 import { getDoc, setDoc, getDocs } from 'firebase/firestore';
 

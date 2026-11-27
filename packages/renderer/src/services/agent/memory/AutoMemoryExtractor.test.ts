@@ -12,7 +12,7 @@ const hoisted = vi.hoisted(() => ({
 
 const { ingestFromSessionMock, getDocMock, setDocMock, mockState } = hoisted;
 
-vi.mock('./AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingestFromSession: hoisted.ingestFromSessionMock,
     },
@@ -34,7 +34,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-import { AutoMemoryExtractor } from './AutoMemoryExtractor';
+import { AutoMemoryExtractor } from '@/services/agent/memory/AutoMemoryExtractor';
 
 const resetSingleton = () => {
     // The module exports a singleton; tests need a fresh instance.

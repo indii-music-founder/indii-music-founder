@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDirectVideoInputManifest, resolveDirectVideoFirstFrame } from './directVideoInputs';
+import { buildDirectVideoInputManifest, resolveDirectVideoFirstFrame } from '@/modules/creative/hooks/directVideoInputs';
 
 describe('resolveDirectVideoFirstFrame', () => {
     it('gives the explicit first frame precedence over references', () => {

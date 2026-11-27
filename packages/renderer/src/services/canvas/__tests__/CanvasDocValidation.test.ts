@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createDocFromImage } from '../CanvasDoc';
-import { normalizeCanvasDoc } from '../CanvasDocValidation';
+import { createDocFromImage } from '@/services/canvas/CanvasDoc';
+import { normalizeCanvasDoc } from '@/services/canvas/CanvasDocValidation';
 
 describe('artwork document compatibility', () => {
     it('normalizes missing legacy fields without upgrading adjustment behavior or dimensions', () => {

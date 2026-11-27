@@ -1,13 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MobileTabBar } from './MobileTabBar';
-import { useStore } from '../store';
+import { MobileTabBar } from '@/core/components/MobileTabBar';
+import { useStore } from '@/core/store';
 
 // ISSUE-1437: the phone "More" drawer must apply the same feature-flag gating the
 // desktop Sidebar applies, must not offer the phantom `audio-analyzer` destination,
 // and must give the phone its only reachable entry points to files/notes/project-canvas.
 
-vi.mock('../store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: vi.fn(),
 }));
 
@@ -42,7 +42,7 @@ vi.mock('@/hooks/useGlobalShortcut', () => ({
     useGlobalShortcut: vi.fn(),
 }));
 
-vi.mock('../theme/moduleColors', () => ({
+vi.mock('@/core/theme/moduleColors', () => ({
     getColorForModule: () => ({
         cssVar: '--color-test',
         text: 'text-test',

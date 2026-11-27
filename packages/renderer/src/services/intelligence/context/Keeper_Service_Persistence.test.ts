@@ -15,7 +15,7 @@ vi.mock('@/services/FirestoreService', () => ({
         constructor(_collectionPath: string) {}
     }
 }));
-vi.mock('../../FirestoreService', () => ({
+vi.mock('@/services/FirestoreService', () => ({
     FirestoreService: class {
         set = vi.fn().mockResolvedValue(undefined);
         update = vi.fn().mockResolvedValue(undefined);

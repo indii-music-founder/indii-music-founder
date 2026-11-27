@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { LayoutAdaptationService, LAYOUT_PRESETS } from '../LayoutAdaptationService';
+import { LayoutAdaptationService, LAYOUT_PRESETS } from '@/services/image/LayoutAdaptationService';
 
 describe('LayoutAdaptationService', () => {
     beforeAll(() => {

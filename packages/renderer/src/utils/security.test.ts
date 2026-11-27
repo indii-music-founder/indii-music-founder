@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generateSecureId, generateSecureHex } from './security';
+import { generateSecureId, generateSecureHex } from '@/utils/security';
 
 describe('Security Utilities', () => {
   describe('generateSecureHex', () => {

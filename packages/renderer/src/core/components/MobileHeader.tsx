@@ -6,7 +6,7 @@ import { ChevronLeft } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { MODULE_DISPLAY_NAMES, type ModuleId } from '@/core/constants';
 import { useMobile } from '@/hooks/useMobile';
-import { AgentCanvasToggle } from './AgentCanvasToggle';
+import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
 
 /**
  * MobileHeader — Compact header bar for phone-class viewports.

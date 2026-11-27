@@ -19,9 +19,9 @@ import {
     FINE_TUNED_MODEL_REGISTRY,
     getFineTunedModel,
     USE_FINE_TUNED_AGENTS,
-} from '../fine-tuned-models';
-import { VALID_AGENT_IDS, type ValidAgentId } from '../types';
-import { SPOKE_AGENT_IDS } from './AgentStressTest.harness';
+} from '@/services/agent/fine-tuned-models';
+import { VALID_AGENT_IDS, type ValidAgentId } from '@/services/agent/types';
+import { SPOKE_AGENT_IDS } from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Mocks

@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { Tablet, Monitor, Smartphone, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 
 interface IpadSurfacePromptProps {
   isOpen: boolean;

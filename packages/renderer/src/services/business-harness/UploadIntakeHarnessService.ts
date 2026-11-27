@@ -14,11 +14,11 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildDistributionReadiness, buildReleaseDna } from '@/services/release-harness/ReleaseHarnessAdapters';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createHarnessRun, type HarnessRun } from './types';
-import { saveHarnessRun } from './HarnessStorage';
-import { compileHarness } from './HarnessCompiler';
-import type { SongDnaHarnessOutput } from './SongDnaCompiler';
-import type { DistributionDdexHarnessOutput } from './DistributionDdexCompiler';
+import { createHarnessRun, type HarnessRun } from '@/services/business-harness/types';
+import { saveHarnessRun } from '@/services/business-harness/HarnessStorage';
+import { compileHarness } from '@/services/business-harness/HarnessCompiler';
+import type { SongDnaHarnessOutput } from '@/services/business-harness/SongDnaCompiler';
+import type { DistributionDdexHarnessOutput } from '@/services/business-harness/DistributionDdexCompiler';
 
 export interface UploadIntakeHarnessInput extends Omit<ReleaseHarnessInput, 'audioProfile'> {
   audioProfile?: AudioIntelligenceProfile;

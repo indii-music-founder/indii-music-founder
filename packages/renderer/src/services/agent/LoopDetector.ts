@@ -1,4 +1,4 @@
-import { MembershipService } from '../MembershipService';
+import { MembershipService } from '@/services/MembershipService';
 
 /**
  * Advanced Loop Detection System

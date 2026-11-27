@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { BiometricService } from './BiometricService';
+import { BiometricService } from '@/services/security/BiometricService';
 
 describe('BiometricService', () => {
     // ==========================================================================

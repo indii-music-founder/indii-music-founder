@@ -1,13 +1,13 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import WorkflowLab from './WorkflowLab';
-import { protocolToReactFlow } from './utils/maestroAdapter';
+import WorkflowLab from '@/modules/workflow/WorkflowLab';
+import { protocolToReactFlow } from '@/modules/workflow/utils/maestroAdapter';
 import { WORKFLOW_REGISTRY } from '@/services/agent/WorkflowRegistry';
 
 let mockSelectedNodeId: string | null = null;
 
-vi.mock('../../core/store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: (selector: (s: Record<string, unknown>) => unknown) =>
         selector({
             nodes: [],
@@ -22,19 +22,19 @@ vi.mock('../../core/store', () => ({
         }),
 }));
 
-vi.mock('./components/WorkflowEditor', () => ({
+vi.mock('@/modules/workflow/components/WorkflowEditor', () => ({
     default: () => <div data-testid="mock-workflow-editor" />,
 }));
-vi.mock('./components/WorkflowGeneratorModal', () => ({ default: () => null }));
-vi.mock('./components/WorkflowTemplateModal', () => ({ default: () => null }));
-vi.mock('./components/WorkflowLoadModal', () => ({ default: () => null }));
-vi.mock('./components/WorkflowNodeInspector', () => ({
+vi.mock('@/modules/workflow/components/WorkflowGeneratorModal', () => ({ default: () => null }));
+vi.mock('@/modules/workflow/components/WorkflowTemplateModal', () => ({ default: () => null }));
+vi.mock('@/modules/workflow/components/WorkflowLoadModal', () => ({ default: () => null }));
+vi.mock('@/modules/workflow/components/WorkflowNodeInspector', () => ({
     default: () => <div data-testid="mock-node-inspector">Inspector</div>,
 }));
 vi.mock('@/modules/creative/components/FreeMiniCampaignModal', () => ({
     FreeMiniCampaignModal: () => null,
 }));
-vi.mock('./services/workflowPersistence', () => ({
+vi.mock('@/modules/workflow/services/workflowPersistence', () => ({
     getUserWorkflows: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/core/context/ToastContext', () => ({

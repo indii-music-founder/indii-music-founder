@@ -33,7 +33,7 @@ vi.mock('@/core/store', () => ({
     useStore: (selector: (state: typeof mocks.store) => unknown) => selector(mocks.store),
 }));
 
-vi.mock('../video/store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const hook = (selector: (state: typeof mocks.videoStore) => unknown) => selector(mocks.videoStore);
     Object.assign(hook, { getState: () => mocks.videoStore });
     return { useVideoEditorStore: hook };
@@ -44,9 +44,9 @@ vi.mock('@/config/typesafeJudgments', () => ({
     judgeCreativeJourneyIntent: mocks.judgeCreativeJourneyIntent,
 }));
 
-vi.mock('./CharacterLibrary', () => ({ CharacterLibrary: () => <div data-testid="character-library" /> }));
+vi.mock('@/modules/creative/components/CharacterLibrary', () => ({ CharacterLibrary: () => <div data-testid="character-library" /> }));
 
-import CreativeJourney from './CreativeJourney';
+import CreativeJourney from '@/modules/creative/components/CreativeJourney';
 
 describe('CreativeJourney', () => {
     beforeEach(() => {

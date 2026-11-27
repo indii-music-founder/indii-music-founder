@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { CanvasObject } from './DesignCanvas';
-import { LayersPanel } from './LayersPanel';
+import type { CanvasObject } from '@/modules/merchandise/components/DesignCanvas';
+import { LayersPanel } from '@/modules/merchandise/components/LayersPanel';
 
 describe('merchandise text properties', () => {
     it('edits content and font from labeled controls and preserves the restored font option', () => {

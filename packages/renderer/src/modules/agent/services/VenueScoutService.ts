@@ -1,7 +1,7 @@
-import { Venue } from '../schemas';
+import { Venue } from '@/modules/agent/schemas';
 import { db, auth } from '@/services/firebase';
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
-import { VenueSchema, SearchOptionsSchema } from '../schemas';
+import { VenueSchema, SearchOptionsSchema } from '@/modules/agent/schemas';
 import { logger } from '@/utils/logger';
 
 export type ScoutEvent = {

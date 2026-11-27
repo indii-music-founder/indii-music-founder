@@ -1,4 +1,4 @@
-import { firebaseAI } from './FirebaseIntelligenceService';
+import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
 
 /**
  * AutonomousIntelligence Unified Facade
@@ -14,7 +14,7 @@ import { firebaseAI } from './FirebaseIntelligenceService';
 export const AutonomousIntelligence = firebaseAI;
 
 // Re-export types for convenience
-export type { FirebaseIntelligenceService as AutonomousIntelligenceClass } from './FirebaseIntelligenceService';
+export type { FirebaseIntelligenceService as AutonomousIntelligenceClass } from '@/services/intelligence/FirebaseIntelligenceService';
 
 /**
  * Safely extracts text from an intelligence response object.

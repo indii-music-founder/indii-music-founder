@@ -7,7 +7,7 @@ vi.mock('@/core/store', () => ({
     }),
 }));
 
-import InvestorPortal from './InvestorPortal';
+import InvestorPortal from '@/modules/investor/InvestorPortal';
 
 describe('InvestorPortal', () => {
     it('does not grant access through a simulated biometric gesture', () => {

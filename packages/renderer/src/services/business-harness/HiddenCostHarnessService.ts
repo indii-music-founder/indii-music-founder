@@ -1,6 +1,6 @@
 import type { Expense } from '@/modules/finance/schemas';
-import type { BusinessActivityEvent, HarnessCostLine, HarnessCostSummary } from './types';
-import { activityValueService } from './ActivityValueService';
+import type { BusinessActivityEvent, HarnessCostLine, HarnessCostSummary } from '@/services/business-harness/types';
+import { activityValueService } from '@/services/business-harness/ActivityValueService';
 
 export interface MileageTripInput {
   userId: string;

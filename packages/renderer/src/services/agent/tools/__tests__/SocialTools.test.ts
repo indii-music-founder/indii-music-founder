@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SocialTools } from '../SocialTools';
+import { SocialTools } from '@/services/agent/tools/SocialTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Dependencies

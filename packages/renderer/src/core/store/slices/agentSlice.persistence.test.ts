@@ -1,7 +1,7 @@
 // Structural-only persistence contract tests. Genuine-user production clearing remains unverified.
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
-import type { AgentMessage, ConversationSession } from './agent';
+import type { AgentMessage, ConversationSession } from '@/core/store/slices/agent';
 
 // Mock must be defined before imports that use it
 const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessages, mockSubscribeToMessages, messageSubscribers, mockSubscribeToSessions, sessionSubscribers, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
@@ -40,7 +40,7 @@ vi.mock('@/services/agent/SessionService', () => ({
 
 vi.mock('@/core/context/ToastContext', () => ({ toast: { error: vi.fn() } }));
 
-import { createAgentSlice, AgentSlice } from './agent';
+import { createAgentSlice, AgentSlice } from '@/core/store/slices/agent';
 import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {

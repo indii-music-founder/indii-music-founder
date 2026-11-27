@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ call: vi.fn() }));
 vi.mock('firebase/functions', () => ({ getFunctions: () => ({}), httpsCallable: () => mocks.call }));
 vi.mock('@/config/featureFlags', () => ({ featureFlags: { isEnabled: () => true }, FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' } }));
-import { judgeSyncMoods, SYNC_MOOD_MAX_TAGS, __resetJudgmentCooldownForTests } from './typesafeJudgments';
+import { judgeSyncMoods, SYNC_MOOD_MAX_TAGS, __resetJudgmentCooldownForTests } from '@/config/typesafeJudgments';
 import { SyncMetadataTaggingService } from '@/services/licensing/SyncMetadataTaggingService';
 
 const answer = (applies: unknown, choice: unknown) => ({

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { agentService } from '../AgentService';
+import { agentService } from '@/services/agent/AgentService';
 import { ContextManager } from '@/services/intelligence/context/ContextManager';
 import { useStore } from '@/core/store';
-import { BaseAgent } from '../BaseAgent';
+import { BaseAgent } from '@/services/agent/BaseAgent';
 
 
 // ------------------------------------------------------------------
@@ -106,7 +106,7 @@ vi.mock('@/services/agent/SessionService', () => ({
 }));
 
 // 5. Mock ContextPipeline
-vi.mock('../components/ContextPipeline', () => ({
+vi.mock('@/services/agent/components/ContextPipeline', () => ({
     ContextPipeline: class {
         buildContext = vi.fn().mockResolvedValue({
             chatHistory: Array(10).fill({ role: 'user', text: 'test' }),
@@ -118,21 +118,21 @@ vi.mock('../components/ContextPipeline', () => ({
 }));
 
 // 6. Mock WorkflowCoordinator
-vi.mock('../WorkflowCoordinator', () => ({
+vi.mock('@/services/agent/WorkflowCoordinator', () => ({
     coordinator: {
         handleUserRequest: vi.fn().mockResolvedValue('DELEGATED_TO_AGENT')
     }
 }));
 
 // 7. Mock AgentOrchestrator
-vi.mock('../components/AgentOrchestrator', () => ({
+vi.mock('@/services/agent/components/AgentOrchestrator', () => ({
     AgentOrchestrator: class {
         determineOrchestrationPath = vi.fn().mockResolvedValue({ type: 'single', agentId: 'generalist' });
     }
 }));
 
 // 8. Mock AgentRegistry to return a real BaseAgent
-vi.mock('../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         warmup: vi.fn(),
         getAsync: vi.fn().mockImplementation(async (id) => {
@@ -155,7 +155,7 @@ vi.mock('../registry', () => ({
 }));
 
 // 9. Mock TraceService
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('trace-123'),
         addStep: vi.fn().mockResolvedValue(true),
@@ -166,7 +166,7 @@ vi.mock('../observability/TraceService', () => ({
 }));
 
 // 10. Mock AgentExecutionContext
-vi.mock('../context/AgentExecutionContext', () => ({
+vi.mock('@/services/agent/context/AgentExecutionContext', () => ({
     ExecutionContextFactory: {
         fromAgentContext: vi.fn().mockResolvedValue({
             hasUncommittedChanges: vi.fn().mockReturnValue(false),

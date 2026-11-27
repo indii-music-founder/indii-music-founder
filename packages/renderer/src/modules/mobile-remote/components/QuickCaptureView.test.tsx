@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType, downloadCapturedMedia } from './QuickCaptureView';
+import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType, downloadCapturedMedia } from '@/modules/mobile-remote/components/QuickCaptureView';
 
 /**
  * ISSUE-985: minimal fakes for the Web Audio recording APIs jsdom doesn't
@@ -89,7 +89,7 @@ vi.mock('@/services/StorageService', () => ({
     },
 }));
 
-vi.mock('../MobileRemote', () => ({
+vi.mock('@/modules/mobile-remote/MobileRemote', () => ({
     triggerHaptic: vi.fn(),
 }));
 

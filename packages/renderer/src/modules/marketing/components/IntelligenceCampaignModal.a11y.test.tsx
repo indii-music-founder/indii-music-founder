@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import IntelligenceCampaignModal from './IntelligenceCampaignModal';
+import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useToast } from '@/core/context/ToastContext';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import * as matchers from 'vitest-axe/matchers';

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StorageService } from './StorageService';
+import { StorageService } from '@/services/StorageService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDocs, orderBy } from 'firebase/firestore';
 
 // Mock Firebase
-vi.mock('./firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
     db: {},
     storage: {},
@@ -44,7 +44,7 @@ vi.mock('firebase/firestore', () => {
 });
 
 // Mock OrganizationService
-vi.mock('./OrganizationService', () => ({
+vi.mock('@/services/OrganizationService', () => ({
     serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: () => 'org-123'

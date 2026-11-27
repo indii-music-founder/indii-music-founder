@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoTools } from '../VideoTools';
+import { VideoTools } from '@/services/agent/tools/VideoTools';
 
 // Mock dependencies
 const mockAddAgentMessage = vi.fn();

@@ -1,4 +1,4 @@
-import { AutonomousIntelligence as AI } from '../../services/intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 export const MARKETING_TOOLS = {

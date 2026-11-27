@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useRef, useCallback, useEffect } from 'react';
-import { generateTimeRulerMarks } from '../utils/timelineUtils';
-import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '../constants';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { generateTimeRulerMarks } from '@/modules/creative/video/editor/utils/timelineUtils';
+import { PIXELS_PER_FRAME, TRACK_HEADER_WIDTH } from '@/modules/creative/video/editor/constants';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 interface TimeRulerProps {
     durationInFrames: number;

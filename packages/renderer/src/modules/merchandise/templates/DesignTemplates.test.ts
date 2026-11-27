@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { templateService } from './DesignTemplates';
+import { templateService } from '@/modules/merchandise/templates/DesignTemplates';
 
 describe('DesignTemplates (ISSUE-1607)', () => {
     it('scales Classic Tour Poster coordinates within the 800x1000 DesignCanvas artboard without clipping', () => {

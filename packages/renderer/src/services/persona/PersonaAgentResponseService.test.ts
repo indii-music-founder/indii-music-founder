@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PERSONA_FADER_DEFAULT, type PersonaFaderValues } from '@indii/shared';
-import type { InstrumentedPersonaResponseResult } from './PersonaResponseService';
-import { finalizePersonaAgentResponse } from './PersonaAgentResponseService';
+import type { InstrumentedPersonaResponseResult } from '@/services/persona/PersonaResponseService';
+import { finalizePersonaAgentResponse } from '@/services/persona/PersonaAgentResponseService';
 
 const USER_FADERS: PersonaFaderValues = {
     riskTolerance: 10,

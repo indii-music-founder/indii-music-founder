@@ -11,7 +11,7 @@ import {
     isStandalone,
     canShare,
     isOnline,
-} from './mobile';
+} from '@/lib/mobile';
 
 describe('Mobile Utilities', () => {
     describe('Haptic Feedback', () => {

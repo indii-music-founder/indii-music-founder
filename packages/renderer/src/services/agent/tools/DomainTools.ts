@@ -1,7 +1,7 @@
 import { db, auth } from '@/services/firebase';
 import { collection, query, where, getDocs, limit as fsLimit } from 'firebase/firestore';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { useStore } from '@/core/store';
 
 export type CollectionConfig = {

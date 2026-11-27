@@ -194,7 +194,7 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
 
-import { createFirebaseMock } from './mocks/firebase';
+import { createFirebaseMock } from '@/test/mocks/firebase';
 
 const firebaseMock = createFirebaseMock();
 

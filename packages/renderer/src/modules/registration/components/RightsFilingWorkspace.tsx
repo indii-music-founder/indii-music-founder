@@ -3,8 +3,8 @@ import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { RightsCaseSchema, validateCopyrightCase, type RightsCase, type CopyrightWork, type CanonicalMusicEntity, restoreRightsCase, restoreRightsReceiptReport, RightsReceiptReportSchema, type PublicRightsSession } from '@indii/shared';
 import { db } from '@/services/firebase';
 import { downloadRightsFile, rightsOperation, saveRightsCase, uploadRightsDeposit } from '@/services/rights/HostedRightsService';
-import { HostedRightsViewport } from './HostedRightsViewport';
-import type { CatalogTrack } from '../types';
+import { HostedRightsViewport } from '@/modules/registration/components/HostedRightsViewport';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 type DraftWork = Omit<CopyrightWork, 'deposit' | 'publication'> & { deposit?: CopyrightWork['deposit']; publication: Record<string, unknown> };
 const inputStyle = 'w-full bg-black/30 border border-white/15 rounded px-3 py-2 text-sm';

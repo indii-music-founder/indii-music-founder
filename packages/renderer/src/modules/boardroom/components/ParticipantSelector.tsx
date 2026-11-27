@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { DEPARTMENTS, getDepartmentOf, listHeadIds } from '@/services/agent/departments';
-import { AGENT_ICONS } from '../constants/agentIcons';
+import { AGENT_ICONS } from '@/modules/boardroom/constants/agentIcons';
 
 export interface AgentOrbitalConfig {
     readonly id: string;

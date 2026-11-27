@@ -8,9 +8,9 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { StoryboardSlot, StoryboardProject } from '../schemas/storyboard';
+import type { StoryboardSlot, StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
@@ -19,16 +19,16 @@ import { logger } from '@/utils/logger';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
+import { compileStoryboardRenderProject } from '@/modules/creative/video/services/storyboardRenderProject';
 import {
     loadStoryboardProject,
     renderPendingStoryboardSlots,
     saveStoryboardProject,
-} from '../services/StoryboardOrchestratorService';
-import { StoryboardVideoIdentityService } from '../services/StoryboardVideoIdentityService';
+} from '@/modules/creative/video/services/StoryboardOrchestratorService';
+import { StoryboardVideoIdentityService } from '@/modules/creative/video/services/StoryboardVideoIdentityService';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
-import { SongIntakeQuestionnaire } from './SongIntakeQuestionnaire';
+import { SongIntakeQuestionnaire } from '@/modules/creative/video/components/SongIntakeQuestionnaire';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { VideoKindSchema } from '@indii/shared';
 import { storage } from '@/services/firebase';

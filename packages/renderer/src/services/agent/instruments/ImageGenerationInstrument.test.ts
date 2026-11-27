@@ -29,7 +29,7 @@ vi.mock('@/services/cache/CacheService', () => ({
     },
 }));
 
-import { ImageGenerationInstrument } from './ImageGenerationInstrument';
+import { ImageGenerationInstrument } from '@/services/agent/instruments/ImageGenerationInstrument';
 
 function generatedResult() {
     return [{

@@ -1,6 +1,6 @@
 import { db } from '@/services/firebase';
 import { collection, query, where, getDocs, Timestamp, orderBy, limit } from 'firebase/firestore';
-import { AgentTrace } from './types';
+import { AgentTrace } from '@/services/agent/observability/types';
 
 export interface SystemMetrics {
     totalExecutions: number;

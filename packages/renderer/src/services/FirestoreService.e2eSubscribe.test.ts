@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FirestoreService } from './FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 
 vi.mock('@/utils/e2eMode', () => ({ isFirebaseE2EMockEnabled: () => true }));
 

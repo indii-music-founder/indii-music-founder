@@ -1,6 +1,6 @@
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import {
     collection,
     addDoc,
@@ -15,7 +15,7 @@ import {
     runTransaction,
     Timestamp,
 } from 'firebase/firestore';
-import { MemorySummarizer } from './MemorySummarizer';
+import { MemorySummarizer } from '@/services/agent/memory/MemorySummarizer';
 import type {
     AlwaysOnMemory,
     ConsolidationInsight,

@@ -1,7 +1,7 @@
 import type { HistoryItem } from '@/core/types/history';
 import { extractVideoFrame, type VideoFramePosition } from '@/utils/video';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { CreativeStorageService } from './CreativeStorageService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 export type HandoffFramePosition = Extract<VideoFramePosition, 'first' | 'last'>;
 

@@ -24,7 +24,7 @@ vi.mock('idb', () => ({
     })),
 }));
 
-vi.mock('../store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: (selector: (state: Record<string, unknown>) => unknown) => selector({
         commandBarAttachments: [],
         commandBarInput: '',
@@ -35,7 +35,7 @@ vi.mock('../store', () => ({
     }),
 }));
 
-import { ShareTargetHandler } from './ShareTargetHandler';
+import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 
 describe('ShareTargetHandler', () => {
     beforeEach(() => {

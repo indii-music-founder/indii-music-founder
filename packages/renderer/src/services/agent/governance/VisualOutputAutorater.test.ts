@@ -7,7 +7,7 @@ import {
     MAX_CORRECTION_ATTEMPTS,
     IMAGE_TOOL_NAMES,
     visualToolOutput,
-} from './VisualOutputAutorater';
+} from '@/services/agent/governance/VisualOutputAutorater';
 
 // ============================================================================
 // Mocks

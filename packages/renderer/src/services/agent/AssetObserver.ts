@@ -1,5 +1,5 @@
 
-import { StorageService } from '../StorageService';
+import { StorageService } from '@/services/StorageService';
 import { HistoryItem } from '@/core/types/history';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';

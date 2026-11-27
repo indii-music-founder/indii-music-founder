@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import StreamView from './StreamView';
+import StreamView from '@/modules/mobile-remote/components/StreamView';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
 
@@ -9,7 +9,7 @@ vi.mock('@/services/StorageService', () => ({
         { id: 'track-1', type: 'music', url: 'https://example.test/master.mp3', prompt: 'New Master', timestamp: 1, projectId: 'p' },
     ]) },
 }));
-vi.mock('./TransportBar', () => ({
+vi.mock('@/modules/mobile-remote/components/TransportBar', () => ({
     default: ({ track }: { track: { id: string } | null }) => <div data-testid="transport-track">{track?.id || 'none'}</div>,
 }));
 

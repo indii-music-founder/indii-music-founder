@@ -13,7 +13,7 @@
  * - Separation band cleanly accommodates the default IDENTITY_SIMILARITY_THRESHOLD (0.55).
  */
 
-import type { CalibrationSample } from '../FacePipeline';
+import type { CalibrationSample } from '@/services/identity/FacePipeline';
 
 export const BASE_EMBEDDING_128: number[] = [
     0.027005, 0.066497, 0.103732, 0.136459, 0.162624, 0.180479, 0.188737, 0.186638,

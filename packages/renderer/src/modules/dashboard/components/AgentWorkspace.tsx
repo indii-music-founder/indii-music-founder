@@ -1,11 +1,11 @@
 import { useRef, useEffect } from 'react';
-import { AgentHeader } from './AgentHeader';
-import { EmptyState } from './EmptyState';
-import { WorkspaceCanvas } from './WorkspaceCanvas';
-import { OperationalApprovalGateBanner } from './OperationalApprovalGateBanner';
+import { AgentHeader } from '@/modules/dashboard/components/AgentHeader';
+import { EmptyState } from '@/modules/dashboard/components/EmptyState';
+import { WorkspaceCanvas } from '@/modules/dashboard/components/WorkspaceCanvas';
+import { OperationalApprovalGateBanner } from '@/modules/dashboard/components/OperationalApprovalGateBanner';
 
 /* ── Logic ── */
-import { useAgentWorkspace } from '../hooks/useAgentWorkspace';
+import { useAgentWorkspace } from '@/modules/dashboard/hooks/useAgentWorkspace';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';

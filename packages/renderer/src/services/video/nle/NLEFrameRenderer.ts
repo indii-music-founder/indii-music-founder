@@ -4,12 +4,12 @@ import {
   isClipActive,
   getSourceOffsetPts,
 } from '@indii/video-compiler';
-import { NLEVideoSource } from './NLEVideoSource';
+import { NLEVideoSource } from '@/services/video/nle/NLEVideoSource';
 import {
   computeTransformMatrix,
   type RenderLayer,
   type WebGL2Compositor,
-} from './WebGL2Compositor';
+} from '@/services/video/nle/WebGL2Compositor';
 
 /** Serializes decoding and coalesces scrub requests to the latest playhead. */
 export class NLEFrameRenderer {

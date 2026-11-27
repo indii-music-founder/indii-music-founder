@@ -1,5 +1,5 @@
 import { PRINT_MEDIA_PRESETS } from '@indii/shared';
-import type { FunctionDeclaration } from '../types';
+import type { FunctionDeclaration } from '@/services/agent/types';
 
 /** Shared schemas used by Creative and the universal tool pool. */
 export const PRINT_TOOL_DECLARATIONS: FunctionDeclaration[] = [

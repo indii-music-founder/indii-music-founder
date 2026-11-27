@@ -7,7 +7,7 @@ const storeState = vi.hoisted(() => ({ currentProjectId: 'p1' as string | null, 
 vi.mock('@/services/audio/AudioIntelligenceService', () => ({ audioIntelligence: { analyze } }));
 vi.mock('@/core/store', () => ({ useStore: { getState: () => storeState } }));
 
-import { MediaTools } from '../MediaTools';
+import { MediaTools } from '@/services/agent/tools/MediaTools';
 
 const profile = {
     technical: { bpm: 120, key: 'C', energy: 0.7 },

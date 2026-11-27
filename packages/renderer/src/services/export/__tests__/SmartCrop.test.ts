@@ -5,7 +5,7 @@ import {
     isExtremeAspectChange,
     EXTREME_ASPECT_THRESHOLD,
     type CropAnchor
-} from '../SmartCrop';
+} from '@/services/export/SmartCrop';
 
 const faceCentered = (cx = 0.5, cy = 0.5, size = 0.2): CropAnchor[] => [
     { kind: 'face', box: { xmin: cx - size / 2, ymin: cy - size / 2, xmax: cx + size / 2, ymax: cy + size / 2 } }
