@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "3860d954626def8d2a7de179746072a7052b4374e4b79d8e2aecc07f9f306e0d",
+  "sourceDigest": "d14d183b97822ae297fa6e021279ca8c3a53bf01a415a9cc7830eb0b52282970",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 38,
     "conditional": 75,
-    "quarantined": 99,
+    "quarantined": 100,
     "deprecated": 1
   },
   "capabilities": [
@@ -737,6 +737,36 @@
       "description": "node scripts/check-production-deploy-guards.mjs",
       "descriptionHash": "8728abd493cc0d7d9a9e2937de179cd7d6ce8abdcbd046b9557f3db15e638428",
       "contentHash": "4b371a843d1ee791f8d2a319638b2e131fbecff0b4d62577b6d1f09a0ac62aeb",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:check:file-size",
+      "name": "npm run check:file-size",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node --test scripts/check-file-size-budget.test.mjs && node scripts/check-file-size-budget.mjs",
+      "descriptionHash": "0171853b890e01587dc0f595b5fee0a3ee8c7d5dcbce60eafcfcf0c97bb90412",
+      "contentHash": "f806c943c7b7402e98d2ca6ee330fa77c93015e4437672773173a9da25ef2722",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1625,9 +1655,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run check:brace-resolution && npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "f70326e57b8f500eb63c30dff2e69785c2ee1231ddedc317912fa7299a504084",
-      "contentHash": "58bc1432c84c54b094471ccdfb4a37b2d8836f0514021269a867c5e6a906cfdd",
+      "description": "npm run check:brace-resolution && npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && npm run check:file-size && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "4f5728b64522f735fe8d63fc319eb1797e3027b2a5954546097e5c36a8dae504",
+      "contentHash": "4992b4f04a7561ccc50b957b12118437f5da185125b33cbfe1d643e4aea3faf8",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [

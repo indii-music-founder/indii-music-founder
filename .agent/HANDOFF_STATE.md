@@ -1,3 +1,17 @@
+# Refactor Phase 1 (A1/A2/B) — 2026-11-26
+
+- **Baseline (`main` @ `6cbd26ec26`):** `npm run lint` exit 0 (0 errors, 271 warnings), `npm run typecheck` exit 0, `check-test-quality.js` exit 0, renderer Vitest 1245 passed / 1 pre-existing failed (`packages/renderer/src/services/share/milestones.test.ts`, 2 Node 25.9.0 localStorage assertions).
+- **Branches published on Entire (independent, each branched from `origin/main`):**
+  - **Batch A1 (`antigravity/refactor-p1-hygiene`, SHA `2e7579bbd9`):** Untracked 2,480 cached files in `packages/renderer/.npm-cache-isolated-1/`, removed zero-ref root lint/scratch/script artifacts + `eslint-temp/` + byte-identical `indiiOS_agent_manifest_v2.md`, removed generated `deep-test-*.png` screenshots and added `deep-test-*.png` to `.gitignore`, and deleted dead `functions/src/admin/setGodMode.ts`.
+  - **Batch A2 (`antigravity/refactor-p1-orphan-tests`, SHA `f3951b6827`):** Ported 24 verified unique behavior test cases from orphaned `tests/` into 5 live renderer suites (`DevOpsTools.test.ts`, `LegalTools.test.ts`, `ContextManager.test.ts`, new `MerchDashboard.test.tsx`, `MerchDesigner.a11y.test.tsx`) guided by 2-pass Jev triage + Challenger mutation checks, dropped 3 behavior-drift cases + deleted-target/Potemkin/covered cases, and deleted dead `tests/` (8 files).
+  - **Batch B (`antigravity/refactor-p1-guardrails`, this commit):** Added `no-restricted-imports` (`warn`) for direct Firebase SDK imports in renderer `.tsx` components (`eslint.config.js`), added `scripts/check-file-size-budget.mjs` (+ `.test.mjs` + `scripts/file-size-budget.allowlist.json`, 1000-line ratchet) wired into `npm run lint` via `check:file-size`.
+- **Pending Phase 1 batches (checkpointed for plan review):**
+  - **Batch C:** Mechanical `@/` import alias codemod across `packages/renderer/src` (including `./`) + ESLint enforcement.
+  - **Batch D:** `docs/refactor/ROADMAP.md` + updates to `docs/PLATINUM_QUALITY_STANDARDS.md` and `CLAUDE.md` mirrors.
+- **Owner production follow-up (`setGodMode`):** Deleting `functions/src/admin/setGodMode.ts` removes the dead source file only. If `setGodMode` was previously deployed to `us-west1`, verify with `firebase functions:list` and remove with `firebase functions:delete setGodMode --region us-west1` under owner authority.
+
+---
+
 # Boardroom UI Modernization & Cleanup (WP1, WP6-renderer, WP7, WP8, WP10, WP11, WP12) — 2026-11-24
 
 - **Branch:** `antigravity/boardroom-ui-modernization-wp1-wp12` (merged with `github/main`).
