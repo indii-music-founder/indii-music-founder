@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AgentGene, EvolutionConfig, FitnessFunction, MutationFunction, CrossoverFunction } from './types';
+import { AgentGene, EvolutionConfig, FitnessFunction, MutationFunction, CrossoverFunction } from '@/services/agent/evolution/types';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 export class EvolutionEngine {

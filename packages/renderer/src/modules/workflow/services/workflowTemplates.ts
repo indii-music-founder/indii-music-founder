@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { v4 as uuidv4 } from 'uuid';
-import { SavedWorkflow, Status } from '../types';
+import { SavedWorkflow, Status } from '@/modules/workflow/types';
 
 export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
     {

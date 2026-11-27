@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { useIsFounderTier } from '@/hooks/useIsFounderTier';
-import { ErrorReportsPanel } from './components/ErrorReportsPanel';
+import { ErrorReportsPanel } from '@/modules/devops/components/ErrorReportsPanel';
 
 type Tab = 'cicd' | 'observability' | 'credentials' | 'testing' | 'reports';
 

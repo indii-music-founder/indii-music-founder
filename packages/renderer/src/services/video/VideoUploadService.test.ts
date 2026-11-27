@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoUploadService } from './VideoUploadService';
+import { VideoUploadService } from '@/services/video/VideoUploadService';
 
 // Mock the thumbnail generation — jsdom doesn't support <video> element events
 vi.spyOn(VideoUploadService, 'generateAndUploadThumbnail').mockResolvedValue(undefined);
@@ -22,7 +22,7 @@ vi.mock('firebase/storage', () => ({
     StorageError: class extends Error { },
 }));
 
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     storage: {
         app: {
             options: {

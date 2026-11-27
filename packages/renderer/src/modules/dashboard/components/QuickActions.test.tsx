@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import QuickActions from './QuickActions';
+import QuickActions from '@/modules/dashboard/components/QuickActions';
 import { vi } from 'vitest';
 
 // Mock the store

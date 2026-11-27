@@ -11,8 +11,8 @@ import { importWithRetry } from '@/utils/dynamicImport';
  */
 
 // Force loopback mode regardless of env.
-vi.mock('./A2AConfig', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./A2AConfig')>();
+vi.mock('@/services/agent/a2a/A2AConfig', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/agent/a2a/A2AConfig')>();
   return {
     ...actual,
     resolveA2AConfig: vi.fn().mockResolvedValue({ mode: 'loopback', baseUrl: '' }),
@@ -33,7 +33,7 @@ describe.skip('A2A loopback integration (real crypto + real router)', () => {
   });
 
   it('Conductor consults Marketing via consult_specialist and gets a real decrypted result', async () => {
-    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
+    const { a2aClient } = await importWithRetry(() => import('@/services/agent/a2a/A2AClient'));
     // Fresh client state for a clean key exchange.
     (a2aClient as unknown as { keyExchangeDone: boolean }).keyExchangeDone = false;
     (a2aClient as unknown as { isInitialized: boolean }).isInitialized = false;
@@ -63,7 +63,7 @@ describe.skip('A2A loopback integration (real crypto + real router)', () => {
   });
 
   it('returns a JSON-RPC method-not-found error for an unknown method (still decrypts cleanly)', async () => {
-    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
+    const { a2aClient } = await importWithRetry(() => import('@/services/agent/a2a/A2AClient'));
     (a2aClient as unknown as { keyExchangeDone: boolean }).keyExchangeDone = false;
     (a2aClient as unknown as { transport: unknown }).transport = null;
     (a2aClient as unknown as { breaker: { isTripped: boolean } }).breaker.isTripped = false;

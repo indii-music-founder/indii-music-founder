@@ -15,13 +15,13 @@ import { resolveReleaseWorkspace } from '@/services/distribution/releaseWorkspac
 import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { agentService } from '@/services/agent/AgentService';
-import { SubmitStepTimeoutError, withStepDeadline } from './submitDeadline';
+import { SubmitStepTimeoutError, withStepDeadline } from '@/modules/publishing/hooks/submitDeadline';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
 import { validateImageForDistributor } from '@/services/onboarding/DistributorContext';
-import { measureReleaseAudio, sha256Hex, validateReleaseAudio } from './releaseAssetValidation';
+import { measureReleaseAudio, sha256Hex, validateReleaseAudio } from '@/modules/publishing/hooks/releaseAssetValidation';
 
 // Map display names from onboarding to DistributorId
 const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {

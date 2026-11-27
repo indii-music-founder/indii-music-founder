@@ -1,4 +1,4 @@
-import { getDesignArtboard, renderDesignCanvas } from '../designArtboard';
+import { getDesignArtboard, renderDesignCanvas } from '@/modules/merchandise/designArtboard';
 import { logger } from '@/utils/logger';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
@@ -7,7 +7,7 @@ import type {
     FabricObjectWithMeta,
     FabricCanvasWithClipboard,
     FabricActiveSelectionWithIterator,
-} from '../types/fabric-extensions';
+} from '@/modules/merchandise/types/fabric-extensions';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
 

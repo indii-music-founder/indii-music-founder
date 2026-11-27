@@ -1,12 +1,12 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
-import { getFineTunedModel } from '../fine-tuned-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 
 // ============================================================================
 // Types for LegalTools

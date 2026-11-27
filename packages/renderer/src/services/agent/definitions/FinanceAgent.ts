@@ -1,10 +1,10 @@
-import { AgentConfig } from "../types";
+import { AgentConfig } from "@/services/agent/types";
 import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { UniversalTools } from '../tools/UniversalTools';
-import { FinanceTools } from '../tools/FinanceTools';
-import { FormatFoundryTools } from '../tools/FormatFoundryTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
+import { FormatFoundryTools } from '@/services/agent/tools/FormatFoundryTools';
 
 const financeRetrievalConfig = {
     'revenue': { path: 'revenue', requiresUserIdFilter: true },
@@ -431,10 +431,10 @@ export const FinanceAgent: AgentConfig = {
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { McpTools } from '../tools/McpTools';
-import { CALCULATE_RECOUPMENT_DECLARATION, STAGE_STRIPE_PAYOUTS_DECLARATION } from '../tools/McpToolDeclarations';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { McpTools } from '@/services/agent/tools/McpTools';
+import { CALCULATE_RECOUPMENT_DECLARATION, STAGE_STRIPE_PAYOUTS_DECLARATION } from '@/services/agent/tools/McpToolDeclarations';
 
 
 // Freeze the schema to prevent cross-test contamination

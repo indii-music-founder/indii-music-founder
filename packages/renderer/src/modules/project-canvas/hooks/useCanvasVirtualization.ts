@@ -21,8 +21,8 @@ import type {
     CanvasViewportBounds,
     CanvasVirtualizationResult,
     CanvasLODLevel,
-} from '../types';
-import { SpatialGridIndex } from '../services/SpatialGridIndex';
+} from '@/modules/project-canvas/types';
+import { SpatialGridIndex } from '@/modules/project-canvas/services/SpatialGridIndex';
 
 export interface UseCanvasVirtualizationOptions {
     blocks: ProjectCanvasBlock[];

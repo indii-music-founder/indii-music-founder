@@ -28,7 +28,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { getTimelineTemplate, listTimelineTemplates } from './TimelinePhaseTemplates';
+import { getTimelineTemplate, listTimelineTemplates } from '@/services/timeline/TimelinePhaseTemplates';
 import { logger } from '@/utils/logger';
 
 import type {
@@ -43,7 +43,7 @@ import type {
     TimelineTemplate,
     PhaseTemplate,
     AssetStrategy,
-} from './TimelineTypes';
+} from '@/services/timeline/TimelineTypes';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 // ============================================================================

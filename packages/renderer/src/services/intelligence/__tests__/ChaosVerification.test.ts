@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AutonomousIntelligence } from '../AutonomousIntelligence';
-import { RateLimiter } from '../RateLimiter';
-import { wcpInstance } from '../../agent/WebSocketControlPlane';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
+import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 import type { Content } from '@/shared/types/ai.dto';
 
 // Mock firebase/ai at the top level to avoid vitest warnings
@@ -20,7 +20,7 @@ vi.mock('firebase/ai', async (importOriginal) => {
 });
 
 // Mock WCP for connection failure scenarios
-vi.mock('../../agent/WebSocketControlPlane', () => ({
+vi.mock('@/services/agent/WebSocketControlPlane', () => ({
     wcpInstance: {
         connectionState: 'disconnected',
         route: vi.fn(),

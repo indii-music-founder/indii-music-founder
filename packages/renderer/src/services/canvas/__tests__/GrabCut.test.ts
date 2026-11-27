@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { extractCutout } from '../segmentation/GrabCut';
-import { ColorMixture } from '../segmentation/Gmm';
+import { extractCutout } from '@/services/canvas/segmentation/GrabCut';
+import { ColorMixture } from '@/services/canvas/segmentation/Gmm';
 
 describe('guided cutout kernel', () => {
     it('separates a contrasting rectangle and honors keep/remove strokes at source resolution', () => {

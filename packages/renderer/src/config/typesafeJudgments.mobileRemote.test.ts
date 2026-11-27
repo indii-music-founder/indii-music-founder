@@ -19,7 +19,7 @@ import {
     heuristicMobileRemoteIntent,
     judgeMobileRemoteIntent,
     __resetJudgmentCooldownForTests,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 describe('TypeSafe Mobile Remote Jev Judgments', () => {

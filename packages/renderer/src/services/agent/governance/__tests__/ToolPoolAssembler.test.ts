@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { ToolPoolAssembler, sanitizeToolParameters } from '../ToolPoolAssembler';
-import { SUPERPOWER_TOOLS } from '../../definitions/SuperpowerTools';
-import { ToolParameters } from '../../types';
+import { ToolPoolAssembler, sanitizeToolParameters } from '@/services/agent/governance/ToolPoolAssembler';
+import { SUPERPOWER_TOOLS } from '@/services/agent/definitions/SuperpowerTools';
+import { ToolParameters } from '@/services/agent/types';
 
 describe('ToolPoolAssembler & Tool Schema Validation', () => {
     describe('SUPERPOWER_TOOLS Schema Compliance', () => {

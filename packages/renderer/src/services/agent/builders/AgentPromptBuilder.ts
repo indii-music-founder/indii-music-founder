@@ -1,4 +1,4 @@
-import { AgentContext, WhiskState } from '../types';
+import { AgentContext, WhiskState } from '@/services/agent/types';
 import { cleanPrompt } from '@/utils/prompt';
 import { elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
 

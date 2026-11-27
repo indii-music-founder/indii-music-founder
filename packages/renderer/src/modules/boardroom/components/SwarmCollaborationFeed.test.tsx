@@ -11,7 +11,7 @@ vi.mock('@/core/store', () => ({
 }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 
-import { SwarmCollaborationFeed } from './SwarmCollaborationFeed';
+import { SwarmCollaborationFeed } from '@/modules/boardroom/components/SwarmCollaborationFeed';
 
 const pendingHandoff = {
     id: 'h1',

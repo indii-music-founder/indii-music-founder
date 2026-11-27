@@ -1,6 +1,6 @@
 import { CloudStorageService } from '@/services/CloudStorageService';
-import { applyMaskedPixels } from './scopedEditPixels';
-import { textContrastColor, textFitsMask, textMaskBounds, type MaskedTextCandidate } from './maskedTextEdit';
+import { applyMaskedPixels } from '@/services/image/scopedEditPixels';
+import { textContrastColor, textFitsMask, textMaskBounds, type MaskedTextCandidate } from '@/services/image/maskedTextEdit';
 
 type InlineImage = { mimeType: string; data: string };
 function surface(width: number, height: number) {

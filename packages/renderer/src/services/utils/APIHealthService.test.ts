@@ -1,6 +1,6 @@
 // Legacy structural-only probes; no deployed health or service availability proof.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiHealthService } from './APIHealthService';
+import { apiHealthService } from '@/services/utils/APIHealthService';
 
 const mockGetDoc = vi.fn();
 const mockHealthFetch = vi.fn();

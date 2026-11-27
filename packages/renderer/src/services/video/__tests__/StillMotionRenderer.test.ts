@@ -5,7 +5,7 @@ import {
     renderStillMotion,
     STILL_MOTION_RESOLUTIONS,
     STILL_MOTION_FPS
-} from '../StillMotionRenderer';
+} from '@/services/video/StillMotionRenderer';
 
 describe('buildStillMotionProject', () => {
     it('builds a single-clip deterministic project with the move serialized', () => {

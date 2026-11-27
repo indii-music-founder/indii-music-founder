@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import BrandAssetsDrawer from './BrandAssetsDrawer';
+import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 

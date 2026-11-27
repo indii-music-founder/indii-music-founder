@@ -50,7 +50,7 @@ vi.mock('@/hooks/useGlobalShortcut', () => ({
     useGlobalShortcut: vi.fn(),
 }));
 
-import { MobileParticipantDrawer } from './MobileParticipantDrawer';
+import { MobileParticipantDrawer } from '@/modules/boardroom/components/MobileParticipantDrawer';
 
 describe('MobileParticipantDrawer manager visibility', () => {
     it('matches the desktop manager-only roster and does not provide direct activation controls', () => {

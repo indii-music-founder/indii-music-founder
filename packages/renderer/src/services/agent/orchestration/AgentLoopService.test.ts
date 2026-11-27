@@ -1,11 +1,11 @@
-import { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AgentLoopService, agentLoopService } from './AgentLoopService';
-import { maestroBatchingService } from '../MaestroBatchingService';
+import { AgentLoopService, agentLoopService } from '@/services/agent/orchestration/AgentLoopService';
+import { maestroBatchingService } from '@/services/agent/MaestroBatchingService';
 import { judgeTransientError } from '@/config/typesafeJudgments';
 import { AgentLoopDefinition, type AgentLoopExecution, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
-import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { FirestoreService } from '../../FirestoreService';
+import { executionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { FirestoreService } from '@/services/FirestoreService';
 
 const { Timestamp } = await vi.importActual<typeof import('firebase/firestore')>('firebase/firestore');
 
@@ -19,7 +19,7 @@ const snapshotOf = (definition: AgentLoopDefinition) => ({
 });
 
 // Mock dependencies
-vi.mock('../MaestroBatchingService', () => ({
+vi.mock('@/services/agent/MaestroBatchingService', () => ({
     maestroBatchingService: {
         executeBatch: vi.fn(),
     }

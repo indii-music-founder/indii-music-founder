@@ -7,7 +7,7 @@
 
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
-import { MarketingProviderUnavailableError } from './providerErrors';
+import { MarketingProviderUnavailableError } from '@/services/marketing/providerErrors';
 import {
     validateInstagramPublishingPayload,
     type InstagramPublishingPayload,

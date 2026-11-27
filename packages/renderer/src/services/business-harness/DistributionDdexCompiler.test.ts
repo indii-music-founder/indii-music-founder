@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DistributionDdexCompiler } from './DistributionDdexCompiler';
-import type { DistributionDdexInput } from './DistributionDdexCompiler';
+import { DistributionDdexCompiler } from '@/services/business-harness/DistributionDdexCompiler';
+import type { DistributionDdexInput } from '@/services/business-harness/DistributionDdexCompiler';
 
 const metadata: DistributionDdexInput['metadata'] = {
   trackTitle: 'Night Signal',

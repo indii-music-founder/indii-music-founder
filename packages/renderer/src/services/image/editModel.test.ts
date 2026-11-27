@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEditModel } from './editModel';
+import { resolveEditModel } from '@/services/image/editModel';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 describe('editor model labels', () => {

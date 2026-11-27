@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { TOOL_REGISTRY } from '../tools';
-import { AGENT_CONFIGS } from '../agentConfig';
-import { BrandAgent } from '../definitions/BrandAgent';
+import { TOOL_REGISTRY } from '@/services/agent/tools';
+import { AGENT_CONFIGS } from '@/services/agent/agentConfig';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
 import { vi } from 'vitest';
 
 // Mock FirebaseIntelligenceService for verify_output (which is currently in BrandTools)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSocialPleasantry } from './trivialInput';
+import { isSocialPleasantry } from '@/services/agent/utils/trivialInput';
 
 describe('isSocialPleasantry (ISSUE-1662)', () => {
     it('matches greetings, thanks and goodbyes', () => {

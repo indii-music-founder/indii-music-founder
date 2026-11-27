@@ -2,8 +2,8 @@ import React, { useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore } from '../store';
-import { getColorForModule } from '../theme/moduleColors';
+import { useStore } from '@/core/store';
+import { getColorForModule } from '@/core/theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 import { Scale, Music, Layout, Network, Book, Users, DollarSign, FileText, StickyNote, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, Search, Settings, Gem, CalendarDays, GitBranch, Target, Library, Shield, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,9 +11,9 @@ import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
-import { ProjectList } from './sidebar/ProjectList';
+import { ProjectList } from '@/core/components/sidebar/ProjectList';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
-import { AgentCanvasToggle } from './AgentCanvasToggle';
+import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
 
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;

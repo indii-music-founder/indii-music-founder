@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { FounderReadinessPanel } from './FounderReadinessPanel';
+import { FounderReadinessPanel } from '@/modules/registration/components/FounderReadinessPanel';
 
 describe('FounderReadinessPanel (ISSUE-1121)', () => {
   it('renders the founder prerequisite checklist and authoritative registration guidance', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AgentEncryptionPane } from './AgentEncryptionPane';
+import { AgentEncryptionPane } from '@/modules/security/AgentEncryptionPane';
 import { e2eEncryptionService } from '@/services/security/E2EEncryptionService';
 
 describe('AgentEncryptionPane', () => {

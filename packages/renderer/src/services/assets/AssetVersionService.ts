@@ -16,7 +16,7 @@
 import { auth, db } from '@/services/firebase';
 import { collection, doc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
-import { assetVersionDocument } from './assetVersionDocument';
+import { assetVersionDocument } from '@/services/assets/assetVersionDocument';
 
 export type VersionSource =
     | 'generation'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DistributorEarnings } from '@/services/distribution/types/distributor';
-import { aggregateNativeEarnings, summarizeNativeRevenue } from './aggregateNativeEarnings';
+import { aggregateNativeEarnings, summarizeNativeRevenue } from '@/services/revenue/aggregateNativeEarnings';
 
 // Pure arithmetic inputs only; no adapter, network, auth, or persisted customer doubles.
 const period = { startDate: '2026-01-01', endDate: '2026-01-31' };

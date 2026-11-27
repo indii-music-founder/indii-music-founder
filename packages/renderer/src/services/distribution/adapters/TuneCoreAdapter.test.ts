@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TuneCoreAdapter } from './TuneCoreAdapter';
+import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 
 /**
  * ISSUE-814: BaseDistributorAdapter.connect() marks any adapter "connected"

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
 import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
 import { logger } from '@/utils/logger';
-import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
+import type { StoryboardProject, StoryboardSlot } from '@/modules/creative/video/schemas/storyboard';
 import type { ScreenwriterStoryboardHandoff } from '@/types/handoff';
 
 /**

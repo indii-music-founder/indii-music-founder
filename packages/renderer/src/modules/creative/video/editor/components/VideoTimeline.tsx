@@ -1,14 +1,14 @@
 import React, { useState, useCallback, memo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus, MousePointer, Scissors, ChevronsLeftRight, MoveHorizontal } from 'lucide-react';
-import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoProject, VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
-import { TimeRuler } from './TimeRuler';
-import { TrackList } from './TrackList';
-import { Playhead } from './Playhead';
-import { TimelineTimecode } from './TimelineTimecode';
-import { PIXELS_PER_FRAME, TOTAL_TRACK_HEADER_OFFSET } from '../constants';
-import { useStableGroupedClips } from '../hooks/useStableGroupedClips';
-import { useSnapIndicatorStore, ClipDragType } from '../hooks/useTimelineDrag';
+import { TimeRuler } from '@/modules/creative/video/editor/components/TimeRuler';
+import { TrackList } from '@/modules/creative/video/editor/components/TrackList';
+import { Playhead } from '@/modules/creative/video/editor/components/Playhead';
+import { TimelineTimecode } from '@/modules/creative/video/editor/components/TimelineTimecode';
+import { PIXELS_PER_FRAME, TOTAL_TRACK_HEADER_OFFSET } from '@/modules/creative/video/editor/constants';
+import { useStableGroupedClips } from '@/modules/creative/video/editor/hooks/useStableGroupedClips';
+import { useSnapIndicatorStore, ClipDragType } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 interface VideoTimelineProps {
     project: VideoProject;

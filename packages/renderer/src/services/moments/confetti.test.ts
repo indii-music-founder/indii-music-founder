@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { burstConfetti, CONFETTI_COLORS } from './confetti';
+import { burstConfetti, CONFETTI_COLORS } from '@/services/moments/confetti';
 
 describe('burstConfetti', () => {
     const originalMatchMedia = window.matchMedia;

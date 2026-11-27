@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.unmock('../ModelArmor');
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ModelArmor, getDefaultPolicy, type ModelArmorPolicy } from '../ModelArmor';
+import { ModelArmor, getDefaultPolicy, type ModelArmorPolicy } from '@/services/agent/governance/ModelArmor';
 
 describe('ModelArmor', () => {
     // ========================================================================

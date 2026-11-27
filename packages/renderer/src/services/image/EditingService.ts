@@ -1,14 +1,14 @@
-import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart, Part } from '@/shared/types/ai.dto';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
-import { normalizeEditImageResult } from './editResponse';
-import { resolveEditModel } from './editModel';
-import { prepareScopedEdit } from './scopedEdit';
-import { maskedTextCandidates } from './maskedTextEdit';
-import { renderMaskedText } from './maskedTextRenderer';
+import { normalizeEditImageResult } from '@/services/image/editResponse';
+import { resolveEditModel } from '@/services/image/editModel';
+import { prepareScopedEdit } from '@/services/image/scopedEdit';
+import { maskedTextCandidates } from '@/services/image/maskedTextEdit';
+import { renderMaskedText } from '@/services/image/maskedTextRenderer';
 import { judgeCanvasTextCandidates } from '@/config/typesafeJudgments';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
@@ -284,7 +284,7 @@ export class EditingService {
         likenessImage: { mimeType: string; data: string };
         model?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        const { ImageAnalysisService } = await import('./ImageAnalysisService');
+        const { ImageAnalysisService } = await import('@/services/image/ImageAnalysisService');
         const analysis = new ImageAnalysisService();
         
         logger.info('[EditingService] Extracting face mask for Likeness Face Swap');
@@ -377,7 +377,7 @@ export class EditingService {
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         if (!options.images.length) throw new Error('At least one reference image is required for a composite.');
-        const { ImageGeneration } = await import('./ImageGenerationService');
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
         const prompt = `Combine these references. ${InputSanitizer.sanitize(options.prompt)} ${
             options.projectContext ? InputSanitizer.sanitize(options.projectContext) : ''
         }`;

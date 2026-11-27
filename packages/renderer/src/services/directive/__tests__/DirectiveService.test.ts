@@ -1,7 +1,7 @@
 import { expect, test, describe, vi, beforeEach } from 'vitest';
-import { DirectiveService } from '../DirectiveService';
+import { DirectiveService } from '@/services/directive/DirectiveService';
 // Mock implementation of FirestoreService
-vi.mock('../../FirestoreService', () => {
+vi.mock('@/services/FirestoreService', () => {
     return {
         FirestoreService: class {
             add = vi.fn().mockResolvedValue('test-directive-id');

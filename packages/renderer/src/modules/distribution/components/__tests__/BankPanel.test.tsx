@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { BankPanel } from '../BankPanel';
+import { BankPanel } from '@/modules/distribution/components/BankPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 
 /**

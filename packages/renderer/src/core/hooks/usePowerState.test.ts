@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { usePowerState } from './usePowerState';
+import { usePowerState } from '@/core/hooks/usePowerState';
 
 describe('usePowerState', () => {
     const originalElectronAPI = window.electronAPI;

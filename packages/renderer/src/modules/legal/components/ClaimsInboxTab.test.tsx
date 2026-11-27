@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ClaimsInboxTab } from './ClaimsInboxTab';
+import { ClaimsInboxTab } from '@/modules/legal/components/ClaimsInboxTab';
 import type { RightsClaim } from '@indii/shared';
 import { LegalService } from '@/services/legal/LegalService';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';

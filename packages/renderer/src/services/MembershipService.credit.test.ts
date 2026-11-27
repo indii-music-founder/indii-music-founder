@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.unmock('@/services/MembershipService');
-import { MembershipService } from './MembershipService';
+import { MembershipService } from '@/services/MembershipService';
 import { doc, getDoc, getDocs, runTransaction } from 'firebase/firestore';
 
 const mockWallet = {

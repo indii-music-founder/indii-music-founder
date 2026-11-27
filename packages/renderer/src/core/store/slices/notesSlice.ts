@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import type { StoreState } from '../types';
+import type { StoreState } from '@/core/store/types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 

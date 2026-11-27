@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { IndiiVideoProject } from '@indii/shared';
 
-import { renderVideoProjectLocally } from './LocalVideoProjectRenderer';
-import { queueCloudRender, waitForCloudRender } from './CloudVideoRenderService';
+import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
+import { queueCloudRender, waitForCloudRender } from '@/services/video/CloudVideoRenderService';
 
 const project = (): IndiiVideoProject => ({
     id: 'project-1',

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { wcpInstance } from './WebSocketControlPlane';
+import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 
 class FakeWebSocket {
   static latest: FakeWebSocket | null = null;

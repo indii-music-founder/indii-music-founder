@@ -38,7 +38,7 @@ import { useVoice } from '@/core/context/VoiceContext';
 import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { liveConversationService, type LiveConversationStartOptions } from '@/services/intelligence/LiveConversationService';
-import VoiceTextViewingStage from './VoiceTextViewingStage';
+import VoiceTextViewingStage from '@/modules/mobile-remote/components/VoiceTextViewingStage';
 
 interface ChatMessage {
     id: string;

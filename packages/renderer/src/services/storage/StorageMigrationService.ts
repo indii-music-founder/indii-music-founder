@@ -1,7 +1,7 @@
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '@/services/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
-import { initDB } from './repository';
+import { initDB } from '@/services/storage/repository';
 const WORKFLOWS_STORE = 'workflows';
 const STORE_NAME = 'assets';
 

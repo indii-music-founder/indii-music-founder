@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CutGraph } from '../segmentation/MaxFlow';
+import { CutGraph } from '@/services/canvas/segmentation/MaxFlow';
 
 describe('PhotoCraft graph port', () => {
     it('agrees with exhaustive minimum cuts including the returned foreground labels', () => {

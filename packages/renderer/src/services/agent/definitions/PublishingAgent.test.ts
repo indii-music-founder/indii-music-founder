@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PublishingAgent } from './PublishingAgent';
+import { PublishingAgent } from '@/services/agent/definitions/PublishingAgent';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 const _autoIntel = AutonomousIntelligence;
 

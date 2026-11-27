@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { E2EEncryptionService } from './E2EEncryptionService';
+import { E2EEncryptionService } from '@/services/security/E2EEncryptionService';
 
 describe('E2E encryption — Python interop harness (Phase 0.7 skeleton)', () => {
   let e2eSender: E2EEncryptionService;

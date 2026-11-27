@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
-import { CostPredictor } from '../utils/CostPredictor';
+import { CostPredictor } from '@/services/intelligence/utils/CostPredictor';
 
 // Mocks
 const mockGenerateContent = vi.fn();
@@ -53,7 +53,7 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn()
 }));
 
-vi.mock('../billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     serverTimestamp: vi.fn(),
     TokenUsageService: {
         trackUsage: vi.fn(),

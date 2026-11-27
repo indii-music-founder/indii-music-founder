@@ -1,6 +1,6 @@
-import type { HarnessCostLine, HarnessRun } from './types';
-import { createHarnessRun } from './types';
-import type { HarnessCompiler, HarnessContext } from './HarnessCompiler';
+import type { HarnessCostLine, HarnessRun } from '@/services/business-harness/types';
+import { createHarnessRun } from '@/services/business-harness/types';
+import type { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
 
 export interface MerchPodSkuInput {
   productType: string;

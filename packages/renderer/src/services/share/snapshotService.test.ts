@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { canCaptureSnapshot, captureAndShareSnapshot } from './snapshotService';
+import { canCaptureSnapshot, captureAndShareSnapshot } from '@/services/share/snapshotService';
 
 const mockShareOrDownloadImage = vi.hoisted(() => vi.fn());
 

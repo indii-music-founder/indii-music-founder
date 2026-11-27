@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Sparkles, Edit2, Bug, Lightbulb, Pin } from 'lucide-react';
-import { ImageAnnotator } from './annotator/ImageAnnotator';
-import { DocumentAnnotator } from './annotator/DocumentAnnotator';
+import { ImageAnnotator } from '@/core/components/chat/annotator/ImageAnnotator';
+import { DocumentAnnotator } from '@/core/components/chat/annotator/DocumentAnnotator';
 import { useToast } from '@/core/context/ToastContext';
 
 interface ImageRendererProps {

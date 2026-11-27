@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { DMCANoticeGenerator } from './DMCANoticeGenerator';
+import { DMCANoticeGenerator } from '@/modules/legal/components/DMCANoticeGenerator';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({

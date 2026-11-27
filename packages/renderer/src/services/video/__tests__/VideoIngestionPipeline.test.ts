@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoIngestionPipeline } from '../VideoIngestionPipeline';
+import { VideoIngestionPipeline } from '@/services/video/VideoIngestionPipeline';
 import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 // Mock the Zustand store hooks and actions

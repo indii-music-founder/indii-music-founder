@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { UserProfile } from '@/modules/workflow/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
@@ -50,7 +50,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     functions: { region: vi.fn(() => ({ httpsCallable: vi.fn(() => mocks.httpsCallableFn) })) },
     db: {},
@@ -58,7 +58,7 @@ vi.mock('../firebase', () => ({
     remoteConfig: {},
 }));
 
-vi.mock('../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

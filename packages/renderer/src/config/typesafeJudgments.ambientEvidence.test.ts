@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ call: vi.fn(), enabled: vi.fn() }));
 vi.mock('firebase/functions', () => ({ getFunctions: () => ({}), httpsCallable: () => mocks.call }));
 vi.mock('@/config/featureFlags', () => ({ featureFlags: { isEnabled: mocks.enabled }, FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' } }));
-import { judgeCreativePromptModeIntent, deterministicCreativePromptModeFallback, judgeGalleryAssetBrandFit, deterministicGalleryBrandFitFallback, judgePlpVariantAdFormat, deterministicPlpVariantAdFallback, __resetJudgmentCooldownForTests } from './typesafeJudgments';
+import { judgeCreativePromptModeIntent, deterministicCreativePromptModeFallback, judgeGalleryAssetBrandFit, deterministicGalleryBrandFitFallback, judgePlpVariantAdFormat, deterministicPlpVariantAdFallback, __resetJudgmentCooldownForTests } from '@/config/typesafeJudgments';
 
 // Structural provenance contracts, not asset inspection or calibration.
 describe('ambient creative evidence', () => {

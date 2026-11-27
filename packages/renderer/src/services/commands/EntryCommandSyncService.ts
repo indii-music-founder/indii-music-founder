@@ -1,4 +1,4 @@
-import { entryCommandHydrationCache } from './EntryCommandHydrationCache';
+import { entryCommandHydrationCache } from '@/services/commands/EntryCommandHydrationCache';
 import {
   collection,
   doc,
@@ -10,13 +10,13 @@ import {
 import { auth, db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
-import type { EntryCommandDefinition } from './EntryCommandRegistry';
+import type { EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
 import {
   getCustomEntryCommands,
   isEntryCommandSurface,
   mergeCustomEntryCommands,
   saveCustomEntryCommand,
-} from './EntryCommandRegistry';
+} from '@/services/commands/EntryCommandRegistry';
 
 export type EntryCommandSyncScope = 'user' | 'team';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WorkflowEngine, workflowCanonicalMaster } from './WorkflowEngine';
+import { WorkflowEngine, workflowCanonicalMaster } from '@/modules/workflow/services/WorkflowEngine';
 import {
     CustomNode,
     CustomEdge,
@@ -9,7 +9,7 @@ import {
     MusicMetadataAsset,
     SplitSheetAsset,
     ReleasePackageAsset
-} from '../types';
+} from '@/modules/workflow/types';
 
 // ── Shared mocks ──────────────────────────────────────────────────────────────
 

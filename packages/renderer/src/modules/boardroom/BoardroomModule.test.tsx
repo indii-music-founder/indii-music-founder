@@ -79,8 +79,8 @@ vi.mock('@/lib/utils', () => ({
 }));
 
 // ── Imports Under Test ───────────────────────────────────────────
-import { BoardroomModule } from './BoardroomModule';
-import { BoardroomTable } from './components/BoardroomTable';
+import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
+import { BoardroomTable } from '@/modules/boardroom/components/BoardroomTable';
 
 // ── Tests ────────────────────────────────────────────────────────
 

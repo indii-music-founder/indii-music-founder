@@ -6,10 +6,10 @@
  * and semantically-indexed memories for intent-based retrieval.
  */
 
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { logger } from '@/utils/logger';
-import { wrapTool } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 export const HiveTools = {
     /**

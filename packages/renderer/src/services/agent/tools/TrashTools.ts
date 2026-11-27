@@ -1,6 +1,6 @@
 import { TrashTargetSchema, TrashProvenanceSchema } from '@indii/shared';
 import { trashService } from '@/services/trash/TrashService';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess } from '@/services/agent/utils/ToolUtils';
 
 export const TrashTools = {
     list_trash: wrapTool('list_trash', async (args: { type?: string; query?: string }) => {

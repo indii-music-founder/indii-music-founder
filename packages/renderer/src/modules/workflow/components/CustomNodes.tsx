@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
-import type { InputNodeData, OutputNodeData, AudioSegmentNodeData, AnyAsset } from '../types';
+import type { InputNodeData, OutputNodeData, AudioSegmentNodeData, AnyAsset } from '@/modules/workflow/types';
 import { AudioWaveform, Play, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import UniversalNode from './UniversalNode';
+import UniversalNode from '@/modules/workflow/components/UniversalNode';
 
 // Re-export UniversalNode as DepartmentNode for backward compatibility in nodeTypes map
 export const DepartmentNode = UniversalNode;

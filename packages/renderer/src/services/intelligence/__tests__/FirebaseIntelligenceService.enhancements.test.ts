@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { CostPredictor } from '../utils/CostPredictor';
+import { CostPredictor } from '@/services/intelligence/utils/CostPredictor';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
 // Mocks must be hoisted to the top

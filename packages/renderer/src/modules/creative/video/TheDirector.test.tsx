@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useVideoEditorStore } from './store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { act } from '@testing-library/react';
 
 vi.unmock('./store/videoEditorStore');

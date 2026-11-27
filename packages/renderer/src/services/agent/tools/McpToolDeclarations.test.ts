@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import * as declarations from './McpToolDeclarations';
-import { BrandAgent } from '../definitions/BrandAgent';
-import { CreativeAgent } from '../definitions/CreativeAgent';
-import { DistributionAgent } from '../definitions/DistributionAgent';
-import { FinanceAgent } from '../definitions/FinanceAgent';
-import { LegalAgent } from '../definitions/LegalAgent';
-import type { AgentConfig, FunctionDeclaration } from '../types';
+import * as declarations from '@/services/agent/tools/McpToolDeclarations';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
+import { CreativeAgent } from '@/services/agent/definitions/CreativeAgent';
+import { DistributionAgent } from '@/services/agent/definitions/DistributionAgent';
+import { FinanceAgent } from '@/services/agent/definitions/FinanceAgent';
+import { LegalAgent } from '@/services/agent/definitions/LegalAgent';
+import type { AgentConfig, FunctionDeclaration } from '@/services/agent/types';
 
 const SERVER_TOOLS = resolve(__dirname, '../../../../../firebase/src/mcp/tools');
 

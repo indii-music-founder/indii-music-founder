@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PUBLICIST_TOOLS } from './tools';
+import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock MemoryService to avoid IndexedDB issues

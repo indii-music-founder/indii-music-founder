@@ -12,10 +12,10 @@ import {
     computeCanvasViewportBounds,
     isBlockInViewport,
     useCanvasVirtualization,
-} from '../hooks/useCanvasVirtualization';
-import { LODBlock } from '../components/blocks/LODBlock';
-import { CanvasEdgeLayer } from '../components/edges/CanvasEdgeLayer';
-import type { ProjectCanvasBlock, ProjectCanvasEdge } from '../types';
+} from '@/modules/project-canvas/hooks/useCanvasVirtualization';
+import { LODBlock } from '@/modules/project-canvas/components/blocks/LODBlock';
+import { CanvasEdgeLayer } from '@/modules/project-canvas/components/edges/CanvasEdgeLayer';
+import type { ProjectCanvasBlock, ProjectCanvasEdge } from '@/modules/project-canvas/types';
 
 function createMockBlock(
     id: string,

@@ -42,7 +42,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Use current directory import since the test is co-located with the service
-import { revenueService, RevenueEntry } from './RevenueService';
+import { revenueService, RevenueEntry } from '@/services/RevenueService';
 
 describe('RevenueService (Production Logic)', () => {
     beforeEach(() => {

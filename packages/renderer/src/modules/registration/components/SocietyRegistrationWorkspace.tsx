@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, query, where, limit, orderBy } from 'firebase/firestore';
 import { Compass, Sparkles } from 'lucide-react';
 import { buildCwrBatch, CwrBatchInputSchema, cwrPercentageUnits, cwrUnitsPercentage, societyPreparationCopy, SOCIETY_ONBOARDING, societyOnboardingChecklist, type CanonicalMusicEntity, type CwrBatchInput, type SocietyRecipient, type CwrWorkOutcome } from '@indii/shared';
-import { SocietyTransportAdmin } from './SocietyTransportAdmin';
-import { SocietyDeliveryPanel } from './SocietyDeliveryPanel';
+import { SocietyTransportAdmin } from '@/modules/registration/components/SocietyTransportAdmin';
+import { SocietyDeliveryPanel } from '@/modules/registration/components/SocietyDeliveryPanel';
 import { db } from '@/services/firebase';
 import { downloadRightsFile, exportRightsCwr, rightsOperation } from '@/services/rights/HostedRightsService';
-import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
+import { RightsRegistrationWalkthroughModal } from '@/modules/registration/components/RightsRegistrationWalkthroughModal';
 
 const rights = ['performance', 'mechanical', 'synchronization'] as const;
 type ShareText = Record<typeof rights[number], string>;

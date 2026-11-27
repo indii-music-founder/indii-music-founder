@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TimeRuler } from './TimeRuler';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
-import { TRACK_HEADER_WIDTH } from '../constants';
+import { TimeRuler } from '@/modules/creative/video/editor/components/TimeRuler';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { TRACK_HEADER_WIDTH } from '@/modules/creative/video/editor/constants';
 
 // Mock store
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
 }));
 

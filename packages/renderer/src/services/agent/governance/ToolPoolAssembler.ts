@@ -1,6 +1,6 @@
-import { FunctionDeclaration, ToolParameters, ToolParameterSchema } from '../types';
-import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from '../ToolRiskRegistry';
-import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
+import { FunctionDeclaration, ToolParameters, ToolParameterSchema } from '@/services/agent/types';
+import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from '@/services/agent/ToolRiskRegistry';
+import { SUPERPOWER_TOOLS } from '@/services/agent/definitions/SuperpowerTools';
 
 function sanitizeSchemaProperty(schema: ToolParameterSchema, propertyName: string): ToolParameterSchema {
     if (!schema || typeof schema !== 'object') return schema;

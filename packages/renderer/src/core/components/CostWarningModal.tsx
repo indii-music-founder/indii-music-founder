@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, DollarSign } from 'lucide-react';
-import { useStore } from '../store';
+import { useStore } from '@/core/store';
 import { Button } from '@/components/ui/button';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { Z_LAYER } from '@/core/zLayers';

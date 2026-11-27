@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AgentGraph, AgentNode, AgentEdge, AgentGraphContext, AgentNodeStatus } from './types';
+import { AgentGraph, AgentNode, AgentEdge, AgentGraphContext, AgentNodeStatus } from '@/services/intelligence/graph/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ModuleId } from '@/core/constants';
 

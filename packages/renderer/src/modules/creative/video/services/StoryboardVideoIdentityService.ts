@@ -6,7 +6,7 @@ import {
     type VideoKind,
     type VideoMusicIdentity,
 } from '@indii/shared';
-import type { StoryboardProject } from '../schemas/storyboard';
+import type { StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { VideoRenderReceipt } from '@/services/video/RenderService';
 

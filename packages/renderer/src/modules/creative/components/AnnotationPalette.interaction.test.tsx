@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import AnnotationPalette from './AnnotationPalette';
-import { STUDIO_COLORS } from '../constants';
+import AnnotationPalette from '@/modules/creative/components/AnnotationPalette';
+import { STUDIO_COLORS } from '@/modules/creative/constants';
 
 // Mock dependencies if needed, but constants should import fine.
 // If STUDIO_COLORS is complex, we might mock it, but usually it's just data.

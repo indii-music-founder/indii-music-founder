@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { SocialService } from './SocialService';
+import { SocialService } from '@/services/social/SocialService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { db } from '@/services/firebase';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

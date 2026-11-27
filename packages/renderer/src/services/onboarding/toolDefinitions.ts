@@ -1,6 +1,6 @@
-import { getSupportedDistributors } from './distributorRequirements';
-import { OnboardingTools } from './types';
-import type { FunctionDeclaration } from './types';
+import { getSupportedDistributors } from '@/services/onboarding/distributorRequirements';
+import { OnboardingTools } from '@/services/onboarding/types';
+import type { FunctionDeclaration } from '@/services/onboarding/types';
 
 /**
  * Autonomous Function Declarations (Tool Definitions) for the Onboarding Conversation.

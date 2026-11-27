@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import LikenessFusionPanel from '../LikenessFusionPanel';
+import LikenessFusionPanel from '@/modules/creative/components/LikenessFusionPanel';
 import { LikenessService } from '@/services/image/LikenessService';
 import { fuseLikeness } from '@/services/identity/LikenessFusionService';
 import { useStore } from '@/core/store';

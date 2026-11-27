@@ -16,7 +16,7 @@
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
-import { assertEmailMutationOk } from './mutationErrors';
+import { assertEmailMutationOk } from '@/services/email/mutationErrors';
 import type {
     EmailProviderInterface,
     EmailMessage,
@@ -28,7 +28,7 @@ import type {
     OAuthExchangeResult,
     EmailAddress,
     EmailAttachment,
-} from './types';
+} from '@/services/email/types';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 

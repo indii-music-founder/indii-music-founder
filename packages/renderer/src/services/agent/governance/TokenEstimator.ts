@@ -1,4 +1,4 @@
-import { FunctionDeclaration } from '../types';
+import { FunctionDeclaration } from '@/services/agent/types';
 import { Content } from '@/shared/types/ai.dto';
 import { logger } from '@/utils/logger';
 

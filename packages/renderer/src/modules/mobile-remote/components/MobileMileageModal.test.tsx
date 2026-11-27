@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import MobileMileageModal from './MobileMileageModal';
+import MobileMileageModal from '@/modules/mobile-remote/components/MobileMileageModal';
 
 const mocks = vi.hoisted(() => ({
     dispatchTask: vi.fn(),
@@ -33,10 +33,10 @@ vi.mock('@/core/context/ToastContext', () => ({
         error: mocks.toastError,
     }),
 }));
-vi.mock('../haptics', () => ({
+vi.mock('@/modules/mobile-remote/haptics', () => ({
     triggerHaptic: vi.fn(),
 }));
-vi.mock('./mileageRate', () => ({
+vi.mock('@/modules/mobile-remote/components/mileageRate', () => ({
     businessMileageRate: () => 0.7,
 }));
 vi.mock('motion/react', () => ({

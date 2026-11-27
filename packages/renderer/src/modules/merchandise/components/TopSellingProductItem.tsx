@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shirt } from 'lucide-react';
-import { MerchCard } from './MerchCard';
-import { MerchProduct } from '../types';
+import { MerchCard } from '@/modules/merchandise/components/MerchCard';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface TopSellingProductItemProps {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createDocFromImage, type RasterLayer } from '../CanvasDoc';
-import { adjustArtworkPixels, finishArtworkPixels, effectiveAdjustments, applyArtworkMask } from '../ArtworkPixels';
+import { createDocFromImage, type RasterLayer } from '@/services/canvas/CanvasDoc';
+import { adjustArtworkPixels, finishArtworkPixels, effectiveAdjustments, applyArtworkMask } from '@/services/canvas/ArtworkPixels';
 
 const layer = () => createDocFromImage('pixel-fixture.png', 'unit-fixture').layers[0] as RasterLayer;
 describe('artwork pixel contract', () => {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { CampaignAsset, ScheduledPost, CampaignStatus } from '../types';
-import CampaignList from './CampaignList';
-import CampaignDetail from './CampaignDetail';
-import EditableCopyModal from './EditableCopyModal';
-import IntelligenceImageBatchModal from './IntelligenceImageBatchModal';
+import { CampaignAsset, ScheduledPost, CampaignStatus } from '@/modules/marketing/types';
+import CampaignList from '@/modules/marketing/components/CampaignList';
+import CampaignDetail from '@/modules/marketing/components/CampaignDetail';
+import EditableCopyModal from '@/modules/marketing/components/EditableCopyModal';
+import IntelligenceImageBatchModal from '@/modules/marketing/components/IntelligenceImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -11,7 +11,7 @@ import {
     CampaignExecutionRequest,
     CampaignExecutionResponse,
     CampaignExecutionResponseSchema,
-} from '../schemas';
+} from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
 
 interface CampaignManagerProps {

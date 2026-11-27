@@ -1,5 +1,5 @@
-import { adjustArtworkPixels, finishArtworkPixels, applyArtworkMask } from './ArtworkPixels';
-import type { RasterLayer } from './CanvasDoc';
+import { adjustArtworkPixels, finishArtworkPixels, applyArtworkMask } from '@/services/canvas/ArtworkPixels';
+import type { RasterLayer } from '@/services/canvas/CanvasDoc';
 
 self.onmessage = (event: MessageEvent<{ buffer: ArrayBuffer; maskBuffer?: ArrayBuffer; originalAlphaBuffer?: ArrayBuffer; width: number; height: number; layer: RasterLayer; phase: 'mask' | 'color' | 'finish' }>) => {
     try {

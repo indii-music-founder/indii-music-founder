@@ -8,11 +8,11 @@ import type { AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
-import { MessageItem } from './chat/ChatMessage';
-import { PromptArea } from './command-bar/PromptArea';
+import { MessageItem } from '@/core/components/chat/ChatMessage';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
-import { AgentSwitcherStrip } from './AgentSwitcherStrip';
+import { AgentSwitcherStrip } from '@/core/components/AgentSwitcherStrip';
 
 interface ChatOverlayProps {
     onClose: () => void;

@@ -26,9 +26,9 @@ import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
-import { EntryOverlay } from './EntryOverlay';
+import { EntryOverlay } from '@/modules/dashboard/components/EntryOverlay';
 import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
-import { OperationalApprovalGateBanner } from './OperationalApprovalGateBanner';
+import { OperationalApprovalGateBanner } from '@/modules/dashboard/components/OperationalApprovalGateBanner';
 import { instantiateQuickWorkflow, type QuickWorkflowTemplateId } from '@/modules/workflow/services/quickWorkflowTemplates';
 
 interface EmptyStateProps {

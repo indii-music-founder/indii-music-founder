@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import SecurityDashboard from './SecurityDashboard';
+import SecurityDashboard from '@/modules/security/SecurityDashboard';
 
 describe('SecurityDashboard', () => {
     it('renders all 4 panes', async () => {

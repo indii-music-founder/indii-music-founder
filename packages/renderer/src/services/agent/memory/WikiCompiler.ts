@@ -1,8 +1,8 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { logger } from '@/utils/logger';
-import { WikiStorageAdapter, WikiDocument } from './WikiStorageAdapter';
-import { WikiLinter } from './WikiLinter';
-import { getFineTunedModel } from '../fine-tuned-models';
+import { WikiStorageAdapter, WikiDocument } from '@/services/agent/memory/WikiStorageAdapter';
+import { WikiLinter } from '@/services/agent/memory/WikiLinter';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 
 export interface CompilationRequest {
     rawInput: string;

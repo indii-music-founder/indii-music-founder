@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/core/store', () => ({ useStore: vi.fn() }));
-vi.mock('../store/videoEditorStore', () => ({ useVideoEditorStore: vi.fn() }));
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({ useVideoEditorStore: vi.fn() }));
 vi.mock('@/services/video/VideoGenerationService', () => ({ VideoGeneration: {} }));
 vi.mock('@/core/context/ToastContext', () => ({ useToast: vi.fn() }));
 vi.mock('@/services/video/RenderService', () => ({ renderService: {} }));
@@ -17,7 +17,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
     INTELLIGENCE_MODELS: { VIDEO: { PRO: 'pro' } },
 }));
 
-import { StoryboardRenderReceiptView } from './StoryboardTimeline';
+import { StoryboardRenderReceiptView } from '@/modules/creative/video/components/StoryboardTimeline';
 
 describe('Storyboard render receipt UI', () => {
     it.each([

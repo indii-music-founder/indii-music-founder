@@ -3,7 +3,7 @@
  * For processing royalty reports from DSPs
  */
 
-import type { DateRange, TerritoryCode } from './common';
+import type { DateRange, TerritoryCode } from '@/services/distribution/proprietary-ingestion/types/common';
 
 // EarningsReport Report - usage/sales report from a DSP
 export interface EarningsReportReport {

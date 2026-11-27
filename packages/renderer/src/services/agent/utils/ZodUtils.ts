@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType, ToolRiskMetadata } from '../types';
+import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType, ToolRiskMetadata } from '@/services/agent/types';
 
 /**
  * Converts a Zod schema to the ToolParamters format expected by the Autonomous SDK.

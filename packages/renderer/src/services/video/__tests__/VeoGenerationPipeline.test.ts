@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGeneration } from '../VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { onSnapshot } from 'firebase/firestore';
 
 // -----------------------------------------------------------------------------
 // Mocks
 // -----------------------------------------------------------------------------
 
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

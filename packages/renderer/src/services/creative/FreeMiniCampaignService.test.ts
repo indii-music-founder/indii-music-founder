@@ -3,7 +3,7 @@ import {
     FreeMiniCampaignService,
     FREE_CAMPAIGN_LIMITS,
     type MiniCampaignPack,
-} from './FreeMiniCampaignService';
+} from '@/services/creative/FreeMiniCampaignService';
 import { CloudStorageService } from '@/services/CloudStorageService';
 
 vi.mock('@/services/CloudStorageService', () => ({

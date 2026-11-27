@@ -44,7 +44,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 }));
 
 // ── Import under test ─────────────────────────────────────────────────────────
-import { FinanceTools } from '../FinanceTools';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

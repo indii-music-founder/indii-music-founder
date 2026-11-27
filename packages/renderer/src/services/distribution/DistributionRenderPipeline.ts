@@ -12,7 +12,7 @@
  *  - CMYK conversion is the vendor's step; noted per profile.
  */
 
-import { getProfile, PROFILE_IDS, type VisualRenderProfile } from './RenderProfiles';
+import { getProfile, PROFILE_IDS, type VisualRenderProfile } from '@/services/distribution/RenderProfiles';
 import { logger } from '@/utils/logger';
 
 export interface BundleRequest {

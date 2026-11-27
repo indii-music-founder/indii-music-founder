@@ -3,8 +3,8 @@ import { Product } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import ProductCard from './ProductCard';
-import CreateProductModal from './CreateProductModal';
+import ProductCard from '@/modules/marketplace/components/ProductCard';
+import CreateProductModal from '@/modules/marketplace/components/CreateProductModal';
 import { Plus, Store } from 'lucide-react';
 import { logger } from '@/utils/logger';
 

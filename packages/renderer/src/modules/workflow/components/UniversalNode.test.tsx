@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import UniversalNode from './UniversalNode';
-import { InputNode, OutputNode } from './CustomNodes';
-import { Status } from '../types';
+import UniversalNode from '@/modules/workflow/components/UniversalNode';
+import { InputNode, OutputNode } from '@/modules/workflow/components/CustomNodes';
+import { Status } from '@/modules/workflow/types';
 
 // Mock dependencies
 vi.mock('reactflow', () => ({
@@ -12,7 +12,7 @@ vi.mock('reactflow', () => ({
     Position: { Left: 'left', Right: 'right' },
 }));
 
-vi.mock('../services/nodeRegistry', () => ({
+vi.mock('@/modules/workflow/services/nodeRegistry', () => ({
     getNodeDefinition: vi.fn(() => ({ icon: () => <svg data-testid="node-icon" /> })),
     getJobDefinition: vi.fn(() => ({
         label: 'Test Job',

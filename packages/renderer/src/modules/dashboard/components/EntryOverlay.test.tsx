@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EntryOverlay } from './EntryOverlay';
+import { EntryOverlay } from '@/modules/dashboard/components/EntryOverlay';
 
 const mockEntryContext = vi.hoisted(() => ({
     scenario: 'new-user' as const,
@@ -10,7 +10,7 @@ const mockEntryContext = vi.hoisted(() => ({
     isLoading: false,
 }));
 
-vi.mock('../hooks/useEntryContext', () => ({
+vi.mock('@/modules/dashboard/hooks/useEntryContext', () => ({
     useEntryContext: () => mockEntryContext,
 }));
 

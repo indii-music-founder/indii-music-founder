@@ -8,7 +8,7 @@
  */
 
 import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 

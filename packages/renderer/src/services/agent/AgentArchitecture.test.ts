@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentService } from './AgentService';
-import { ContextPipeline } from './components/ContextPipeline';
-import { AgentOrchestrator } from './components/AgentOrchestrator';
-import { HistoryManager } from './components/HistoryManager';
+import { AgentService } from '@/services/agent/AgentService';
+import { ContextPipeline } from '@/services/agent/components/ContextPipeline';
+import { AgentOrchestrator } from '@/services/agent/components/AgentOrchestrator';
+import { HistoryManager } from '@/services/agent/components/HistoryManager';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
-import { agentRegistry } from './registry';
+import { agentRegistry } from '@/services/agent/registry';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
@@ -294,7 +294,7 @@ describe('Multi-Agent Architecture Tests', () => {
 
         it('should invoke runAgent when delegate_task is called', async () => {
             // Import the singleton used by BaseAgent
-            const { agentService } = await importWithRetry(() => import('./AgentService'));
+            const { agentService } = await importWithRetry(() => import('@/services/agent/AgentService'));
 
             // Mock runAgent on the singleton
             const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue({ text: 'Delegation Success' });

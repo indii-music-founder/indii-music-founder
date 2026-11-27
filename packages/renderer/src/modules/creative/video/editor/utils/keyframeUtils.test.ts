@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getKeyframeColor, easeValue, interpolateKeyframeValue } from './keyframeUtils';
+import { getKeyframeColor, easeValue, interpolateKeyframeValue } from '@/modules/creative/video/editor/utils/keyframeUtils';
 import type { IndiiVideoKeyframe } from '@indii/shared';
 
 describe('keyframeUtils', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildDistributionReadiness } from './ReleaseHarnessAdapters';
-import type { DdexDeliveryAuthorityEvidence } from './types';
+import { buildDistributionReadiness } from '@/services/release-harness/ReleaseHarnessAdapters';
+import type { DdexDeliveryAuthorityEvidence } from '@/services/release-harness/types';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 vi.mock('firebase/firestore', () => ({

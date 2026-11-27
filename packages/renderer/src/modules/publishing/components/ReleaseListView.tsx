@@ -8,13 +8,13 @@ import {
     Circle,
     LayoutGrid, List as ListIcon, Trash2, Archive
 } from 'lucide-react';
-import { ReleaseStatusCard } from './ReleaseStatusCard';
+import { ReleaseStatusCard } from '@/modules/publishing/components/ReleaseStatusCard';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { useReleaseList } from '../hooks/useReleaseList';
-import { ClientReleaseRecord } from '../hooks/useReleases';
+import { useReleaseList } from '@/modules/publishing/hooks/useReleaseList';
+import { ClientReleaseRecord } from '@/modules/publishing/hooks/useReleases';
 import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso';
 import { getColorForModule } from '@/core/theme/moduleColors';
-import { describeBulkReleaseResult, runBulkReleaseAction } from './bulkReleaseAction';
+import { describeBulkReleaseResult, runBulkReleaseAction } from '@/modules/publishing/components/bulkReleaseAction';
 
 interface ReleaseListViewProps {
     onNewRelease: () => void;

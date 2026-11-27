@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     WebRTCPresenceMesh,
     RTC_ICE_CONFIG,
-} from '../services/WebRTCPresenceMesh';
+} from '@/modules/project-canvas/services/WebRTCPresenceMesh';
 import { setDoc } from 'firebase/firestore';
 
 // Mock Firebase

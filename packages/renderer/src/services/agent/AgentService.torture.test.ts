@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentService } from './AgentService';
+import { AgentService } from '@/services/agent/AgentService';
 import { useStore } from '@/core/store';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
@@ -80,7 +80,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // 5. Mock TraceService
-vi.mock('./observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),
@@ -114,7 +114,7 @@ const mockAnnotationTool = vi.hoisted(() => vi.fn());
 
 // 8. Mock Agent Registry with a fake GeneralistAgent that captures invocations
 // DO NOT use vi.unmock() - it causes real code loading and test hangs in CI
-vi.mock('./registry', () => {
+vi.mock('@/services/agent/registry', () => {
     const mockGeneralistAgent = {
         id: 'generalist',
         name: 'indii Conductor',
@@ -148,7 +148,7 @@ vi.mock('./registry', () => {
 });
 
 // Mock Tools - only safe tools are registered
-vi.mock('./tools', () => ({
+vi.mock('@/services/agent/tools', () => ({
     TOOL_REGISTRY: {
         generate_image: vi.fn(),
         edit_image_with_annotations: mockAnnotationTool,
@@ -202,7 +202,7 @@ describe('🛡️ Shield: Agent Torture Test', () => {
 
     it('🛡️ Sandbox Escape: TOOL_REGISTRY does NOT contain dangerous tools', async () => {
         // Import the mocked tools to verify the registry
-        const { TOOL_REGISTRY } = await importWithRetry(() => import('./tools'));
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
 
         // Verify dangerous tools are NOT in the registry
         expect(TOOL_REGISTRY).not.toHaveProperty('exec_shell');

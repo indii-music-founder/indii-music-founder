@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { DaySheetModal } from './DaySheetModal';
+import { DaySheetModal } from '@/modules/touring/components/DaySheetModal';
 
 function filterMotionProps(props: Record<string, unknown>): Record<string, unknown> {
     const { initial: _initial, animate: _animate, transition: _transition, ...domProps } = props;

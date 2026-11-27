@@ -3,8 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 import {
     blankProjectForId,
     useVideoEditorStore,
-} from './videoEditorStore';
-import { useTimelineDrag } from '../editor/hooks/useTimelineDrag';
+} from '@/modules/creative/video/store/videoEditorStore';
+import { useTimelineDrag } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 // Un-stub the global setup's store mock to test authentic store logic
 vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => importOriginal());

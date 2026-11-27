@@ -23,7 +23,7 @@ import {
     writeBatch,
     runTransaction
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '@/services/firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class FirestoreService<T extends DocumentData = DocumentData> {

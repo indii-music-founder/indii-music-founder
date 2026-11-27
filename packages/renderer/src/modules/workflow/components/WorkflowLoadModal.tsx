@@ -1,6 +1,6 @@
 import React from 'react';
 import { FolderOpen, X, ArrowRight } from 'lucide-react';
-import { SavedWorkflow } from '../types';
+import { SavedWorkflow } from '@/modules/workflow/types';
 
 interface WorkflowLoadModalProps {
     onClose: () => void;

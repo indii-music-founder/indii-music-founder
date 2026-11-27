@@ -2,13 +2,13 @@ import { isStorageObjectNotFound } from '@/utils/storageErrors';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 
-import { storage } from './firebase';
+import { storage } from '@/services/firebase';
 import { Timestamp, where, orderBy, limit, query, onSnapshot, Unsubscribe, QuerySnapshot, DocumentData, QueryDocumentSnapshot, FirestoreError } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '@/core/types/history';
-import { FirestoreService } from './FirestoreService';
-import { CloudStorageService } from './CloudStorageService';
-import { mediaUrlToBlob } from './storage/mediaUrlToBlob';
+import { FirestoreService } from '@/services/FirestoreService';
+import { CloudStorageService } from '@/services/CloudStorageService';
+import { mediaUrlToBlob } from '@/services/storage/mediaUrlToBlob';
 
 /** File extension for an uploaded audio/video MIME type. */
 export function mediaExtension(mimeType: string): string {
@@ -20,7 +20,7 @@ export function mediaExtension(mimeType: string): string {
     if (mimeType === 'audio/webm') return 'webm';
     return 'mp3';
 }
-import { OrganizationService } from './OrganizationService';
+import { OrganizationService } from '@/services/OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -96,7 +96,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
      * @returns The download URL.
      */
     async uploadFile(file: Blob | File, path: string): Promise<string> {
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         if (!auth.currentUser) {
             throw new Error('User must be authenticated to upload files.');
         }
@@ -119,7 +119,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         path: string,
         onProgress: (progress: number) => void
     ): Promise<string> {
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         if (!auth.currentUser) {
             throw new Error('User must be authenticated to upload files.');
         }
@@ -180,7 +180,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         // and become invalid after page refresh. We must upload to Firebase Storage
         // and persist the durable https:// URL to the history collection.
         if (item.url.startsWith('blob:') && item.type === 'video') {
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
             const userId = auth.currentUser?.uid;
 
             if (userId) {
@@ -189,7 +189,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     const blob = await blobResponse.blob();
                     const file = new File([blob], `veo_${item.id}.mp4`, { type: 'video/mp4' });
 
-                    const { VideoUploadService } = await import('./video/VideoUploadService');
+                    const { VideoUploadService } = await import('@/services/video/VideoUploadService');
                     const storagePath = `videos/${userId}/${item.id}.mp4`;
                     const uploadResult = await VideoUploadService.uploadVideo(file, storagePath);
 
@@ -213,7 +213,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         // the File itself (no base64 copy of a 30+ MB master in memory).
         // (blob: video is already handled by the branch above.)
         if (item.url.startsWith('blob:') && item.type === 'music') {
-            const { auth } = await import('./firebase');
+            const { auth } = await import('@/services/firebase');
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error('User must be authenticated to upload media.');
             try {
@@ -233,7 +233,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
         // If it's a base64 data URL, use CloudStorageService
         if (item.url.startsWith('data:')) {
-            const { auth } = await import('./firebase');
+            const { auth } = await import('@/services/firebase');
             const userId = auth.currentUser?.uid;
 
             if (userId) {
@@ -242,7 +242,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     const mimeType = mimeMatch?.[1] || '';
                     if (item.type === 'image' && (item.meta === 'upscale' || item.preserveResolution === true)) {
                         // Preserve print masters: smartSave caps ordinary previews at 2048px.
-                        const { safeStorageFetch } = await import('./storage/safeStorageFetch');
+                        const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
                         const { blob } = await safeStorageFetch(item.url);
                         const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/webp' ? 'webp' : 'png';
                         const storagePath = `users/${userId}/assets/${item.id}.${extension}`;
@@ -284,7 +284,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
         // Get Current Org ID
         const orgId = OrganizationService.getCurrentOrgId();
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         if (!auth.currentUser) {
             throw new Error('User must be authenticated to save generated history.');
         }
@@ -315,7 +315,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
      * @param id The ID of the history item.
      */
     async removeItem(id: string): Promise<void> {
-        const { trashService } = await import('./trash/TrashService');
+        const { trashService } = await import('@/services/trash/TrashService');
         await trashService.moveToTrash(
             { type: 'history', targetId: id },
             { actor: 'user', reason: 'User requested creative history removal' }
@@ -367,7 +367,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             }
         };
 
-            const { auth } = await import('./firebase');
+            const { auth } = await import('@/services/firebase');
 
         if (!auth.currentUser?.uid) {
             return [];
@@ -409,7 +409,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             return () => { };
         }
 
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         
         if (!auth.currentUser?.uid) {
             onUpdate([]);

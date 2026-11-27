@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import ReviewStep from './ReviewStep';
+import ReviewStep from '@/modules/creative/video/components/ReviewStep';
 
 describe('ReviewStep', () => {
     const defaultProps = {

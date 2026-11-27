@@ -25,7 +25,7 @@ vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 const organizationMocks = vi.hoisted(() => ({ createOrganization: vi.fn() }));
 vi.mock('@/services/OrganizationService', () => ({ OrganizationService: { createOrganization: organizationMocks.createOrganization } }));
 
-import SelectOrg from './SelectOrg';
+import SelectOrg from '@/modules/select-org/SelectOrg';
 
 describe('SelectOrg', () => {
     beforeEach(() => {

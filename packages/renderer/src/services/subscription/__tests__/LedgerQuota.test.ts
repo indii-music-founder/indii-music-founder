@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SubscriptionService } from '../SubscriptionService';
-import { SubscriptionTier } from '../SubscriptionTier';
+import { SubscriptionService } from '@/services/subscription/SubscriptionService';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
 import { httpsCallable } from 'firebase/functions';
 

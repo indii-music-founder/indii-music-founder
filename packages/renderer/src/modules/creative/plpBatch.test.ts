@@ -6,7 +6,7 @@ import {
     getEligiblePlpSlots,
     getPlpBatchCounts,
     retryPlpSlot,
-} from './plpBatch';
+} from '@/modules/creative/plpBatch';
 
 describe('PLP batch lifecycle', () => {
     it('starts with ten queued image slots and five queued video slots', () => {

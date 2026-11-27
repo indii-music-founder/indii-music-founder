@@ -1,9 +1,9 @@
 import type { AgentMessage } from '@/core/store';
-import { agentRegistry } from '../registry';
-import { SummaryService } from '../utils/SummaryService';
+import { agentRegistry } from '@/services/agent/registry';
+import { SummaryService } from '@/services/agent/utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
-import { readOptionalContext } from './OptionalContext';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { readOptionalContext } from '@/services/agent/components/OptionalContext';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useOnboarding } from './useOnboarding';
+import { useOnboarding } from '@/modules/onboarding/hooks/useOnboarding';
 
 const { mockExtractText, mockRunConversation } = vi.hoisted(() => ({
     mockExtractText: vi.fn(),

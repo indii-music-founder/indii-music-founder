@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import AI_Input_Search from './ai-input-search';
+import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 // Mock Lucide icons
 vi.mock('lucide-react', async (importOriginal) => ({

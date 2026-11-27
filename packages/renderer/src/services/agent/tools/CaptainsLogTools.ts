@@ -6,10 +6,10 @@
  * but agents can also log decisions and milestones directly.
  */
 
-import { captainsLogService, type LogEntryType } from '../memory/CaptainsLogService';
-import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { captainsLogService, type LogEntryType } from '@/services/agent/memory/CaptainsLogService';
+import { wrapTool, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export const CaptainsLogTools = {

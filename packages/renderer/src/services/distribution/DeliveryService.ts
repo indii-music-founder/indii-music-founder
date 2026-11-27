@@ -1,6 +1,6 @@
 import { credentialService } from '@/services/security/CredentialService';
-import { SFTPTransporter } from './transport/SFTPTransporter';
-import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/distributor';
+import { SFTPTransporter } from '@/services/distribution/transport/SFTPTransporter';
+import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { transcodingService } from '@/services/audio/TranscodingService';
 import { logger } from '@/utils/logger';

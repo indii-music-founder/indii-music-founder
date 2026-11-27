@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
-import { SwarmGraph } from './SwarmGraph';
-import { XRayPanel } from './XRayPanel';
+import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
+import { XRayPanel } from '@/components/studio/observability/XRayPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutGrid, Network } from 'lucide-react';
 

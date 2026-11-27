@@ -7,7 +7,7 @@ import {
     vignetteMatrix,
     applyTransformPatch,
     type RasterLayer
-} from '../CanvasDoc';
+} from '@/services/canvas/CanvasDoc';
 
 describe('createDocFromImage (C1.1)', () => {
     it('creates a doc with a single neutral background raster layer', () => {

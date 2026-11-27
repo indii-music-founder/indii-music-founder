@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CreativeProductionCompiler } from './CreativeProductionCompiler';
-import type { HarnessContext } from '../business-harness/HarnessCompiler';
+import { CreativeProductionCompiler } from '@/services/creative/CreativeProductionCompiler';
+import type { HarnessContext } from '@/services/business-harness/HarnessCompiler';
 
 describe('CreativeProductionCompiler', () => {
   const compiler = new CreativeProductionCompiler();

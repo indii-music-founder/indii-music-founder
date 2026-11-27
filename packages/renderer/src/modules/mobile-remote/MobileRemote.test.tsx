@@ -1,9 +1,9 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import MobileRemote from './MobileRemote';
-import { MobileRemoteProviders } from './MobileRemoteProviders';
-import { getRemoteConnectionPhase } from './RemoteConnectionState';
+import MobileRemote from '@/modules/mobile-remote/MobileRemote';
+import { MobileRemoteProviders } from '@/modules/mobile-remote/MobileRemoteProviders';
+import { getRemoteConnectionPhase } from '@/modules/mobile-remote/RemoteConnectionState';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 
 vi.unmock('@/core/context/ToastContext');
@@ -112,7 +112,7 @@ vi.mock('motion/react', () => {
     };
 });
 
-vi.mock('./components/StatusDashboard', () => ({
+vi.mock('@/modules/mobile-remote/components/StatusDashboard', () => ({
     default: ({ onTabChange }: { onTabChange?: (tab: string) => void }) => (
         <div>
             <button type="button" onClick={() => onTabChange?.('road')}>
@@ -122,7 +122,7 @@ vi.mock('./components/StatusDashboard', () => ({
     ),
 }));
 
-vi.mock('./components/QuickCaptureView', async () => {
+vi.mock('@/modules/mobile-remote/components/QuickCaptureView', async () => {
     const { useToast } = await vi.importActual<typeof import('@/core/context/ToastContext')>(
         '@/core/context/ToastContext'
     );
@@ -134,7 +134,7 @@ vi.mock('./components/QuickCaptureView', async () => {
     };
 });
 
-vi.mock('./components/StreamView', () => ({
+vi.mock('@/modules/mobile-remote/components/StreamView', () => ({
     default: ({ onSendToStudio }: { onSendToStudio?: (prompt: string) => unknown }) => (
         <div>
             <span>Stream View</span>
@@ -150,11 +150,11 @@ vi.mock('./components/StreamView', () => ({
     ),
 }));
 
-vi.mock('./components/SettingsView', () => ({
+vi.mock('@/modules/mobile-remote/components/SettingsView', () => ({
     default: () => <div>Settings View</div>,
 }));
 
-vi.mock('./components/AgentChat', async () => {
+vi.mock('@/modules/mobile-remote/components/AgentChat', async () => {
     const { useVoice } = await vi.importActual<typeof import('@/core/context/VoiceContext')>(
         '@/core/context/VoiceContext'
     );
@@ -178,11 +178,11 @@ vi.mock('@/modules/touring/components/RoadMode', async () => {
     };
 });
 
-vi.mock('./components/StudioWorkView', () => ({
+vi.mock('@/modules/mobile-remote/components/StudioWorkView', () => ({
     default: () => <div>Studio Work & Chat</div>,
 }));
 
-vi.mock('./components/EncounterFeedView', () => ({
+vi.mock('@/modules/mobile-remote/components/EncounterFeedView', () => ({
     default: () => <div>Encounter Feed</div>,
 }));
 

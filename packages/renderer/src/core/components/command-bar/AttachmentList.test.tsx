@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { AttachmentList } from './AttachmentList';
+import { AttachmentList } from '@/core/components/command-bar/AttachmentList';
 import { vi } from 'vitest';
 
 // Mock Lucide icons to avoid rendering issues

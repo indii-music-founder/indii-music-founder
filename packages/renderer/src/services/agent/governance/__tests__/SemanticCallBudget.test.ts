@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ExecutionTokenBudget } from '../ExecutionTokenBudget';
-import { estimateSemanticCallTokens, runBudgetedSemanticCall } from '../SemanticCallBudget';
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { estimateSemanticCallTokens, runBudgetedSemanticCall } from '@/services/agent/governance/SemanticCallBudget';
 
 const LIMIT = 100_000;
 const payload = {

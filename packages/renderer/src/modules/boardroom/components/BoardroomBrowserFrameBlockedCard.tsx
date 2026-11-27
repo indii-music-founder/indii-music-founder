@@ -1,6 +1,6 @@
 import React from 'react';
 import { BookOpen, ExternalLink, Globe, Pin } from 'lucide-react';
-import type { QuickBookmark } from './BoardroomBrowserBookmarks';
+import type { QuickBookmark } from '@/modules/boardroom/components/BoardroomBrowserBookmarks';
 
 interface BoardroomBrowserFrameBlockedCardProps {
     portalTitle: string;

@@ -67,7 +67,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { MarketingTools } from '../MarketingTools';
+import { MarketingTools } from '@/services/agent/tools/MarketingTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { getDocs } from 'firebase/firestore';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CollaborationSplitsCompiler, CollaborationSplitsInput } from './CollaborationSplitsCompiler';
-import { HarnessContext } from '../business-harness/HarnessCompiler';
+import { CollaborationSplitsCompiler, CollaborationSplitsInput } from '@/services/collaboration/CollaborationSplitsCompiler';
+import { HarnessContext } from '@/services/business-harness/HarnessCompiler';
 import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 describe('CollaborationSplitsCompiler', () => {

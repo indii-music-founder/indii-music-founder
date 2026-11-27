@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { TraceViewer } from './TraceViewer';
+import { TraceViewer } from '@/components/studio/observability/TraceViewer';
 
 // Mock dependencies
 vi.mock('firebase/firestore', () => ({
@@ -26,12 +26,12 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('./SwarmGraph', () => ({
+vi.mock('@/components/studio/observability/SwarmGraph', () => ({
   serverTimestamp: vi.fn(),
     SwarmGraph: () => <div data-testid="swarm-graph-mock">Team Graph</div>
 }));
 
-vi.mock('./XRayPanel', () => ({
+vi.mock('@/components/studio/observability/XRayPanel', () => ({
   serverTimestamp: vi.fn(),
     XRayPanel: () => <div data-testid="xray-panel-mock">X-Ray Panel</div>
 }));

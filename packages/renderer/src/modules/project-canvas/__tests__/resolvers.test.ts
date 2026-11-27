@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EntityResolver } from '../resolvers/EntityResolver';
+import { EntityResolver } from '@/modules/project-canvas/resolvers/EntityResolver';
 import { useStore } from '@/core/store';
 
 describe('EntityResolver', () => {

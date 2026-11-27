@@ -33,7 +33,7 @@ vi.mock('firebase/storage', () => ({
     listAll: (...args: unknown[]) => mockListAll(...args),
 }));
 
-import { exportUserData, exportToBlob, type DataExportResult } from './DataExportService';
+import { exportUserData, exportToBlob, type DataExportResult } from '@/services/account/DataExportService';
 
 describe('DataExportService', () => {
     const TEST_USER_ID = 'uid-test-abc';

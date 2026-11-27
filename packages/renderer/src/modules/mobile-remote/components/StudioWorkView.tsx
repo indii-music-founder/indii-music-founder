@@ -2,16 +2,16 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sparkles, MessageSquare, Image as ImageIcon, Download, Maximize2, X, Send, Loader2, LayoutGrid, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/services/agent/RemoteRelayService';
-import { buildGeneratedImagesGallery } from './GenerationMonitor';
-import { triggerHaptic } from '../haptics';
+import { buildGeneratedImagesGallery } from '@/modules/mobile-remote/components/GenerationMonitor';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { useToast } from '@/core/context/ToastContext';
-import { downloadCapturedMedia } from './QuickCaptureView';
+import { downloadCapturedMedia } from '@/modules/mobile-remote/components/QuickCaptureView';
 import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
-const AgentChat = lazy(() => import('./AgentChat'));
-const GenerationMonitor = lazy(() => import('./GenerationMonitor'));
-const CommandPad = lazy(() => import('./CommandPad'));
+const AgentChat = lazy(() => import('@/modules/mobile-remote/components/AgentChat'));
+const GenerationMonitor = lazy(() => import('@/modules/mobile-remote/components/GenerationMonitor'));
+const CommandPad = lazy(() => import('@/modules/mobile-remote/components/CommandPad'));
 
 type StudioSubTab = 'outputs' | 'generate' | 'actions' | 'chat';
 

@@ -17,23 +17,23 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     },
 }));
 
-vi.mock('./PersonaMeasurementRecorder', () => ({
+vi.mock('@/services/persona/PersonaMeasurementRecorder', () => ({
     recordPersonaResponseMeasurement: telemetryMocks.recordMeasurement,
 }));
 
-vi.mock('./PersonaInteractionRecorder', () => ({
+vi.mock('@/services/persona/PersonaInteractionRecorder', () => ({
     recordSignal: telemetryMocks.recordSignal,
 }));
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { compilePersonaPrompt } from './PersonaPromptCompiler';
+import { compilePersonaPrompt } from '@/services/persona/PersonaPromptCompiler';
 import {
     getVerdict,
     renderInStyle,
     getPersonaResponse,
     PersonaResponseError,
     type PersonaVerdict,
-} from './PersonaResponseService';
+} from '@/services/persona/PersonaResponseService';
 
 const mockGenerateStructuredData = vi.mocked(AutonomousIntelligence.generateStructuredData);
 const mockGenerateText = vi.mocked(AutonomousIntelligence.generateText);

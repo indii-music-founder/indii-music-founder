@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ThreeDCardContainer, ThreeDCard, ThreeDCardBody, ThreeDCardItem } from './ThreeDCard'
+import { ThreeDCardContainer, ThreeDCard, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 

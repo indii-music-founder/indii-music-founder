@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAudioIntelligenceSlice, type AudioIntelligenceSlice } from '../audioIntelligenceSlice';
+import { createAudioIntelligenceSlice, type AudioIntelligenceSlice } from '@/core/store/slices/audioIntelligenceSlice';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
 
 describe('audioIntelligenceSlice Cache Invalidation & Mutations', () => {

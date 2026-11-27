@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ContractVersioningService } from './ContractVersioningService';
+import { ContractVersioningService } from '@/services/legal/ContractVersioningService';
 
 const {
     mockDoc,

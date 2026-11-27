@@ -6,10 +6,10 @@
 
 import { beforeEach, describe, expect, vi } from 'vitest';
 
-import { runVideoRendererContractSuite } from '../../../../../shared/src/testing/videoRendererSuite';
-import type { RendererContractScenario } from '../../../../../shared/src/testing/videoRendererSuite';
+import { runVideoRendererContractSuite } from '@shared/testing/videoRendererSuite';
+import type { RendererContractScenario } from '@shared/testing/videoRendererSuite';
 
-import { RenderService } from '../RenderService';
+import { RenderService } from '@/services/video/RenderService';
 
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn() }));
 vi.mock('@/services/firebase', () => ({ functions: {} }));

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGeneration } from '../VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

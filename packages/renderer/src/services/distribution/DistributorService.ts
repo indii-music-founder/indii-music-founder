@@ -24,13 +24,13 @@ import type {
   DistributorAdapter,
   DashboardRelease,
   ReleaseStatus,
-} from './types/distributor';
+} from '@/services/distribution/types/distributor';
 import type { ReleaseDeploymentDocument } from '@/types/firestore';
 
-import { distributionStore } from './DistributionPersistenceService';
+import { distributionStore } from '@/services/distribution/DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
-import { deliveryService, DeliveryResult } from './DeliveryService';
-import { currencyConversionService } from './CurrencyConversionService';
+import { deliveryService, DeliveryResult } from '@/services/distribution/DeliveryService';
+import { currencyConversionService } from '@/services/distribution/CurrencyConversionService';
 // useStore removed
 import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resilience';
 import {
@@ -39,10 +39,10 @@ import {
 } from '@/services/distribution/proprietary-ingestion/validation';
 
 // Import default adapters
-import { DistroKidAdapter } from './adapters/DistroKidAdapter';
-import { TuneCoreAdapter } from './adapters/TuneCoreAdapter';
-import { CDBabyAdapter } from './adapters/CDBabyAdapter';
-import { SymphonicAdapter } from './adapters/SymphonicAdapter';
+import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdapter';
+import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
+import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
+import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdapter';
 import { logger } from '@/utils/logger';
 
 class DistributorServiceImpl {

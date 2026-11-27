@@ -4,8 +4,8 @@
  * Copyright (c) 2026 ArtCraft Team and the PhotoCraft contributors.
  * MIT license: ./PHOTOCRAFT-LICENSE.txt
  */
-import { CutGraph } from './MaxFlow';
-import { ColorMixture } from './Gmm';
+import { CutGraph } from '@/services/canvas/segmentation/MaxFlow';
+import { ColorMixture } from '@/services/canvas/segmentation/Gmm';
 export interface CutoutPoint { x: number; y: number }
 export interface CutoutStroke { label: 'keep' | 'remove'; radius: number; points: CutoutPoint[] }
 export interface CutoutRectangle { x: number; y: number; width: number; height: number }

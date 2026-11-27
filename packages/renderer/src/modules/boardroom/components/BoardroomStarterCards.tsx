@@ -8,7 +8,7 @@ import {
     judgeBoardroomExecutiveIntent,
     type BoardroomExecutiveMission,
 } from '@/config/typesafeJudgments';
-import { BOARDROOM_MISSIONS } from '../constants/boardroomMissions';
+import { BOARDROOM_MISSIONS } from '@/modules/boardroom/constants/boardroomMissions';
 
 export interface StarterCardItem {
     id: string;

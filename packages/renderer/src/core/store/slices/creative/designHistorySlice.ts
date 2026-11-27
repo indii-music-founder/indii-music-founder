@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
-import { CanvasImage } from './creativeHistorySlice';
-import { WhiskState, CreativeControlsSlice } from './creativeControlsSlice';
+import { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
+import { WhiskState, CreativeControlsSlice } from '@/core/store/slices/creative/creativeControlsSlice';
 import { HistoryItem } from '@/core/types/history';
 import type { StoreState } from '@/core/store/types';
 

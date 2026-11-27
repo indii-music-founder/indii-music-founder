@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { STUDIO_TAGS } from '../constants';
+import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { PromptAdditiveTracker, PromptAdditiveUsage } from '@/services/creative/PromptAdditiveTracker';
 import { judgeCreativePromptAdditiveSuggestions } from '@/config/typesafeJudgments';
 

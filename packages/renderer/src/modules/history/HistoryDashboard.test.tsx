@@ -25,8 +25,8 @@ vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 vi.mock('@/lib/utils', () => ({ formatSmartDate: (ts: number) => new Date(ts).toLocaleDateString('en-US'), cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 vi.mock('@/core/store/slices/agent', () => ({}));
 
-import HistoryDashboard from './HistoryDashboard';
-import { FilterItem } from './components/FilterItem';
+import HistoryDashboard from '@/modules/history/HistoryDashboard';
+import { FilterItem } from '@/modules/history/components/FilterItem';
 
 describe('HistoryDashboard', () => {
     beforeEach(() => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BugReportDialog } from './BugReportDialog';
+import { BugReportDialog } from '@/modules/debug/BugReportDialog';
 import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
 

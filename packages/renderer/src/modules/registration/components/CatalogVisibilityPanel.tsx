@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/services/firebase';
-import { parseCatalogVisibilityState, type CatalogVisibilityState } from '../services/CatalogVisibilityState';
+import { parseCatalogVisibilityState, type CatalogVisibilityState } from '@/modules/registration/services/CatalogVisibilityState';
 
 export function CatalogVisibilityPanel({ userId }: { userId: string }) {
     const [records, setRecords] = useState<CatalogVisibilityState[]>([]);

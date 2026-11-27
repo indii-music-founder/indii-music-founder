@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
 import { webArtifactStorage } from '@/services/agent/WebArtifactStorage';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
-import { isSafeExternalAssetUrl } from '../utils/boardroomUrls';
+import { isSafeExternalAssetUrl } from '@/modules/boardroom/utils/boardroomUrls';
 
 type WorkbenchTab = 'assets' | 'artifacts' | 'canvas';
 type ArtifactRequest = { filename: string; owner?: string; target: BoardroomWorkbenchTarget; attempt: number };

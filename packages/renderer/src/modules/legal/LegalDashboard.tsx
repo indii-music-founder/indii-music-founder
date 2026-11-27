@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen, Fingerprint, ShieldAlert, Users } from 'lucide-react';
-import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
-import { MyContracts } from './components/MyContracts';
-import { CreatorProtectionCenter } from './components/CreatorProtectionCenter';
-import { ClaimsInboxTab } from './components/ClaimsInboxTab';
-import { SplitSheetGeneratorModal } from './components/SplitSheetGeneratorModal';
-import { CopyrightRegistrationModal } from './components/CopyrightRegistrationModal';
+import { DMCANoticeGenerator } from '@/modules/legal/components/DMCANoticeGenerator';
+import { MyContracts } from '@/modules/legal/components/MyContracts';
+import { CreatorProtectionCenter } from '@/modules/legal/components/CreatorProtectionCenter';
+import { ClaimsInboxTab } from '@/modules/legal/components/ClaimsInboxTab';
+import { SplitSheetGeneratorModal } from '@/modules/legal/components/SplitSheetGeneratorModal';
+import { CopyrightRegistrationModal } from '@/modules/legal/components/CopyrightRegistrationModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';

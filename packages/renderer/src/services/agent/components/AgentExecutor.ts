@@ -1,16 +1,16 @@
 import { auth, db } from '@/services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { TraceService } from '../observability/TraceService';
+import { TraceService } from '@/services/agent/observability/TraceService';
 import {
     AgentRegistryProvider,
     AgentResponse,
     AgentProgressCallback,
     type ValidAgentId
-} from '../types';
-import { PipelineContext } from './ContextPipeline';
+} from '@/services/agent/types';
+import { PipelineContext } from '@/services/agent/components/ContextPipeline';
 import { logger } from '@/utils/logger';
-import { DelegationLoopDetector } from '../LoopDetector';
-import { getFineTunedModel } from '../fine-tuned-models';
+import { DelegationLoopDetector } from '@/services/agent/LoopDetector';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**

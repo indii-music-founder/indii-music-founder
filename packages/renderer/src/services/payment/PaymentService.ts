@@ -14,7 +14,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { PaymentTransaction } from './types';
+import type { PaymentTransaction } from '@/services/payment/types';
 
 export type { PaymentTransaction };
 

@@ -3,8 +3,8 @@ import { releaseHarnessService, getReleaseHarnessRun, saveReleaseHarnessRun } fr
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { ISWCService } from '@/services/publishing/ISWCService';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 export const ReleaseHarnessTools: Record<string, AnyToolFunction> = {
   compile_release_harness: wrapTool('compile_release_harness', async (args: {

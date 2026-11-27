@@ -92,7 +92,7 @@ vi.mock('@/services/video/RenderService', () => ({
     },
 }));
 
-import { EditorTools, __resetEditorToolsCacheForTests } from '../EditorTools';
+import { EditorTools, __resetEditorToolsCacheForTests } from '@/services/agent/tools/EditorTools';
 
 describe('EditorTools (ISSUE-1416 / MIG-011)', () => {
     beforeEach(() => {

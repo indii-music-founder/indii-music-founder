@@ -1,5 +1,5 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { importWithRetry } from '@/utils/dynamicImport';

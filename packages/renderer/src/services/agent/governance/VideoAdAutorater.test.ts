@@ -9,11 +9,11 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     },
 }));
 
-vi.mock('./BrandVisionQC', () => ({
+vi.mock('@/services/agent/governance/BrandVisionQC', () => ({
     runCreativeVisionCheck: (...args: unknown[]) => mockRunCreativeVisionCheck(...args),
 }));
 
-import { VideoAdAutorater } from './VideoAdAutorater';
+import { VideoAdAutorater } from '@/services/agent/governance/VideoAdAutorater';
 
 const BRAND_KIT = {
     primaryColors: ['#FFE135', '#0B0D12'],

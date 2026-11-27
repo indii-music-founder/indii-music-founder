@@ -5,9 +5,9 @@ export type { WhiskState };
 import type { AgentMessage } from '@/core/store/slices/agent';
 export type { AgentMessage };
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
-import { INDII_MESSAGES } from './constants';
-import type { AgentIdentityCard } from './governance/AgentIdentity';
-import { AgentCard } from './a2a/AgentCard';
+import { INDII_MESSAGES } from '@/services/agent/constants';
+import type { AgentIdentityCard } from '@/services/agent/governance/AgentIdentity';
+import { AgentCard } from '@/services/agent/a2a/AgentCard';
 export type { AgentCard };
 import type { Directive } from '@/services/directive/DirectiveTypes';
 export type { Directive };
@@ -370,7 +370,7 @@ export interface ToolFunctionResult {
     metadata?: Record<string, unknown>;
 }
 
-import type { ToolExecutionContext } from './ToolExecutionContext';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 
 export interface DelegateTaskArgs extends ToolFunctionArgs {
     targetAgentId: ValidAgentId;

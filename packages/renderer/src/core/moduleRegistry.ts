@@ -16,7 +16,7 @@ import {
     Music, Palette, PenTool, Scale, Server, Share2, Shield, ShoppingBag, Smartphone, Star, StickyNote,
     Target, Terminal, Users, type LucideIcon,
 } from 'lucide-react';
-import { type ModuleId } from './constants';
+import { type ModuleId } from '@/core/constants';
 
 export type ModuleGroup =
     | "Manager's Office"

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AudioAnalysisService } from './AudioAnalysisService';
+import { AudioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { ProvenanceSchema } from '@shared/schemas/musicEntity';
 
 // Polyfill Blob.arrayBuffer if missing (Node environment)

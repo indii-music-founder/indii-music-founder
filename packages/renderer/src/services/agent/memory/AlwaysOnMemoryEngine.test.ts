@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AlwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
-import { memoryIngestionPipeline } from './MemoryIngestionPipeline';
-import { MemoryConsolidator } from './MemoryConsolidator';
+import { AlwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { memoryIngestionPipeline } from '@/services/agent/memory/MemoryIngestionPipeline';
+import { MemoryConsolidator } from '@/services/agent/memory/MemoryConsolidator';
 
 // ============================================================================
 // MOCKS
 // ============================================================================
 
 // Mock Firebase
-vi.mock('../../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     db: {},
     auth: { currentUser: { uid: 'test-user-123' } },
 }));
@@ -67,7 +67,7 @@ const { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedC
     return { mockGenerateText, mockGenerateContent, mockEmbedContent, mockBatchEmbedContents };
 });
 
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: mockGenerateText,
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

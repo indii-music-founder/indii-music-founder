@@ -6,7 +6,7 @@ import { SFTPConfig, SFTPReport } from '@/types/distribution';
 import { credentialService } from '@/services/security/CredentialService';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { DistributorId } from '@/services/distribution/types/distributor';
-import ConnectDistributorModal from './ConnectDistributorModal';
+import ConnectDistributorModal from '@/modules/distribution/components/ConnectDistributorModal';
 import { DIRECT_DSP_PROFILES } from '@/core/config/distributors';
 import { logger } from '@/utils/logger';
 

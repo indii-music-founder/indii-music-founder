@@ -1,4 +1,4 @@
-import { IngestionMapper } from './IngestionMapper';
+import { IngestionMapper } from '@/services/distribution/proprietary-ingestion/IngestionMapper';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 

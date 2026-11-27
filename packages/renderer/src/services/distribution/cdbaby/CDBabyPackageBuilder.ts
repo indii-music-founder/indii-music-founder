@@ -1,7 +1,7 @@
 import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { ReleaseAssets } from '../types/distributor';
+import { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 
 /**

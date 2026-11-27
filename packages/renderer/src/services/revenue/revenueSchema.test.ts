@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     RevenueEntrySchema,
     EarningsSummarySchema
-} from './schema';
+} from '@/services/revenue/schema';
 
 describe('Revenue Schemas', () => {
     describe('RevenueEntrySchema', () => {

@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PrintSpecDialog } from './PrintSpecDialog';
+import { PrintSpecDialog } from '@/components/ui/PrintSpecDialog';
 import type { PrintPlan } from '@/services/print/PrintSpec';
 
 // Structural component checks only; production acceptance uses the signed-in browser.

@@ -21,7 +21,7 @@ import type {
   TakedownRoute,
   VoiceLikenessConsentRecord,
   AuthorizedReplicaLicense,
-} from './types';
+} from '@/services/creator-protection/types';
 
 export const CREATOR_PROTECTION_SOURCES: LegalSourceSnapshot[] = [
   {

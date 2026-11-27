@@ -24,7 +24,7 @@ vi.mock('@shared/share/shareFile', () => ({
     shareOrDownloadImage: mocks.shareOrDownloadImage,
 }));
 
-import { PreSaveLandingPage } from './PreSaveLandingPage';
+import { PreSaveLandingPage } from '@/modules/marketing/components/PreSaveLandingPage';
 
 describe('PreSaveLandingPage', () => {
     const originalShare = navigator.share;

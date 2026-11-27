@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VALID_AGENT_IDS } from '../types';
+import { VALID_AGENT_IDS } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // We need to test with different feature flag values, so we mock import.meta.env
@@ -21,7 +21,7 @@ describe('Fine-Tuned Model Registry', () => {
 
     it('should fail loudly when the tuned-agent flag is explicitly disabled', async () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'false');
-        const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
+        const { getFineTunedModel } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
         expect(() => getFineTunedModel('generalist')).toThrow(
             'Specialized agents are unavailable because tuned routing is disabled'
@@ -30,7 +30,7 @@ describe('Fine-Tuned Model Registry', () => {
 
     it('should return endpoint strings for every valid agent when feature flag is enabled', async () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'true');
-        const { getFineTunedModel, FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('../fine-tuned-models'));
+        const { getFineTunedModel, FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
         expect(Object.keys(FINE_TUNED_MODEL_REGISTRY).sort()).toEqual([...VALID_AGENT_IDS].sort());
 
@@ -48,7 +48,7 @@ describe('Fine-Tuned Model Registry', () => {
 
     it('should have all endpoint strings in the correct Vertex Autonomous format', async () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'true');
-        const { FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('../fine-tuned-models'));
+        const { FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
         const endpointPattern = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
@@ -59,7 +59,7 @@ describe('Fine-Tuned Model Registry', () => {
     });
 
     it('should cover all canonical agent IDs', async () => {
-        const { FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('../fine-tuned-models'));
+        const { FINE_TUNED_MODEL_REGISTRY } = await importWithRetry(() => import('@/services/agent/fine-tuned-models'));
 
         for (const agentId of VALID_AGENT_IDS) {
             expect(FINE_TUNED_MODEL_REGISTRY).toHaveProperty(agentId);

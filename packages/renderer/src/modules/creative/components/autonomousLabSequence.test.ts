@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getValidatedSequenceDurations } from './autonomousLabSequence';
+import { getValidatedSequenceDurations } from '@/modules/creative/components/autonomousLabSequence';
 
 describe('getValidatedSequenceDurations', () => {
     it('rejects an empty sequence', () => {

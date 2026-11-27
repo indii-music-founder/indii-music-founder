@@ -1,13 +1,13 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import SocialFeed from './SocialFeed';
-import { useSocial } from '../hooks/useSocial';
+import SocialFeed from '@/modules/social/components/SocialFeed';
+import { useSocial } from '@/modules/social/hooks/useSocial';
 import { useStore } from '@/core/store';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 
 // Mock the dependencies
-vi.mock('../hooks/useSocial');
+vi.mock('@/modules/social/hooks/useSocial');
 vi.mock('@/core/store');
 vi.mock('@/services/marketplace/MarketplaceService');
 
@@ -29,7 +29,7 @@ vi.mock('@/modules/marketplace/components/ProductCard', () => ({
     default: () => <div data-testid="product-card" />,
 }));
 
-vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
+vi.mock('@/modules/creative/components/BrandAssetsDrawer', () => ({
     default: ({ onSelect, onClose }: { onSelect?: (asset: { url: string; description?: string }) => void; onClose: () => void }) => (
         <div data-testid="brand-assets-drawer">
             <button onClick={() => onSelect?.({ url: 'https://example.com/brand-asset.jpg', description: 'Brand asset' })}>

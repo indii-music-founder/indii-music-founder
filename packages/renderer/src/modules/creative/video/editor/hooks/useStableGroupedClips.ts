@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/refs */
 import { useRef, useMemo, useEffect } from 'react';
-import { VideoClip } from '../../store/videoEditorStore';
-import { groupClipsByTrack } from '../utils/timelineUtils';
+import { VideoClip } from '@/modules/creative/video/store/videoEditorStore';
+import { groupClipsByTrack } from '@/modules/creative/video/editor/utils/timelineUtils';
 
 /**
  * A hook that groups clips by track ID but maintains referential stability of the arrays

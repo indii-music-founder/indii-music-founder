@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
 import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
-import { buildAgentSessionState, type AgentSessionSlice } from './agentSessionSlice';
+import { buildAgentSessionState, type AgentSessionSlice } from '@/core/store/slices/agent/agentSessionSlice';
 
 const mocks = vi.hoisted(() => ({ clearMessages: vi.fn(), error: vi.fn() }));
 vi.mock('@/services/agent/SessionService', () => ({ sessionService: { clearMessages: mocks.clearMessages } }));

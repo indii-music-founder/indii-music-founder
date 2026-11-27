@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TaxFormCollection } from './TaxFormCollection';
+import { TaxFormCollection } from '@/modules/finance/components/TaxFormCollection';
 import { TaxFormService, type TaxCollaborator } from '@/services/finance/TaxFormService';
 
 vi.mock('motion/react', () => ({

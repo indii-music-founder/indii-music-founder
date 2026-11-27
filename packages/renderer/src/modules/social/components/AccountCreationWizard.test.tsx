@@ -14,9 +14,9 @@ vi.mock('@/core/store', () => {
     const useStore = Object.assign(vi.fn(), { getState: mocks.getState });
     return { useStore };
 });
-vi.mock('../../creative/components/BrandAssetsDrawer', () => ({ default: () => null }));
+vi.mock('@/modules/creative/components/BrandAssetsDrawer', () => ({ default: () => null }));
 
-import AccountCreationWizard from './AccountCreationWizard';
+import AccountCreationWizard from '@/modules/social/components/AccountCreationWizard';
 
 const draftKey = 'indii:social-account-setup:user-1:project-1';
 

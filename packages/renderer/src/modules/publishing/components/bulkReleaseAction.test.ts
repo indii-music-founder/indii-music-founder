@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeBulkReleaseResult, runBulkReleaseAction } from './bulkReleaseAction';
+import { describeBulkReleaseResult, runBulkReleaseAction } from '@/modules/publishing/components/bulkReleaseAction';
 
 describe('runBulkReleaseAction', () => {
     it('keeps the releases that were changed when another one fails', async () => {

@@ -4,11 +4,11 @@
  * The Intelligence Analytics Specialist - Expert in streaming metrics, audience profiles, and release velocity curves.
  */
 
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { AnalyticsTools } from '../tools/AnalyticsTools';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { AnalyticsTools } from '@/services/agent/tools/AnalyticsTools';
 import systemPrompt from '@agents/analytics/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 

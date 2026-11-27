@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { agentFirebaseConnector } from '../AgentFirebaseConnector';
+import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { setDoc, doc } from 'firebase/firestore';
 

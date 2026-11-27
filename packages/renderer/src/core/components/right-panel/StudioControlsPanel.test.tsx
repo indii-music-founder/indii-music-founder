@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import StudioControlsPanel from './StudioControlsPanel';
-import { useStore } from '../../store';
+import StudioControlsPanel from '@/core/components/right-panel/StudioControlsPanel';
+import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 const billingMocks = vi.hoisted(() => ({
@@ -16,7 +16,7 @@ vi.mock('@/services/billing/CostControlService', () => ({
 }));
 
 // Mock store
-vi.mock('../../store', () => {
+vi.mock('@/core/store', () => {
     const mockUseStore = vi.fn();
     (mockUseStore as any).setState = vi.fn();
     (mockUseStore as any).getState = vi.fn(() => ({}));
@@ -34,7 +34,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock sub-components
-vi.mock('../../../modules/creative/components/CreativeGallery', () => ({
+vi.mock('@/modules/creative/components/CreativeGallery', () => ({
     default: () => <div data-testid="creative-gallery">Creative Gallery Content</div>,
 }));
 

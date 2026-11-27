@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { buildLiveMomentNote, collectRemoteAgentResponses, isValidCoordinate, MAX_REMOTE_AGENT_RESPONSES, shouldProcessStudioCommand } from '../useRemoteCommandListener';
+import { buildLiveMomentNote, collectRemoteAgentResponses, isValidCoordinate, MAX_REMOTE_AGENT_RESPONSES, shouldProcessStudioCommand } from '@/hooks/useRemoteCommandListener';
 import { resolveRemoteConversationMode } from '@/services/agent/AgentService';
 import { useStore } from '@/core/store';
 

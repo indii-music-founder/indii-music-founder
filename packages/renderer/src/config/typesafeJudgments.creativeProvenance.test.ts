@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ call: vi.fn(), enabled: vi.fn(() => true) }));
 vi.mock('firebase/functions', () => ({ getFunctions: () => ({}), httpsCallable: () => mocks.call }));
 vi.mock('@/config/featureFlags', () => ({ featureFlags: { isEnabled: mocks.enabled }, FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' } }));
-import { judgeCreativeStudioConfigPreset, deterministicCreativeStudioConfigFallback, judgePromptImprovementIntent, deterministicPromptImprovementFallback, __resetJudgmentCooldownForTests } from './typesafeJudgments';
+import { judgeCreativeStudioConfigPreset, deterministicCreativeStudioConfigFallback, judgePromptImprovementIntent, deterministicPromptImprovementFallback, __resetJudgmentCooldownForTests } from '@/config/typesafeJudgments';
 
 // Structural evidence contracts, not model calibration or genuine generation acceptance.
 describe('creative judgment provenance', () => {

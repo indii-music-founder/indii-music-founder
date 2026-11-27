@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
 import { RateLimiter } from '@/services/intelligence/RateLimiter';
-import { EditDocumentWithAnnotationsTool } from './EditDocumentWithAnnotationsTool';
+import { EditDocumentWithAnnotationsTool } from '@/services/agent/tools/EditDocumentWithAnnotationsTool';
 import { logger } from '@/utils/logger';
 
 // The tool routes content through the backend streaming endpoint via fetch

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PlatformData } from './types';
+import type { PlatformData } from '@/services/analytics/types';
 
 const spotifyPlatform: PlatformData = {
     platform: 'spotify',
@@ -43,11 +43,11 @@ const releaseCatalogServiceMock = vi.hoisted(() => ({
     listCurrentUserReleases: vi.fn(),
 }));
 
-vi.mock('./SpotifyService', () => ({ spotifyService: spotifyServiceMock }));
-vi.mock('./YouTubeAnalyticsService', () => ({ youTubeAnalyticsService: youtubeServiceMock }));
-vi.mock('./TikTokAnalyticsService', () => ({ tikTokAnalyticsService: tiktokServiceMock }));
-vi.mock('./InstagramAnalyticsService', () => ({ instagramAnalyticsService: instagramServiceMock }));
-vi.mock('./AppleMusicService', () => ({ appleMusicService: appleMusicServiceMock }));
+vi.mock('@/services/analytics/SpotifyService', () => ({ spotifyService: spotifyServiceMock }));
+vi.mock('@/services/analytics/YouTubeAnalyticsService', () => ({ youTubeAnalyticsService: youtubeServiceMock }));
+vi.mock('@/services/analytics/TikTokAnalyticsService', () => ({ tikTokAnalyticsService: tiktokServiceMock }));
+vi.mock('@/services/analytics/InstagramAnalyticsService', () => ({ instagramAnalyticsService: instagramServiceMock }));
+vi.mock('@/services/analytics/AppleMusicService', () => ({ appleMusicService: appleMusicServiceMock }));
 vi.mock('@/services/distribution/ReleaseCatalogService', async (importOriginal) => {
     const original = await importOriginal<typeof import('@/services/distribution/ReleaseCatalogService')>();
     return { ...original, releaseCatalogService: releaseCatalogServiceMock };
@@ -102,7 +102,7 @@ describe('PlatformDataService attribution boundaries', () => {
 
     it('does not fabricate Spotify artist metrics or a zero-filled history', async () => {
         appleMusicServiceMock.buildPlatformData.mockResolvedValue(null);
-        const { PlatformDataService } = await import('./PlatformDataService');
+        const { PlatformDataService } = await import('@/services/analytics/PlatformDataService');
 
         const catalogue = await new PlatformDataService().buildCatalogue();
 
@@ -132,7 +132,7 @@ describe('PlatformDataService attribution boundaries', () => {
             completionRate: 0.75,
             creatorCount: 0,
         } satisfies PlatformData);
-        const { PlatformDataService } = await import('./PlatformDataService');
+        const { PlatformDataService } = await import('@/services/analytics/PlatformDataService');
 
         const catalogue = await new PlatformDataService().buildCatalogue();
 

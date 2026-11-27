@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isUserCancellation, errorText } from './flowFailure';
+import { isUserCancellation, errorText } from '@/services/agent/flowFailure';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 describe('isUserCancellation (ISSUE-1667)', () => {

@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import IntelligenceCampaignModal from './IntelligenceCampaignModal';
+import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
-import { GeneratedCampaignPlan } from '../types';
+import { GeneratedCampaignPlan } from '@/modules/marketing/types';
 import userEvent from '@testing-library/user-event';
 
 // --- Mocks ---

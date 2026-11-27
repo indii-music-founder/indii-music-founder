@@ -1,12 +1,12 @@
-import { artworkTransform, artworkExportDimensions } from './ArtworkGeometry';
-export { artworkTransform } from './ArtworkGeometry';
+import { artworkTransform, artworkExportDimensions } from '@/services/canvas/ArtworkGeometry';
+export { artworkTransform } from '@/services/canvas/ArtworkGeometry';
 import * as fabric from 'fabric';
 import { auth } from '@/services/firebase';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { adjustmentsToFilters, type CanvasDoc, type CanvasLayer, type RasterLayer } from './CanvasDoc';
-import { descriptorsToFabricFilters } from './fabricFilters';
-import { rasterizeTextLayer } from './textLayerRaster';
-import { adjustArtworkPixels, applyArtworkMask, effectiveAdjustments, finishArtworkPixels } from './ArtworkPixels';
+import { adjustmentsToFilters, type CanvasDoc, type CanvasLayer, type RasterLayer } from '@/services/canvas/CanvasDoc';
+import { descriptorsToFabricFilters } from '@/services/canvas/fabricFilters';
+import { rasterizeTextLayer } from '@/services/canvas/textLayerRaster';
+import { adjustArtworkPixels, applyArtworkMask, effectiveAdjustments, finishArtworkPixels } from '@/services/canvas/ArtworkPixels';
 
 function surface(width: number, height: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');

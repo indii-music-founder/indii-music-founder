@@ -6,7 +6,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Package, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
-import { useInventory } from '../hooks/useInventory';
+import { useInventory } from '@/modules/merchandise/hooks/useInventory';
 
 // Data comes from real Firestore hook.
 // In production, wire to a merch provider API (Printful/Printify/Shopify) to populate Firestore.

@@ -9,7 +9,7 @@ import {
     isStudioExecutorSurface,
     parseMobileShortcutAction,
     shouldUseMobileRemoteSurface,
-} from './routing';
+} from '@/modules/mobile-remote/routing';
 
 describe('mobile remote routing contract', () => {
     it('accepts only recognized quick capture and vault actions', () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AdaptiveWorkspace } from './AdaptiveWorkspace';
+import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
 let resizeCallback: ResizeObserverCallback | undefined;
 

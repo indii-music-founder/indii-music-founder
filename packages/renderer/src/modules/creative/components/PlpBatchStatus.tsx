@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, LoaderCircle, RefreshCw, Rocket, Sparkles } from 'lucide-react';
-import { getEligiblePlpSlots, getPlpBatchCounts, type PlpBatch } from '../plpBatch';
+import { getEligiblePlpSlots, getPlpBatchCounts, type PlpBatch } from '@/modules/creative/plpBatch';
 import { judgePlpVariantAdFormat, type PlpVariantAdVerdict } from '@/config/typesafeJudgments';
 
 interface PlpBatchStatusProps {

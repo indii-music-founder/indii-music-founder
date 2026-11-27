@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NotesTools } from './NotesTools';
-import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
+import { NotesTools } from '@/services/agent/tools/NotesTools';
+import { SUPERPOWER_TOOLS } from '@/services/agent/definitions/SuperpowerTools';
 import { useStore } from '@/core/store';
 
 vi.mock('@/core/store', () => ({

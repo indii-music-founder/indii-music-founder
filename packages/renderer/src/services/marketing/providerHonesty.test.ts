@@ -5,7 +5,7 @@
  * zero-filled analytics, fake revocations).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MarketingProviderUnavailableError } from './providerErrors';
+import { MarketingProviderUnavailableError } from '@/services/marketing/providerErrors';
 
 const httpsCallableMock = vi.fn();
 
@@ -15,9 +15,9 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: (...args: unknown[]) => httpsCallableMock(...args),
 }));
 
-import { SMSMarketingService } from './SMSMarketingService';
-import { EmailMarketingService } from './EmailMarketingService';
-import { SocialAutoPosterService } from './SocialAutoPosterService';
+import { SMSMarketingService } from '@/services/marketing/SMSMarketingService';
+import { EmailMarketingService } from '@/services/marketing/EmailMarketingService';
+import { SocialAutoPosterService } from '@/services/marketing/SocialAutoPosterService';
 
 const member = { phone: '+15550001111', isSuperfan: true, subscribedAt: 0 };
 const emailMember = { email: 'fan@example.com', subscribedAt: 0 };

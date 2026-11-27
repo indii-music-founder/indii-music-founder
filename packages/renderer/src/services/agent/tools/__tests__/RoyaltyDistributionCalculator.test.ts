@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FinanceTools } from '../FinanceTools';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 
 describe('FinanceTools - royalty_distribution_calculator', () => {
     const calc = FinanceTools.royalty_distribution_calculator;

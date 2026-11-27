@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FraudDetectionService } from './FraudDetectionService';
+import { FraudDetectionService } from '@/services/security/FraudDetectionService';
 
 // Mock Firebase Firestore
 const mockAddDoc = vi.fn();

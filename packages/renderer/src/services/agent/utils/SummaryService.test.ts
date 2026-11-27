@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AutonomousIntelligence } from '../../intelligence/AutonomousIntelligence';
-import { SummaryService } from './SummaryService';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { SummaryService } from '@/services/agent/utils/SummaryService';
 
-vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: { generateContent: vi.fn() },
 }));
 

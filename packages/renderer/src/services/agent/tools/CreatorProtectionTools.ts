@@ -7,8 +7,8 @@ import {
   saveReplicaIncident,
   saveTakedownCase,
 } from '@/services/creator-protection';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import type { HarnessEvidenceRef } from '@/services/business-harness';
 
 export const CreatorProtectionTools: Record<string, AnyToolFunction> = {

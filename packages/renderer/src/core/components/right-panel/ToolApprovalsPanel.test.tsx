@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import ToolApprovalsPanel from './ToolApprovalsPanel';
+import ToolApprovalsPanel from '@/core/components/right-panel/ToolApprovalsPanel';
 import { toolApprovalService } from '@/services/agent/governance/ToolApprovalService';
 
 const approvalItems = vi.hoisted(() => ({ current: [] as unknown[], warning: vi.fn(), success: vi.fn(), error: vi.fn() }));

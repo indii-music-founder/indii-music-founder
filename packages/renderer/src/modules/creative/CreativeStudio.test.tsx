@@ -1,24 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import CreativeStudio from './CreativeStudio';
+import CreativeStudio from '@/modules/creative/CreativeStudio';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 // Mock dependencies
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
-vi.mock('./components/CreativeNavbar', () => ({ default: () => <div data-testid="creative-navbar" /> }));
-vi.mock('./components/CreativeGallery', () => ({ default: () => <div data-testid="creative-gallery" /> }));
-vi.mock('./components/CanvasEditor/CanvasEditor', () => ({ CanvasEditor: () => <div data-testid="canvas-editor-mock" /> }));
-vi.mock('./components/DirectGenerationTab', () => ({ default: () => <div data-testid="direct-generation-tab" /> }));
+vi.mock('@/modules/creative/components/CreativeNavbar', () => ({ default: () => <div data-testid="creative-navbar" /> }));
+vi.mock('@/modules/creative/components/CreativeGallery', () => ({ default: () => <div data-testid="creative-gallery" /> }));
+vi.mock('@/modules/creative/components/CanvasEditor/CanvasEditor', () => ({ CanvasEditor: () => <div data-testid="canvas-editor-mock" /> }));
+vi.mock('@/modules/creative/components/DirectGenerationTab', () => ({ default: () => <div data-testid="direct-generation-tab" /> }));
 vi.mock('../../core/components/AgentWindow', () => ({ default: () => <div data-testid="agent-window" /> }));
-vi.mock('./components/InfiniteCanvas', () => ({ default: () => <div data-testid="infinite-canvas" /> }));
+vi.mock('@/modules/creative/components/InfiniteCanvas', () => ({ default: () => <div data-testid="infinite-canvas" /> }));
 vi.mock('./components/Showroom', () => ({ default: () => <div data-testid="showroom" /> }));
 vi.mock('../video/VideoWorkflow', () => ({ default: () => <div data-testid="video-workflow" /> }));
 
 let capturedOnSendToWorkflow: any = null;
 let capturedOnClose: any = null;
-vi.mock('./components/CreativeCanvas', () => ({
+vi.mock('@/modules/creative/components/CreativeCanvas', () => ({
     default: (props: any) => {
         capturedOnSendToWorkflow = props.onSendToWorkflow;
         capturedOnClose = props.onClose;

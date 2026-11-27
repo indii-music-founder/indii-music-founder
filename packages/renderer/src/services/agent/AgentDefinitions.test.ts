@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { BrandAgent } from './definitions/BrandAgent';
-import { MarketingAgent } from './definitions/MarketingAgent';
-import { freezeAgentConfig } from './FreezeDiagnostic';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
+import { MarketingAgent } from '@/services/agent/definitions/MarketingAgent';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
 
 // Freeze the schema early to catch mutations
 freezeAgentConfig(BrandAgent);

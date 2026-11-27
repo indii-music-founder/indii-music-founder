@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { OptimizedImage } from './OptimizedImage';
+import { OptimizedImage } from '@/core/components/ui/OptimizedImage';
 
 describe('OptimizedImage', () => {
     it('loads a fallback, then retries a changed primary source', () => {

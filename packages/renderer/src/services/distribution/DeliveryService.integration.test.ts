@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DeliveryService } from './DeliveryService';
+import { DeliveryService } from '@/services/distribution/DeliveryService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import path from 'path';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { AGENT_CONFIGS } from './agentConfig';
-import { BrandAgent } from './definitions/BrandAgent';
+import { AGENT_CONFIGS } from '@/services/agent/agentConfig';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
 
 describe('Schema Diagnostic', () => {
     it('should have correct required parameters for BrandAgent in AGENT_CONFIGS', () => {

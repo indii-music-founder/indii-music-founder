@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { Expense } from '../schemas';
-import { HiddenCostHarnessPanel } from './HiddenCostHarnessPanel';
+import type { Expense } from '@/modules/finance/schemas';
+import { HiddenCostHarnessPanel } from '@/modules/finance/components/HiddenCostHarnessPanel';
 
 const expense = (amount: number, paymentStatus?: Expense['paymentStatus']): Expense => ({
     id: `${amount}-${paymentStatus ?? 'legacy'}`,

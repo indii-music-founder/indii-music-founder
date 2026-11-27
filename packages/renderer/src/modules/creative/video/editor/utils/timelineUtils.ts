@@ -1,5 +1,5 @@
-import { VideoClip } from '../../store/videoEditorStore';
-import { PIXELS_PER_FRAME } from '../constants';
+import { VideoClip } from '@/modules/creative/video/store/videoEditorStore';
+import { PIXELS_PER_FRAME } from '@/modules/creative/video/editor/constants';
 
 export const groupClipsByTrack = (clips: VideoClip[]): Record<string, VideoClip[]> => {
     const grouped: Record<string, VideoClip[]> = {};

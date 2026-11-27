@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { THEME_PALETTES } from '@/config/typesafeJudgments';
-import { deriveThemeDeterministic } from './DynamicThemeService';
+import { deriveThemeDeterministic } from '@/services/theme/DynamicThemeService';
 
 describe('deriveThemeDeterministic', () => {
     it('uses distinct editorial and analog palettes for electronic and retro metadata', () => {

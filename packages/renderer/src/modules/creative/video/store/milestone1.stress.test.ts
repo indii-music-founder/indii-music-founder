@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useVideoEditorStore, type VideoProject } from './videoEditorStore';
-import { easeValue, interpolateKeyframeValue, getKeyframeColor } from '../editor/utils/keyframeUtils';
+import { useVideoEditorStore, type VideoProject } from '@/modules/creative/video/store/videoEditorStore';
+import { easeValue, interpolateKeyframeValue, getKeyframeColor } from '@/modules/creative/video/editor/utils/keyframeUtils';
 import type { IndiiVideoKeyframe } from '@indii/shared';
 import { vi } from 'vitest';
 

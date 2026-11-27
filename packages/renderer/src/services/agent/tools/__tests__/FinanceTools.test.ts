@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FinanceTools } from '../FinanceTools';
+import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getFineTunedModel } from '../../fine-tuned-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock Dependencies

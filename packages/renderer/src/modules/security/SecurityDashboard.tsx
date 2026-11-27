@@ -1,9 +1,9 @@
 import React from 'react';
 import { Shield, Key, Activity, Lock } from 'lucide-react';
-import { VisualVerificationsPane } from './VisualVerificationsPane';
-import { AgentEncryptionPane } from './AgentEncryptionPane';
-import { ApiCredentialsPane } from './ApiCredentialsPane';
-import { AccessControlPane } from './AccessControlPane';
+import { VisualVerificationsPane } from '@/modules/security/VisualVerificationsPane';
+import { AgentEncryptionPane } from '@/modules/security/AgentEncryptionPane';
+import { ApiCredentialsPane } from '@/modules/security/ApiCredentialsPane';
+import { AccessControlPane } from '@/modules/security/AccessControlPane';
 import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 export default function SecurityDashboard() {

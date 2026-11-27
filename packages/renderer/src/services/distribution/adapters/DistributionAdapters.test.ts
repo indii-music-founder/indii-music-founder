@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
-import { SymphonicAdapter } from './SymphonicAdapter';
-import { DistroKidAdapter } from './DistroKidAdapter';
-import { TuneCoreAdapter } from './TuneCoreAdapter';
-import { CDBabyAdapter } from './CDBabyAdapter';
-import { BelieveAdapter } from './BelieveAdapter';
-import { OnerpmAdapter } from './OnerpmAdapter';
-import { UnitedMastersAdapter } from './UnitedMastersAdapter';
+import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdapter';
+import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdapter';
+import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
+import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
+import { BelieveAdapter } from '@/services/distribution/adapters/BelieveAdapter';
+import { OnerpmAdapter } from '@/services/distribution/adapters/OnerpmAdapter';
+import { UnitedMastersAdapter } from '@/services/distribution/adapters/UnitedMastersAdapter';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
-import { ReleaseAssets } from '../types/distributor';
+import { ReleaseAssets } from '@/services/distribution/types/distributor';
 
 // Mock Distribution Store (Persistence)
 // This is critical to prevent tests from hitting real Firestore and failing with permissions errors
-vi.mock('../DistributionPersistenceService', () => {
+vi.mock('@/services/distribution/DistributionPersistenceService', () => {
     return {
         distributionStore: {
             createDeployment: vi.fn().mockResolvedValue({ id: 'mock-deployment-id' }),
@@ -45,7 +45,7 @@ describe('Distributor adapter takedown honesty', () => {
 });
 
 // Mock Earnings Service (used by adapters now)
-vi.mock('../EarningsService', () => {
+vi.mock('@/services/distribution/EarningsService', () => {
     return {
         earningsService: {
             getEarnings: vi.fn().mockResolvedValue(null),

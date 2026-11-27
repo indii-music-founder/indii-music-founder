@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { APPROVED_MODELS, ModelIdSchema } from '../intelligence-models';
+import { APPROVED_MODELS, ModelIdSchema } from '@/core/config/intelligence-models';
 
 describe('Intelligence Model Validation', () => {
     it('should have only valid model IDs in APPROVED_MODELS', () => {

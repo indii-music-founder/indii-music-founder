@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AnalyticsAgent } from './AnalyticsAgent';
+import { AnalyticsAgent } from '@/services/agent/definitions/AnalyticsAgent';
 
 // Mock the prompt import which uses Vite's ?raw
 vi.mock('@agents/analytics/prompt.md?raw', () => ({

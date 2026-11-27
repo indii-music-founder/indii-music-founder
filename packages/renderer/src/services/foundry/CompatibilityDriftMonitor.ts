@@ -2,7 +2,7 @@ import {
   CompatibilityDriftReport,
   FormatForensicsReport
 } from '@indii/shared';
-import { FormatForensicsEngine } from './FormatForensicsEngine';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 import { judgeStatementColumnLoss } from '@/config/typesafeJudgments';
 
 export class CompatibilityDriftMonitor {

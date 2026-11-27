@@ -1,17 +1,17 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EarningsDashboard } from './EarningsDashboard';
-import { useFinance } from '../hooks/useFinance';
+import { EarningsDashboard } from '@/modules/finance/components/EarningsDashboard';
+import { useFinance } from '@/modules/finance/hooks/useFinance';
 
 // Mock the hook
-vi.mock('../hooks/useFinance');
+vi.mock('@/modules/finance/hooks/useFinance');
 
 // Mock child components
-vi.mock('./RevenueChart', () => ({
+vi.mock('@/modules/finance/components/RevenueChart', () => ({
     RevenueChart: () => <div data-testid="revenue-chart">Revenue Chart</div>
 }));
-vi.mock('./EarningsTable', () => ({
+vi.mock('@/modules/finance/components/EarningsTable', () => ({
     EarningsTable: () => <div data-testid="earnings-table">Earnings Table</div>
 }));
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from './instagramComposer';
+import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from '@/modules/social/instagramComposer';
 
 const feedImage = { publishUrl: 'https://cdn.example.test/feed.png', width: 1080, height: 1350 };
 

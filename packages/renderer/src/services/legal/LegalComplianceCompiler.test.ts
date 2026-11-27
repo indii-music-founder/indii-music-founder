@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LegalComplianceCompiler } from './LegalComplianceCompiler';
+import { LegalComplianceCompiler } from '@/services/legal/LegalComplianceCompiler';
 
 describe('LegalComplianceCompiler', () => {
   const compiler = new LegalComplianceCompiler();

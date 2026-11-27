@@ -5,10 +5,10 @@ const { createExecution, getExecution, resumeExecution } = vi.hoisted(() => ({
     getExecution: vi.fn(),
     resumeExecution: vi.fn(),
 }));
-vi.mock('./WorkflowStateService', () => ({ workflowStateService: { createExecution, getExecution, resumeExecution } }));
+vi.mock('@/services/agent/WorkflowStateService', () => ({ workflowStateService: { createExecution, getExecution, resumeExecution } }));
 vi.mock('@/utils/logger', () => ({ logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() } }));
 
-import { OrchestrationService } from './OrchestrationService';
+import { OrchestrationService } from '@/services/agent/OrchestrationService';
 
 describe('OrchestrationService', () => {
     const service = new OrchestrationService();

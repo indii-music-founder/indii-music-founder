@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { InputSanitizer } from './InputSanitizer';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 
 describe('InputSanitizer', () => {
     describe('sanitize', () => {

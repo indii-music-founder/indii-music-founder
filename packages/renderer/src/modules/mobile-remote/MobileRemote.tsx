@@ -35,22 +35,22 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { getRemoteConnectionPhase } from './RemoteConnectionState';
-import { isIpadOrTabletDevice, isRemoteSurfaceDevice, parseMobileShortcutAction } from './routing';
-import IpadSurfacePrompt, { IPAD_REMOTE_PROMPT_KEY } from './components/IpadSurfacePrompt';
+import { getRemoteConnectionPhase } from '@/modules/mobile-remote/RemoteConnectionState';
+import { isIpadOrTabletDevice, isRemoteSurfaceDevice, parseMobileShortcutAction } from '@/modules/mobile-remote/routing';
+import IpadSurfacePrompt, { IPAD_REMOTE_PROMPT_KEY } from '@/modules/mobile-remote/components/IpadSurfacePrompt';
 import { useMobile } from '@/hooks/useMobile';
 
 // Helper for haptic feedback
-export { triggerHaptic } from './haptics';
-import { triggerHaptic } from './haptics';
+export { triggerHaptic } from '@/modules/mobile-remote/haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 
 // Lazy load sub-components for performance on remote devices
-const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
-const EncounterFeedView = lazy(() => import('./components/EncounterFeedView'));
-const StreamView = lazy(() => import('./components/StreamView'));
-const SettingsView = lazy(() => import('./components/SettingsView'));
-const StudioWorkView = lazy(() => import('./components/StudioWorkView'));
-const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
+const QuickCaptureView = lazy(() => import('@/modules/mobile-remote/components/QuickCaptureView'));
+const EncounterFeedView = lazy(() => import('@/modules/mobile-remote/components/EncounterFeedView'));
+const StreamView = lazy(() => import('@/modules/mobile-remote/components/StreamView'));
+const SettingsView = lazy(() => import('@/modules/mobile-remote/components/SettingsView'));
+const StudioWorkView = lazy(() => import('@/modules/mobile-remote/components/StudioWorkView'));
+const ApprovalQueue = lazy(() => import('@/modules/mobile-remote/components/ApprovalQueue'));
 const RoadMode = lazy(() =>
   import('@/modules/touring/components/RoadMode').then(module => ({ default: module.RoadMode }))
 );

@@ -5,8 +5,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
-import { TrackListEditor } from './BrandSubComponents';
-import type { BrandManagerTabProps, TrackEntry } from './types';
+import { TrackListEditor } from '@/modules/marketing/components/brand-manager/BrandSubComponents';
+import type { BrandManagerTabProps, TrackEntry } from '@/modules/marketing/components/brand-manager/types';
 
 interface ReleasePanelProps extends BrandManagerTabProps {}
 

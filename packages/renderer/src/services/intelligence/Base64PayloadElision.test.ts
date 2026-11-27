@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { elideBase64Payloads } from './Base64PayloadElision';
+import { elideBase64Payloads } from '@/services/intelligence/Base64PayloadElision';
 
 describe('print-sized base64 prompt elision', () => {
     it('handles a 20 MB literal payload without overflowing the regex stack', () => {

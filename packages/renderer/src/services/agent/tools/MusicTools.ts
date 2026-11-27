@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 import { metadataOrchestrator } from '@/services/metadata/MetadataOrchestrator';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';

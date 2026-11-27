@@ -5,7 +5,7 @@ import {
     VideoAspectRatioSchema,
     VideoGenerationOptionsSchema,
     DirectorSettingsSchema
-} from './schemas';
+} from '@/modules/creative/video/schemas';
 
 describe('Video Schemas', () => {
     describe('Enums', () => {

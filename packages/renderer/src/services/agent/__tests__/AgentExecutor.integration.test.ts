@@ -4,8 +4,8 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 vi.unmock('firebase/ai');
 vi.unmock('@/services/firebase');
 
-import { AgentExecutor } from '../components/AgentExecutor';
-import { agentRegistry } from '../registry';
+import { AgentExecutor } from '@/services/agent/components/AgentExecutor';
+import { agentRegistry } from '@/services/agent/registry';
 
 // Integration Tests for AgentExecutor
 // This ensures that the executor can load real agents from the registry,

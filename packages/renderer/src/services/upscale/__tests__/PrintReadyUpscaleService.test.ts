@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planPrintUpscale, printUpscaleMethodLabel } from '../printUpscalePlan';
+import { planPrintUpscale, printUpscaleMethodLabel } from '@/services/upscale/printUpscalePlan';
 
 // Pure geometry checks only. No synthetic image, canvas, GPU, auth, or service
 // response: these tests do not certify enhanced pixels or a customer export.

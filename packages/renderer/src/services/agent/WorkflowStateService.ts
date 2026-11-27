@@ -1,8 +1,8 @@
 import { httpsCallable } from 'firebase/functions';
-import { FirestoreService } from '../FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 import { logger } from '@/utils/logger';
 import { auth, functions } from '@/services/firebase';
-import type { WorkflowExecution, WorkflowStep, WorkflowEdge } from './types';
+import type { WorkflowExecution, WorkflowStep, WorkflowEdge } from '@/services/agent/types';
 import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,

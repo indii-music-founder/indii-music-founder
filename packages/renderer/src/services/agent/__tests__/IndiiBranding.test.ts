@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AGENT_SYSTEM_BRANDING, INDII_MESSAGES } from '../constants';
+import { AGENT_SYSTEM_BRANDING, INDII_MESSAGES } from '@/services/agent/constants';
 
 describe('indii Branding Constants', () => {
     describe('AGENT_SYSTEM_BRANDING', () => {

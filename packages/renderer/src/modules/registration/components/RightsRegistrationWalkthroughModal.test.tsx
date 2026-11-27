@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { RightsRegistrationWalkthroughModal, RIGHTS_GUIDES } from './RightsRegistrationWalkthroughModal';
+import { RightsRegistrationWalkthroughModal, RIGHTS_GUIDES } from '@/modules/registration/components/RightsRegistrationWalkthroughModal';
 
 describe('RightsRegistrationWalkthroughModal', () => {
     const mockOnClose = vi.fn();

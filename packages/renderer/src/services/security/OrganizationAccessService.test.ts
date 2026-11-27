@@ -13,7 +13,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: mocks.httpsCallable,
 }));
 
-import { OrganizationAccessService } from './OrganizationAccessService';
+import { OrganizationAccessService } from '@/services/security/OrganizationAccessService';
 
 describe('OrganizationAccessService', () => {
     beforeEach(() => {

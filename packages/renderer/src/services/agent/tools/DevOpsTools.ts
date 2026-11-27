@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 

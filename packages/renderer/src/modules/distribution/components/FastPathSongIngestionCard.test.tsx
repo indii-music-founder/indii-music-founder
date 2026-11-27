@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { FastPathSongIngestionCard } from './FastPathSongIngestionCard';
+import { FastPathSongIngestionCard } from '@/modules/distribution/components/FastPathSongIngestionCard';
 
 const audioFile = new File(['audio bytes'], 'Detroit_Midnight_master_v3_final_4416.wav', { type: 'audio/wav' });
 

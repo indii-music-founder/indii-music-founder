@@ -18,7 +18,7 @@ import {
     createOneTimePayment,
     getLatestInvoice,
     type OneTimePaymentRequest,
-} from './PaymentService';
+} from '@/services/payment/PaymentService';
 
 describe('PaymentService', () => {
     beforeEach(() => {

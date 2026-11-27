@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { formatRemoteMediaReferences, resolveCommandAttachments } from '../rendererExecutionAdapter';
+import { formatRemoteMediaReferences, resolveCommandAttachments } from '@/services/remote/rendererExecutionAdapter';
 import { useStore } from '@/core/store';
 import type { RemoteCommandAttachment } from '@/services/agent/RemoteRelayService';
 

@@ -22,7 +22,7 @@ vi.mock('@/services/agent/observability/MetricsService', () => ({
     },
 }));
 
-import { MetricsDashboard } from './MetricsDashboard';
+import { MetricsDashboard } from '@/modules/observability/components/MetricsDashboard';
 
 describe('MetricsDashboard', () => {
     it('renders the tail latency metric and completed trace summary', async () => {

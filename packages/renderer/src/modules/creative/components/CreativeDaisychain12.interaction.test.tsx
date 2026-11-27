@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React, { useState } from 'react';
-import CreativeGallery from './CreativeGallery';
-import CreativeNavbar from './CreativeNavbar';
-import CreativeCanvas from './CreativeCanvas';
-import IntelligencePromptBuilder from './IntelligencePromptBuilder';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
+import CreativeNavbar from '@/modules/creative/components/CreativeNavbar';
+import CreativeCanvas from '@/modules/creative/components/CreativeCanvas';
+import IntelligencePromptBuilder from '@/modules/creative/components/IntelligencePromptBuilder';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -19,28 +19,28 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock complex sub-components
-vi.mock('./CandidatesCarousel', () => ({
+vi.mock('@/modules/creative/components/CandidatesCarousel', () => ({
     CandidatesCarousel: () => <div data-testid="candidates-carousel" />
 }));
 
-vi.mock('./EndFrameSelector', () => ({
+vi.mock('@/modules/creative/components/EndFrameSelector', () => ({
     EndFrameSelector: () => <div data-testid="end-frame-selector" />
 }));
 
-vi.mock('./AnnotationPalette', () => ({
+vi.mock('@/modules/creative/components/AnnotationPalette', () => ({
     default: () => <div data-testid="annotation-palette" />
 }));
 
-vi.mock('./CanvasToolbar', () => ({
+vi.mock('@/modules/creative/components/CanvasToolbar', () => ({
     CanvasToolbar: () => <div data-testid="canvas-toolbar" />
 }));
 
-vi.mock('./EditDefinitionsPanel', () => ({
+vi.mock('@/modules/creative/components/EditDefinitionsPanel', () => ({
     default: () => <div data-testid="edit-definitions-panel" />
 }));
 
 // Mock IntelligencePromptBuilder — renders the brand category and tag buttons the test expects
-vi.mock('./IntelligencePromptBuilder', () => ({
+vi.mock('@/modules/creative/components/IntelligencePromptBuilder', () => ({
     default: ({ onAddTag }: { onAddTag: (tag: string) => void }) => (
         <div data-testid="prompt-builder-panel">
             <button
@@ -60,7 +60,7 @@ vi.mock('./IntelligencePromptBuilder', () => ({
 }));
 
 // Mock Canvas operations
-vi.mock('../services/CanvasOperationsService', () => ({
+vi.mock('@/modules/creative/services/CanvasOperationsService', () => ({
     canvasOps: {
         isInitialized: vi.fn().mockReturnValue(true),
         initialize: vi.fn(),

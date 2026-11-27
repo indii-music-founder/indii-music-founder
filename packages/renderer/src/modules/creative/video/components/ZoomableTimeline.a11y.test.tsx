@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
-import { ZoomableTimeline } from './ZoomableTimeline';
-import * as videoEditorStore from '../store/videoEditorStore';
+import { ZoomableTimeline } from '@/modules/creative/video/components/ZoomableTimeline';
+import * as videoEditorStore from '@/modules/creative/video/store/videoEditorStore';
 
 expect.extend(matchers);
 
 // Mock the store
-vi.mock('../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
 }));
 

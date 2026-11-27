@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { eventLogger, type CompactionResult } from './EventLogger';
+import { eventLogger, type CompactionResult } from '@/services/memory/EventLogger';
 import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 // Unique session id per test keeps the shared singleton isolated.

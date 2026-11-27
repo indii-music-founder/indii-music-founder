@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { a2aClient } from './A2AClient';
+import { a2aClient } from '@/services/agent/a2a/A2AClient';
 import { e2eEncryptionService } from '@/services/security/E2EEncryptionService';
 import { DigitalHandshake } from '@/services/agent/governance/DigitalHandshake';
 
@@ -7,8 +7,8 @@ vi.unmock('@/services/agent/a2a/A2AClient');
 
 // Force HTTP transport so we can assert the wire contract (URLs + fetch).
 // The loopback round-trip is covered by A2A.integration.test.ts with REAL crypto.
-vi.mock('./A2AConfig', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./A2AConfig')>();
+vi.mock('@/services/agent/a2a/A2AConfig', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/agent/a2a/A2AConfig')>();
   return {
     ...actual,
     resolveA2AConfig: vi.fn().mockResolvedValue({ mode: 'http', baseUrl: 'http://localhost:50080/a2a' }),

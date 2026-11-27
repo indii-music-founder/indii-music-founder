@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { segmentationContour, detectionBox } from './segmentationGeometry';
+import { segmentationContour, detectionBox } from '@/services/image/segmentationGeometry';
 
 // Pure geometry checks: no account, media history, or provider responses are simulated.
 describe('segmentation contour geometry', () => {

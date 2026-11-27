@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ScoutControls } from './ScoutControls';
+import { ScoutControls } from '@/modules/agent/components/ScoutControls';
 
 describe('ScoutControls', () => {
     const defaultProps = {

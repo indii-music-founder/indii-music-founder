@@ -3,7 +3,7 @@ import { Sparkles, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import type { OrgAdapter, CatalogTrack } from '../types';
+import type { OrgAdapter, CatalogTrack } from '@/modules/registration/types';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 

@@ -51,7 +51,7 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
-import { BoardroomRightRail } from './BoardroomRightRail';
+import { BoardroomRightRail } from '@/modules/boardroom/components/BoardroomRightRail';
 import { useStore } from '@/core/store';
 
 describe('BoardroomRightRail', () => {

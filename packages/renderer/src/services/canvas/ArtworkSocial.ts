@@ -1,5 +1,5 @@
 import { getPrintPreset } from '@indii/shared';
-import type { CanvasDoc } from './CanvasDoc';
+import type { CanvasDoc } from '@/services/canvas/CanvasDoc';
 
 const preset = getPrintPreset('social_1080x1350')!;
 export const ARTWORK_SOCIAL_SIZE = {

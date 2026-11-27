@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SettingsModal } from '../SettingsModal';
+import { SettingsModal } from '@/modules/settings/components/SettingsModal';
 
 vi.mock('@/modules/settings/SettingsPanel', () => ({
     default: () => <div data-testid="mock-settings-panel">Settings Panel Content</div>,

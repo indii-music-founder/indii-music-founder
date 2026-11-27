@@ -7,9 +7,9 @@
 
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 import { SubscriptionService, subscriptionService } from '@/services/subscription/SubscriptionService';
-import { instrumentRegistry } from './instruments/InstrumentRegistry';
+import { instrumentRegistry } from '@/services/agent/instruments/InstrumentRegistry';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Instrument } from './instruments/InstrumentTypes';
+import { Instrument } from '@/services/agent/instruments/InstrumentTypes';
 import type { UsageStats } from '@/services/subscription/types';
 export interface AgentInstrumentContext {
   /** Available instruments formatted for agent discovery */

@@ -14,7 +14,7 @@ import {
   InstrumentResult,
   ValidationResult,
   CostEstimate
-} from './InstrumentTypes';
+} from '@/services/agent/instruments/InstrumentTypes';
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';

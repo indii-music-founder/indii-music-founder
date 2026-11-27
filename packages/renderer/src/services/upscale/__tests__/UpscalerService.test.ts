@@ -11,7 +11,7 @@ import {
     UpscalerService,
     type UpscaleBridge,
     type UpscaleModel,
-} from '../UpscalerService';
+} from '@/services/upscale/UpscalerService';
 
 function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { runMock: ReturnType<typeof vi.fn>; cancelMock: ReturnType<typeof vi.fn> } {
     const runMock = vi.fn(async (_req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string }) => ({

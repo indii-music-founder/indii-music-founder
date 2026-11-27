@@ -25,7 +25,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { metadataPersistenceService } from './MetadataPersistenceService';
+import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
 describe('MetadataPersistenceService', () => {
     beforeEach(() => {

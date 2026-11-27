@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
-import { AVAILABLE_AGENTS, BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
+import { AVAILABLE_AGENTS, BOARDROOM_PRIMARY_HEAD_IDS } from '@/modules/boardroom/components/ParticipantSelector';
 
 interface BoardroomRightRailProps {
     onOpenLivingPlans?: () => void;

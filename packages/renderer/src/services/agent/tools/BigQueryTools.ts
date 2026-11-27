@@ -1,8 +1,8 @@
 import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 // Tool: BigQuery (Real queries via Cloud Functions)
 // This tool executes BigQuery queries through Firebase Cloud Functions.

@@ -1,34 +1,34 @@
-import { delegatedAgentText } from './executionFailure';
-import { inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
-import { runWithAgentDeadline } from './governance/AgentRunDeadline';
+import { delegatedAgentText } from '@/services/agent/executionFailure';
+import { inheritExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { runWithAgentDeadline } from '@/services/agent/governance/AgentRunDeadline';
 import { logger } from '@/utils/logger';
 import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 import { auth } from '@/services/firebase';
 import { CostControlService } from '@/services/billing/CostControlService';
-import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
-import { AgentOrchestrator } from './components/AgentOrchestrator';
-import { AgentExecutor } from './components/AgentExecutor';
+import { ContextPipeline, PipelineContext } from '@/services/agent/components/ContextPipeline';
+import { AgentOrchestrator } from '@/services/agent/components/AgentOrchestrator';
+import { AgentExecutor } from '@/services/agent/components/AgentExecutor';
 import {
     AgentContext,
     type AgentResponse,
     type BoardroomDispatchPlanContext,
     type BoardroomDispatchTask,
-} from './types';
-import { agentRegistry } from './registry';
-import { normalizeBoardroomAgentIds } from './departments';
-import { livingPlanService } from './LivingPlanService';
+} from '@/services/agent/types';
+import { agentRegistry } from '@/services/agent/registry';
+import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
+import { livingPlanService } from '@/services/agent/LivingPlanService';
 
 // Workflow coordinator removed for indii Conductor standard routing
-import { maestroBatchingService } from './MaestroBatchingService';
+import { maestroBatchingService } from '@/services/agent/MaestroBatchingService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { compressStreamImageAttachments, elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { agentGraphService } from './orchestration/AgentGraphService';
-import { agentGraphStateService } from './orchestration/AgentGraphStateService';
-import { AgentGraph } from './types';
-import { moduleImportCache } from './ModuleImportCache';
+import { agentGraphService } from '@/services/agent/orchestration/AgentGraphService';
+import { agentGraphStateService } from '@/services/agent/orchestration/AgentGraphStateService';
+import { AgentGraph } from '@/services/agent/types';
+import { moduleImportCache } from '@/services/agent/ModuleImportCache';
 import { importWithRetry } from '@/utils/dynamicImport';
 import {
     finalizePersonaAgentResponse,
@@ -39,20 +39,20 @@ import {
     getPersonaResponseMetadata,
 } from '@/services/persona/PersonaResponseMetadata';
 import { isSocialPleasantry, isTrivialInput } from '@/services/agent/utils/trivialInput';
-import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from './utils/approvalConsent';
-import { isCapabilityQuestion } from './capabilityTruth';
-import { PRINT_TOOL_DECLARATIONS } from './definitions/PrintToolDeclarations';
-import { isFounderUserProfile } from './builders/AgentPromptBuilder';
+import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from '@/services/agent/utils/approvalConsent';
+import { isCapabilityQuestion } from '@/services/agent/capabilityTruth';
+import { PRINT_TOOL_DECLARATIONS } from '@/services/agent/definitions/PrintToolDeclarations';
+import { isFounderUserProfile } from '@/services/agent/builders/AgentPromptBuilder';
 import {
     validateBoardroomSteps, normalizeBoardroomSteps, stepsFromBoardroomGraph, boardroomAddressedAgents, withAddressedBoardroomSteps, receiptForBoardroomStep, isBoardroomCapabilityOnly,
     isShortConfirmationUtterance, readyBoardroomSteps, formatBoardroomReceipt, boardroomDependencyField, boardroomRequestedSourceId,
     type BoardroomActionStep, type BoardroomStepReceipt,
-} from './orchestration/BoardroomActionPlan';
+} from '@/services/agent/orchestration/BoardroomActionPlan';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
-import { isUserCancellation, errorText, USER_STOPPED_TEXT } from './flowFailure';
-import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from './boardroomRunTimeout';
-import { endBoardroomLeaseRun, forgetBoardroomLease, rememberBoardroomLease, releaseOrphanedBoardroomLease } from './boardroomLeaseRecovery';
-import { buildGalleryManifestEntries } from './galleryAssets';
+import { isUserCancellation, errorText, USER_STOPPED_TEXT } from '@/services/agent/flowFailure';
+import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from '@/services/agent/boardroomRunTimeout';
+import { endBoardroomLeaseRun, forgetBoardroomLease, rememberBoardroomLease, releaseOrphanedBoardroomLease } from '@/services/agent/boardroomLeaseRecovery';
+import { buildGalleryManifestEntries } from '@/services/agent/galleryAssets';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -484,7 +484,7 @@ export class AgentService {
 
             // Tier 2: Index user message for semantic recall (Episodic Indexing)
             if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     redactedText,
                     'user_input',
@@ -1009,7 +1009,7 @@ export class AgentService {
 
             // Tier 2: Index model response
             if (!skipMemoryIndex && state.currentProjectId && state.activeSessionId && completedText.length > 20) {
-                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     completedText,
                     'agent_output',
@@ -1048,7 +1048,7 @@ export class AgentService {
             return;
         }
 
-        const { DEPARTMENTS } = await importWithRetry(() => import('./departments'));
+        const { DEPARTMENTS } = await importWithRetry(() => import('@/services/agent/departments'));
         const dept = DEPARTMENTS[activeDepartmentId];
         
         if (!dept) {
@@ -2115,7 +2115,7 @@ The user will see this plan and can approve it to start execution.`;
             if (!context.livingContext) {
                 const { auth } = await importWithRetry(() => import('@/services/firebase'));
                 if (auth.currentUser) {
-                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('./living/LivingFileService'));
+                    const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('@/services/agent/living/LivingFileService'));
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
                 }
             }
@@ -2125,7 +2125,7 @@ The user will see this plan and can approve it to start execution.`;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
+                    const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
                     const results = await alwaysOnMemoryEngine.retrieve({ query: task, limit: 5 });
                     if (results && results.length > 0) {
                         context.relevantMemories = results.map(m => m.summary || m.content);
@@ -2157,7 +2157,7 @@ The user will see this plan and can approve it to start execution.`;
         // A manager's notes are durable Firestore documents, so a fact shared on
         // phone is available to the same manager on desktop before its next run.
         try {
-            const { agentNoteService } = await importWithRetry(() => import('./AgentNoteService'));
+            const { agentNoteService } = await importWithRetry(() => import('@/services/agent/AgentNoteService'));
             context.interAgentNotes = await agentNoteService.forAgent(agentId, context.projectId);
         } catch (error) {
             logger.warn('[AgentService] Could not load inter-agent notes (non-blocking):', error);
@@ -2273,7 +2273,7 @@ The user will see this plan and can approve it to start execution.`;
         try {
             logger.info(`[AgentService] Dispatching direct tool call ${toolName} to agent ${agentId}`);
             
-            const { TOOL_REGISTRY } = await importWithRetry(() => import('./tools'));
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
             if (TOOL_REGISTRY[toolName]) {
                 // Execute the tool
                 const result = await TOOL_REGISTRY[toolName](args);
@@ -2387,7 +2387,7 @@ The user will see this plan and can approve it to start execution.`;
                     content: m.text || ''
                 }));
 
-            const { MultiTurnAutorater } = await importWithRetry(() => import('./governance/MultiTurnAutorater'));
+            const { MultiTurnAutorater } = await importWithRetry(() => import('@/services/agent/governance/MultiTurnAutorater'));
             
             // Fire-and-forget evaluation to not block the user interface
             await MultiTurnAutorater.evaluateAndRegister(
@@ -2423,7 +2423,7 @@ The user will see this plan and can approve it to start execution.`;
         userMessageId: string
     ): Promise<void> {
         try {
-            const { VisualOutputAutorater, visualToolOutput } = await importWithRetry(() => import('./governance/VisualOutputAutorater'));
+            const { VisualOutputAutorater, visualToolOutput } = await importWithRetry(() => import('@/services/agent/governance/VisualOutputAutorater'));
             const useStore = await this.getStore();
             const state = useStore.getState();
             if ((state.activeSessionId ?? null) !== runSessionId) return;

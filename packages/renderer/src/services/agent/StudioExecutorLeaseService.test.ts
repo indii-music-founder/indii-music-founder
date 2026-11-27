@@ -29,8 +29,8 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('@/services/firebase', () => ({ functions: {} }));
 
-import { studioExecutorLeaseService } from './StudioExecutorLeaseService';
-import { getStudioRelayHealth, resetStudioRelayHealth } from './studioRelayHealth';
+import { studioExecutorLeaseService } from '@/services/agent/StudioExecutorLeaseService';
+import { getStudioRelayHealth, resetStudioRelayHealth } from '@/services/agent/studioRelayHealth';
 
 describe('StudioExecutorLeaseService', () => {
     beforeEach(() => {

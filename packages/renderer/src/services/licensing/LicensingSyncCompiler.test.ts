@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LicensingSyncCompiler, LicensingSyncInput } from './LicensingSyncCompiler';
+import { LicensingSyncCompiler, LicensingSyncInput } from '@/services/licensing/LicensingSyncCompiler';
 
 describe('LicensingSyncCompiler', () => {
   const compiler = new LicensingSyncCompiler();

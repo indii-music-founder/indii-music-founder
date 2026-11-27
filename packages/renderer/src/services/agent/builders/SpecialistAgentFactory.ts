@@ -1,6 +1,6 @@
-import { getCardForAgent } from '../a2a/CardRegistry';
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { SpecializedAgent, AgentConfig } from '../types';
+import { getCardForAgent } from '@/services/agent/a2a/CardRegistry';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { SpecializedAgent, AgentConfig } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
@@ -16,7 +16,7 @@ export class SpecialistAgentFactory {
      * binds its unique A2A identification card, and freezes the config against mutations.
      */
     static async createConfigAgent(config: AgentConfig): Promise<SpecializedAgent> {
-        const { RAGAgent } = await importWithRetry(() => import('../RAGAgent'));
+        const { RAGAgent } = await importWithRetry(() => import('@/services/agent/RAGAgent'));
         const agent = new RAGAgent(config);
         agent.card = getCardForAgent(config.id);
         freezeAgentConfig(agent);
@@ -45,7 +45,7 @@ export class SpecialistAgentFactory {
      * binds its unique A2A card, and freezes its configuration.
      */
     static async createBaseAgent(config: AgentConfig): Promise<SpecializedAgent> {
-        const { BaseAgent } = await importWithRetry(() => import('../BaseAgent'));
+        const { BaseAgent } = await importWithRetry(() => import('@/services/agent/BaseAgent'));
         const agent = new BaseAgent(config);
         agent.card = getCardForAgent(config.id);
         freezeAgentConfig(agent);

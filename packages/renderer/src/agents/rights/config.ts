@@ -1,5 +1,5 @@
 import { AgentConfig } from "@/services/agent/types";
-import systemPrompt from './prompt.md?raw';
+import systemPrompt from '@/agents/rights/prompt.md?raw';
 
 export const RightsAgent: AgentConfig = {
     id: "rights",

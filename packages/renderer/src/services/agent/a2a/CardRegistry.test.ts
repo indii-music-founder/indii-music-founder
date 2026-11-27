@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CARD_REGISTRY, getCardForAgent } from './CardRegistry';
-import { AgentCardSchema } from './AgentCard.schema';
+import { CARD_REGISTRY, getCardForAgent } from '@/services/agent/a2a/CardRegistry';
+import { AgentCardSchema } from '@/services/agent/a2a/AgentCard.schema';
 
 /**
  * Load-time contract gate for the A2A card registry.

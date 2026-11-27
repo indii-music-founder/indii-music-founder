@@ -29,9 +29,9 @@ vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 vi.mock('@/services/FileSystemService', () => ({ FileNode: {} }));
 
-import FileDashboard from './FileDashboard';
-import { NavItem } from './components/NavItem';
-import { DetailRow } from './components/DetailRow';
+import FileDashboard from '@/modules/files/FileDashboard';
+import { NavItem } from '@/modules/files/components/NavItem';
+import { DetailRow } from '@/modules/files/components/DetailRow';
 
 describe('FileDashboard', () => {
     beforeEach(() => {

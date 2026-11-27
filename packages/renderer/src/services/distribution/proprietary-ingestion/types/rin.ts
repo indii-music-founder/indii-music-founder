@@ -1,4 +1,4 @@
-import { IngestionMessageHeader } from './common';
+import { IngestionMessageHeader } from '@/services/distribution/proprietary-ingestion/types/common';
 
 // Root Message
 export interface RecordingInformationMessage {

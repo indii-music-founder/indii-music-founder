@@ -10,7 +10,7 @@ const storageMocks = vi.hoisted(() => ({
 vi.mock('firebase/storage', () => storageMocks);
 vi.mock('@/services/firebase', () => ({ storage: { bucket: 'test-bucket' } }));
 
-import { canonicalCoverArtService } from './CanonicalCoverArtService';
+import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 
 describe('CanonicalCoverArtService', () => {
     beforeEach(() => {

@@ -6,7 +6,7 @@ import {
     scanAsset,
     type ComplianceVisionProbe,
     type ScanDeps,
-} from './BrandComplianceService';
+} from '@/services/brand/BrandComplianceService';
 import type { Box2D } from '@/services/image/ImageAnalysisService';
 import type { BrandKit } from '@/types/User';
 

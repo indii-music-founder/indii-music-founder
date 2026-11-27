@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import BrandManager from './BrandManager';
+import BrandManager from '@/modules/marketing/components/BrandManager';
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({

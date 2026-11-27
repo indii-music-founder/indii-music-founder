@@ -1,9 +1,9 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ProjectCanvas from '../ProjectCanvas';
+import ProjectCanvas from '@/modules/project-canvas/ProjectCanvas';
 import { useStore } from '@/core/store';
-import type { ProjectCanvasBlock, ProjectCanvasDocument } from '../types';
+import type { ProjectCanvasBlock, ProjectCanvasDocument } from '@/modules/project-canvas/types';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({

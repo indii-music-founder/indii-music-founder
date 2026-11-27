@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MusicAgent } from './MusicAgent';
+import { MusicAgent } from '@/services/agent/definitions/MusicAgent';
 
 // Mock the prompt import which uses Vite's ?raw
 vi.mock('@agents/music/prompt.md?raw', () => ({
@@ -7,7 +7,7 @@ vi.mock('@agents/music/prompt.md?raw', () => ({
 }));
 
 // Mock MusicTools
-vi.mock('../tools/MusicTools', () => ({
+vi.mock('@/services/agent/tools/MusicTools', () => ({
     MusicTools: {
         analyze_audio: vi.fn(),
         create_music_metadata: vi.fn(),

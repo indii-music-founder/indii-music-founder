@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { KnowledgeTools } from '../KnowledgeTools';
+import { KnowledgeTools } from '@/services/agent/tools/KnowledgeTools';
 import { runAgenticWorkflow } from '@/services/rag/ragService';
 import { useStore } from '@/core/store';
 

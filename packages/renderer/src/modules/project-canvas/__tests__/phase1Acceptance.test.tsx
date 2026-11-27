@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ProjectCanvasPersistence, type CanvasFullState } from '../services/ProjectCanvasPersistence';
-import { InfiniteCanvasAdapter } from '../adapters/InfiniteCanvasAdapter';
-import { EntityResolver } from '../resolvers/EntityResolver';
+import { ProjectCanvasPersistence, type CanvasFullState } from '@/modules/project-canvas/services/ProjectCanvasPersistence';
+import { InfiniteCanvasAdapter } from '@/modules/project-canvas/adapters/InfiniteCanvasAdapter';
+import { EntityResolver } from '@/modules/project-canvas/resolvers/EntityResolver';
 import { useStore } from '@/core/store';
 import type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
-import type { ProjectCanvasBlock, ProjectCanvasDocument } from '../types';
+import type { ProjectCanvasBlock, ProjectCanvasDocument } from '@/modules/project-canvas/types';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({

@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
-import CampaignList from './CampaignList';
-import { CampaignAsset, CampaignStatus } from '../types';
+import CampaignList from '@/modules/marketing/components/CampaignList';
+import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
 
 // Mock motion to avoid animation issues in tests
 vi.mock('motion/react', () => ({
@@ -16,7 +16,7 @@ vi.mock('motion/react', () => ({
 }));
 
 // Mock CampaignCard since it's used inside CampaignList
-vi.mock('./CampaignCard', () => ({
+vi.mock('@/modules/marketing/components/CampaignCard', () => ({
     default: ({ campaign, onSelect }: any) => (
         <div data-testid="campaign-card" onClick={() => onSelect(campaign)}>
             {campaign.title}

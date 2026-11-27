@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TrackIngestionService } from './TrackIngestionService';
+import { TrackIngestionService } from '@/services/ingestion/TrackIngestionService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';

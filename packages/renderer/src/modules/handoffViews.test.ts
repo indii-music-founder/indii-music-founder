@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { resolveBrandManagerTab, resolveTouringTab, resolveMerchViewMode } from './handoffViews';
+import { resolveBrandManagerTab, resolveTouringTab, resolveMerchViewMode } from '@/modules/handoffViews';
 
 describe('handoff view resolution', () => {
     it('defaults marketing handoffs to the visuals tab', () => {

@@ -3,7 +3,7 @@ import {
     agentIdentityService,
     verifyAttestation,
     type AgentIdentityCard,
-} from '../AgentIdentity';
+} from '@/services/agent/governance/AgentIdentity';
 
 describe('AgentIdentity', () => {
     // ========================================================================

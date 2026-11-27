@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DistributionSyncService } from './DistributionSyncService';
+import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
 import { getDocs, getDoc, doc } from 'firebase/firestore';
 
 // Mock Firebase

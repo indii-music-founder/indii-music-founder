@@ -32,19 +32,19 @@ vi.mock('react-markdown', () => ({
     default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('remark-gfm', () => ({ default: vi.fn() }));
-vi.mock('../VisualScriptRenderer', () => ({ default: () => null }));
-vi.mock('../ScreenplayRenderer', () => ({ default: () => null }));
-vi.mock('../CallSheetRenderer', () => ({ default: () => null }));
-vi.mock('../ContractRenderer', () => ({ default: () => null }));
-vi.mock('./JsonViewer', () => ({ JsonViewer: () => null }));
-vi.mock('./ToolOutputRenderer', () => ({
+vi.mock('@/core/components/VisualScriptRenderer', () => ({ default: () => null }));
+vi.mock('@/core/components/ScreenplayRenderer', () => ({ default: () => null }));
+vi.mock('@/core/components/CallSheetRenderer', () => ({ default: () => null }));
+vi.mock('@/core/components/ContractRenderer', () => ({ default: () => null }));
+vi.mock('@/core/components/chat/JsonViewer', () => ({ JsonViewer: () => null }));
+vi.mock('@/core/components/chat/ToolOutputRenderer', () => ({
     ImageRenderer: () => null,
     ToolImageOutput: () => null,
     ToolDocumentOutput: () => null,
     ToolFeedbackOutput: () => null,
 }));
-vi.mock('./CodeBlock', () => ({ CodeBlock: () => null }));
-vi.mock('./PlanCard', () => ({ PlanCard: () => null }));
+vi.mock('@/core/components/chat/CodeBlock', () => ({ CodeBlock: () => null }));
+vi.mock('@/core/components/chat/PlanCard', () => ({ PlanCard: () => null }));
 vi.mock('@/services/agent/LivingPlanService', () => ({
     livingPlanService: {},
 }));
@@ -55,7 +55,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
-import { MessageItem } from './ChatMessage';
+import { MessageItem } from '@/core/components/chat/ChatMessage';
 
 describe('ChatMessage companion mode cognitive logic', () => {
     it('keeps Cognitive Logic collapsed by default while allowing users to expand diagnostics manually', () => {

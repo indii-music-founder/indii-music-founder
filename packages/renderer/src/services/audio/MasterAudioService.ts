@@ -3,7 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 
 import { functions, storage } from '@/services/firebase';
 import type { MasterAudioReference } from '@/services/metadata/types';
-import { inspectCanonicalMaster } from './MasterAudioValidation';
+import { inspectCanonicalMaster } from '@/services/audio/MasterAudioValidation';
 
 interface PersistMasterAudioOptions {
     userId: string;

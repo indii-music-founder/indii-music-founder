@@ -27,7 +27,7 @@ import { tikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsServ
 import { instagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
 import { appleMusicService } from '@/services/analytics/AppleMusicService';
 import type { PlatformConnectionStatus } from '@/services/analytics/PlatformDataService';
-import { PlatformWalkthroughModal, type WalkthroughPlatformId } from './PlatformWalkthroughModal';
+import { PlatformWalkthroughModal, type WalkthroughPlatformId } from '@/modules/analytics/components/PlatformWalkthroughModal';
 
 // ── Platform definitions ──────────────────────────────────────────────────────
 

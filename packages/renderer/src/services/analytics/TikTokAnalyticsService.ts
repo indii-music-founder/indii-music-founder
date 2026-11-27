@@ -28,7 +28,7 @@ import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
-import type { PlatformData, StreamDataPoint } from './types';
+import type { PlatformData, StreamDataPoint } from '@/services/analytics/types';
 import {
     beginAccountBoundOAuthSession,
     clearAccountBoundOAuthSession,

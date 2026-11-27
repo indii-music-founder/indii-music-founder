@@ -3,7 +3,7 @@
  * Source: runtime environment / deployment secrets.
  */
 
-import { isTestHarnessRuntime } from '../../utils/e2eMode';
+import { isTestHarnessRuntime } from '@/utils/e2eMode';
 
 const ENV: Record<string, string | undefined> = {
     VITE_INGESTION_SYSTEM_IDENTIFIER: import.meta.env.VITE_INGESTION_SYSTEM_IDENTIFIER,

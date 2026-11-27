@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EvolutionEngine } from './EvolutionEngine';
-import { AgentGene, EvolutionConfig } from './types';
+import { EvolutionEngine } from '@/services/agent/evolution/EvolutionEngine';
+import { AgentGene, EvolutionConfig } from '@/services/agent/evolution/types';
 
 // Mock secureRandomInt to return deterministic values for testing
 // selectParent uses secureRandomInt(0, pool.length) — returning 0 picks index 0 (highest fitness)

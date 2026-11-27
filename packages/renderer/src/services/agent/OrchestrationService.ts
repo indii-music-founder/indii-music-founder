@@ -1,6 +1,6 @@
-import type { AgentContext } from './types';
-import { WORKFLOW_REGISTRY } from './WorkflowRegistry';
-import { workflowStateService } from './WorkflowStateService';
+import type { AgentContext } from '@/services/agent/types';
+import { WORKFLOW_REGISTRY } from '@/services/agent/WorkflowRegistry';
+import { workflowStateService } from '@/services/agent/WorkflowStateService';
 import { WorkflowExecutionStatusEnum } from '@indii/shared';
 import { logger } from '@/utils/logger';
 

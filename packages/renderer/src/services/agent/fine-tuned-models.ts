@@ -10,8 +10,8 @@
  * Source of truth: packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts
  * Regen: node scripts/sync-fine-tuned-endpoints.mjs
  */
-import { VALID_AGENT_IDS, type ValidAgentId } from './types';
-import { R8_ENDPOINTS } from './fine-tuned-endpoints.generated';
+import { VALID_AGENT_IDS, type ValidAgentId } from '@/services/agent/types';
+import { R8_ENDPOINTS } from '@/services/agent/fine-tuned-endpoints.generated';
 
 const VERTEX_ENDPOINT_PATTERN = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 

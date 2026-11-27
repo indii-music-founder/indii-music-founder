@@ -121,7 +121,7 @@ describe('DistributionTools', () => {
 
     describe('issue_isrc', () => {
         it('should generate a valid ISRC', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.issue_isrc({
                 trackTitle: 'Test Track',
@@ -139,7 +139,7 @@ describe('DistributionTools', () => {
 
     describe('certify_tax_profile', () => {
         it('should require the Bank Layer for tax certification', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -156,7 +156,7 @@ describe('DistributionTools', () => {
         });
 
         it('should require legal name for certification', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -172,7 +172,7 @@ describe('DistributionTools', () => {
         });
 
         it('should not locally certify missing perjury signature', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -189,7 +189,7 @@ describe('DistributionTools', () => {
         });
 
         it('should not locally select W-8BEN for foreign individuals', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -207,7 +207,7 @@ describe('DistributionTools', () => {
         });
 
         it('should not locally select W-8BEN-E for foreign entities', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -226,7 +226,7 @@ describe('DistributionTools', () => {
 
         it('sends the canonical snake_case schema to the Bank Layer and succeeds (ISSUE-793)', async () => {
             enableElectron();
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.certify_tax_profile({
                 userId: 'user-123',
@@ -256,7 +256,7 @@ describe('DistributionTools', () => {
     describe('calculate_payout', () => {
         it('sends the locked Python contract to the Bank Layer (ISSUE-826)', async () => {
             enableElectron();
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.calculate_payout({
                 grossRevenue: 10000,
@@ -285,7 +285,7 @@ describe('DistributionTools', () => {
         });
 
         it('should calculate waterfall correctly', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.calculate_payout({
                 grossRevenue: 10000,
@@ -305,7 +305,7 @@ describe('DistributionTools', () => {
         });
 
         it('should recoup expenses before splits', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.calculate_payout({
                 grossRevenue: 10000,
@@ -328,7 +328,7 @@ describe('DistributionTools', () => {
         });
 
         it('should pass clean metadata', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.run_metadata_qc({
                 title: 'Beautiful Song',
@@ -343,7 +343,7 @@ describe('DistributionTools', () => {
         });
 
         it('should reject generic artist names', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.run_metadata_qc({
                 title: 'Some Track',
@@ -358,7 +358,7 @@ describe('DistributionTools', () => {
         });
 
         it('should warn about ALL CAPS titles', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.run_metadata_qc({
                 title: 'LOUD SONG',
@@ -372,7 +372,7 @@ describe('DistributionTools', () => {
         });
 
         it('should error on featured artist in title', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.run_metadata_qc({
                 title: 'My Song (feat. Guest Artist)',
@@ -386,7 +386,7 @@ describe('DistributionTools', () => {
         });
 
         it('should require artwork URL', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.run_metadata_qc({
                 title: 'Good Track',
@@ -401,7 +401,7 @@ describe('DistributionTools', () => {
 
     describe('prepare_release', () => {
         it('should reject invalid ISRC', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
             const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
             vi.mocked(IdentifierService.validateISRC).mockReturnValue(false);
 
@@ -422,7 +422,7 @@ describe('DistributionTools', () => {
         });
 
         it('should reject invalid UPC', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
             const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
             vi.mocked(IdentifierService.validateUPC).mockReturnValue(false);
 
@@ -445,7 +445,7 @@ describe('DistributionTools', () => {
 
     describe('manual fallback paths', () => {
         it('labels premium video distribution as manual-only when no DSP worker is deployed', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.distribute_premium_video({
                 videoTitle: 'Live Visual',
@@ -461,7 +461,7 @@ describe('DistributionTools', () => {
         });
 
         it('labels SFTP ingestion as manual-only when the server-side worker is unavailable', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.sftp_direct_ingestion({
                 targetDSP: 'VEVO',
@@ -480,7 +480,7 @@ describe('DistributionTools', () => {
                 exists: () => true,
                 data: () => ({}),
             } as never);
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
 
             const result = await DistributionTools.issue_automated_takedown({
                 releaseId: 'release-123',
@@ -497,7 +497,7 @@ describe('DistributionTools', () => {
 
     describe('validate_metadata', () => {
         it('should pass validation for clean metadata with valid UPC and ISRC', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
             const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
             vi.mocked(IdentifierService.validateUPC).mockReturnValue(true);
             vi.mocked(IdentifierService.validateISRC).mockReturnValue(true);
@@ -518,7 +518,7 @@ describe('DistributionTools', () => {
         });
 
         it('should fail validation when UPC is invalid in strict mode', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
             const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
             vi.mocked(IdentifierService.validateUPC).mockReturnValue(false);
 
@@ -536,7 +536,7 @@ describe('DistributionTools', () => {
         });
 
         it('should fail validation when duplicate ISRCs exist across tracks', async () => {
-            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { DistributionTools } = await importWithRetry(() => import('@/services/agent/tools/DistributionTools'));
             const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
             vi.mocked(IdentifierService.validateUPC).mockReturnValue(true);
             vi.mocked(IdentifierService.validateISRC).mockReturnValue(true);

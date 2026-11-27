@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WhiteGloveIngestionService } from './WhiteGloveIngestionService';
+import { WhiteGloveIngestionService } from '@/services/ingestion/WhiteGloveIngestionService';
 
 // We need to mock firebase storage
 vi.mock('firebase/storage', () => ({

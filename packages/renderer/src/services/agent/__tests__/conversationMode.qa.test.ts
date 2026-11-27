@@ -13,9 +13,9 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { BaseAgent } from '../BaseAgent';
-import type { AgentConfig, AgentContext, ValidAgentId } from '../types';
-import { DEPARTMENTS } from '../departments';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import type { AgentConfig, AgentContext, ValidAgentId } from '@/services/agent/types';
+import { DEPARTMENTS } from '@/services/agent/departments';
 
 function makeAgent(id: ValidAgentId): BaseAgent {
     const config: AgentConfig = {

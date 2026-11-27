@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VenueScoutService } from './VenueScoutService';
+import { VenueScoutService } from '@/modules/agent/services/VenueScoutService';
 
 // Mock dependencies
 const {

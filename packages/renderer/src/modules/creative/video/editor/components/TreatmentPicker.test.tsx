@@ -25,7 +25,7 @@ const mocks = vi.hoisted(() => {
     return { project, updateProjectSettings, updateClip };
 });
 
-vi.mock('../../store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const getState = () => ({
         project: mocks.project,
         updateProjectSettings: mocks.updateProjectSettings,
@@ -38,7 +38,7 @@ vi.mock('../../store/videoEditorStore', () => {
     return { useVideoEditorStore: Object.assign(hook, { getState }) };
 });
 
-import { TreatmentPicker } from './TreatmentPicker';
+import { TreatmentPicker } from '@/modules/creative/video/editor/components/TreatmentPicker';
 
 describe('TreatmentPicker', () => {
     beforeEach(() => {

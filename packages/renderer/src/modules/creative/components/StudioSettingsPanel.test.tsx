@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import StudioSettingsPanel from './StudioSettingsPanel';
+import StudioSettingsPanel from '@/modules/creative/components/StudioSettingsPanel';
 
 const { mockUseStore } = vi.hoisted(() => {
     const state = {

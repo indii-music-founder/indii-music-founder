@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RegistrationChecklistPanel } from '../RegistrationChecklistPanel';
+import { RegistrationChecklistPanel } from '@/modules/distribution/components/RegistrationChecklistPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 
 import { useStore } from '@/core/store';

@@ -29,7 +29,7 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-import { SpotifyService } from './SpotifyService';
+import { SpotifyService } from '@/services/analytics/SpotifyService';
 
 describe('SpotifyService', () => {
     let service: SpotifyService;

@@ -1,20 +1,20 @@
-import { SocialClipPanel } from './components/SocialClipPanel';
+import { SocialClipPanel } from '@/modules/creative/video/editor/components/SocialClipPanel';
 import React from 'react';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
-import { VideoPreview } from './components/VideoPreview';
-import { VideoPropertiesPanel } from './components/VideoPropertiesPanel';
-import { VideoTimeline } from './components/VideoTimeline';
+import { VideoPreview } from '@/modules/creative/video/editor/components/VideoPreview';
+import { VideoPropertiesPanel } from '@/modules/creative/video/editor/components/VideoPropertiesPanel';
+import { VideoTimeline } from '@/modules/creative/video/editor/components/VideoTimeline';
 import { StudioToolbar } from '@/components/studio/StudioToolbar';
-import { useTimelineDrag } from './hooks/useTimelineDrag';
-import { VideoEditorSidebar } from './components/VideoEditorSidebar';
-import { useVideoEditor } from './hooks/useVideoEditor';
-import { useVideoProjectPersistence } from './hooks/useVideoProjectPersistence';
-import { TreatmentPicker } from './components/TreatmentPicker';
+import { useTimelineDrag } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
+import { VideoEditorSidebar } from '@/modules/creative/video/editor/components/VideoEditorSidebar';
+import { useVideoEditor } from '@/modules/creative/video/editor/hooks/useVideoEditor';
+import { useVideoProjectPersistence } from '@/modules/creative/video/editor/hooks/useVideoProjectPersistence';
+import { TreatmentPicker } from '@/modules/creative/video/editor/components/TreatmentPicker';
 import { useDesktopRenderRelay } from '@/services/video/DesktopRenderRelayService';
-import AnnotationPalette from "../../components/AnnotationPalette";
-import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
-import { STUDIO_COLORS, CreativeColor } from '../../constants';
+import AnnotationPalette from "@/modules/creative/components/AnnotationPalette";
+import EditDefinitionsPanel from "@/modules/creative/components/EditDefinitionsPanel";
+import { STUDIO_COLORS, CreativeColor } from '@/modules/creative/constants';
 import { Clapperboard, Scissors, Layers } from 'lucide-react';
 
 interface VideoEditorProps {

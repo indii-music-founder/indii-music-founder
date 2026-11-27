@@ -1,4 +1,4 @@
-import { VideoGeneration } from '../VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useStore } from '@/core/store';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -6,7 +6,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // Mocks
 vi.mock('@/core/store');
 
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
-import { BaseAgent } from '../BaseAgent';
-import { AgentConfig, AgentContext } from '../types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig, AgentContext } from '@/services/agent/types';
 import systemPrompt from '@agents/indii_curriculum/prompt.md?raw';
 import { importWithRetry } from '@/utils/dynamicImport';
 

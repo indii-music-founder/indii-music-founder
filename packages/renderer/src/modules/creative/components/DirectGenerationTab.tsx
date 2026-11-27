@@ -4,16 +4,16 @@ import {
     ChevronDown, ChevronUp, Film, MoreHorizontal, Wand2, Globe, Shield, Layers, Compass, Pin
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { IngredientDropZone } from './IngredientDropZone';
-import { CreativeVideoPlayer } from './CreativeVideoPlayer';
-import { useDirectGeneration } from '../hooks/useDirectGeneration';
+import { IngredientDropZone } from '@/modules/creative/components/IngredientDropZone';
+import { CreativeVideoPlayer } from '@/modules/creative/components/CreativeVideoPlayer';
+import { useDirectGeneration } from '@/modules/creative/hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
+import { VideoGenerationProgress } from '@/modules/creative/components/veo/VideoGenerationProgress';
 import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
-import { SavedArtworkPanel } from './CanvasEditor/SavedArtworkPanel';
+import { SavedArtworkPanel } from '@/modules/creative/components/CanvasEditor/SavedArtworkPanel';
 import {
     judgeCreativePromptModeIntent,
     judgeCreativeStudioConfigPreset,
@@ -29,7 +29,7 @@ import {
 const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu';
-import { BrandPromptAdditivesMenu } from './BrandPromptAdditivesMenu';
+import { BrandPromptAdditivesMenu } from '@/modules/creative/components/BrandPromptAdditivesMenu';
 
 export default function DirectGenerationTab() {
     const toast = useToast();

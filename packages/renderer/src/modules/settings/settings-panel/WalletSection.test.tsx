@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import WalletSection from './WalletSection';
+import WalletSection from '@/modules/settings/settings-panel/WalletSection';
 import { MembershipService } from '@/services/MembershipService';
 
 const mockUser = {

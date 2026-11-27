@@ -5,7 +5,7 @@ import {
     resolveEffectiveFaderValues,
     assignAndResolve,
     CONTROL_GROUP_RATE,
-} from './PersonaControlGroup';
+} from '@/services/persona/PersonaControlGroup';
 
 const USER_FADERS: PersonaFaderValues = {
     riskTolerance: 90,

@@ -27,16 +27,16 @@ import { platformDataService } from '@/services/analytics/PlatformDataService';
 import { analyticsEngine } from '@/services/analytics/AnalyticsEngine';
 import type { TrackReport } from '@/services/analytics/types';
 
-import { TrackSelector } from './components/TrackSelector';
-import { ViralScorePanel } from './components/ViralScorePanel';
-import { MetricsGrid } from './components/MetricsGrid';
-import { StreamGrowthChart } from './components/StreamGrowthChart';
-import { GrowthPatternsPanel } from './components/GrowthPatternsPanel';
-import { AlertsPanel } from './components/AlertsPanel';
-import { PlatformBreakdown } from './components/PlatformBreakdown';
-import { RegionalMap } from './components/RegionalMap';
-import { PlatformConnector } from './components/PlatformConnector';
-import { CustomizableAnalyticsDashboard } from './components/CustomizableAnalyticsDashboard';
+import { TrackSelector } from '@/modules/analytics/components/TrackSelector';
+import { ViralScorePanel } from '@/modules/analytics/components/ViralScorePanel';
+import { MetricsGrid } from '@/modules/analytics/components/MetricsGrid';
+import { StreamGrowthChart } from '@/modules/analytics/components/StreamGrowthChart';
+import { GrowthPatternsPanel } from '@/modules/analytics/components/GrowthPatternsPanel';
+import { AlertsPanel } from '@/modules/analytics/components/AlertsPanel';
+import { PlatformBreakdown } from '@/modules/analytics/components/PlatformBreakdown';
+import { RegionalMap } from '@/modules/analytics/components/RegionalMap';
+import { PlatformConnector } from '@/modules/analytics/components/PlatformConnector';
+import { CustomizableAnalyticsDashboard } from '@/modules/analytics/components/CustomizableAnalyticsDashboard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Tab definitions

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { OpportunityCompiler } from './OpportunityCompiler';
+import { OpportunityCompiler } from '@/services/business-harness/OpportunityCompiler';
 import { HarnessContext } from '@indii/shared';
 
 describe('OpportunityCompiler', () => {

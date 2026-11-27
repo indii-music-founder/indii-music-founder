@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { useVideoEditorStore, VideoProject, VideoClip } from '@/modules/creative/video/store/videoEditorStore';
 import { PropertiesPanel } from '@/components/studio/PropertiesPanel';
-import FrameSelectionModal from '../../components/FrameSelectionModal';
+import FrameSelectionModal from '@/modules/creative/video/components/FrameSelectionModal';
 import { HistoryItem } from '@/core/store';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import {
@@ -14,7 +14,7 @@ import {
     ContentSection,
     SourceSection,
     AudioSection
-} from './VideoPropertySections';
+} from '@/modules/creative/video/editor/components/VideoPropertySections';
 
 interface VideoPropertiesPanelProps {
     project: VideoProject;

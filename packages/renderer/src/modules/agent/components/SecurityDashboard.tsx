@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ShieldAlert, Zap } from 'lucide-react';
-import { agentOptimizer, OptimizationSuggestion } from '../../../services/agent/governance/AgentOptimizer';
+import { agentOptimizer, OptimizationSuggestion } from '@/services/agent/governance/AgentOptimizer';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { spotifyService } from '@/services/analytics/SpotifyService';
 import { tikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsService';
-import type { PlatformOAuthCallbackProvider } from './platformOAuthCallbackRoute';
+import type { PlatformOAuthCallbackProvider } from '@/modules/analytics/components/platformOAuthCallbackRoute';
 
 const PROVIDER_LABELS: Readonly<Record<PlatformOAuthCallbackProvider, string>> = Object.freeze({
     spotify: 'Spotify',

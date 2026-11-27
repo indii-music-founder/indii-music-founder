@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { agentGraphService } from './AgentGraphService';
+import { agentGraphService } from '@/services/agent/orchestration/AgentGraphService';
 import type { AgentGraph, AgentContext } from '@/services/agent/types';
 import { runTransaction } from 'firebase/firestore';
 

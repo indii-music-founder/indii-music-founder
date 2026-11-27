@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import MarketingDashboard from './MarketingDashboard';
+import MarketingDashboard from '@/modules/marketing/MarketingDashboard';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
@@ -18,7 +18,7 @@ vi.mock('@/modules/marketing/hooks/useMarketing', () => ({
 }));
 
 // Mock child components that rely on context or complex logic to simplify integration test
-vi.mock('./components/CampaignManager', () => ({
+vi.mock('@/modules/marketing/components/CampaignManager', () => ({
     default: () => <div data-testid="campaign-manager">Campaign Manager Content</div>
 }));
 

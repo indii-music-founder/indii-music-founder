@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { measureReleaseAudio, validateReleaseAudio } from './releaseAssetValidation';
+import { measureReleaseAudio, validateReleaseAudio } from '@/modules/publishing/hooks/releaseAssetValidation';
 
 function file(bytes: Uint8Array, name: string): File {
   // jsdom's File lacks arrayBuffer; production browser File always implements it.

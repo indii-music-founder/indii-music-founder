@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateAgentStreamCost } from './estimateAgentStreamCost';
+import { estimateAgentStreamCost } from '@/services/intelligence/billing/estimateAgentStreamCost';
 
 import { minimumTextStreamReservationCost } from '../../../../../firebase/src/functions/creative/textStreamAdmission';
 

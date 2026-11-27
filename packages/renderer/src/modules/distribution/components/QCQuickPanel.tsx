@@ -2,7 +2,7 @@ import React from 'react';
 import { Brain, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { StatusLight } from './StatusLight';
+import { StatusLight } from '@/modules/distribution/components/StatusLight';
 
 export function QCQuickPanel() {
     const { releases, loading } = useStore(

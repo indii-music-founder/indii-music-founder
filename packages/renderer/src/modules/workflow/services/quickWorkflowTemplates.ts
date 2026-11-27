@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { WORKFLOW_TEMPLATES } from './workflowTemplates';
-import { Status, type SavedWorkflow } from '../types';
+import { WORKFLOW_TEMPLATES } from '@/modules/workflow/services/workflowTemplates';
+import { Status, type SavedWorkflow } from '@/modules/workflow/types';
 
 export type QuickWorkflowTemplateId = 'template-simple-image' | 'template-video-teaser' | 'template-music-release';
 

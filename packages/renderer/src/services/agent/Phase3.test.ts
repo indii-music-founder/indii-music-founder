@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
-import { TransactionManager } from './context/TransactionManager';
-import { LoopDetector } from './LoopDetector';
-import { AgentContext } from './types';
+import { AgentExecutionContext, ExecutionContextFactory } from '@/services/agent/context/AgentExecutionContext';
+import { TransactionManager } from '@/services/agent/context/TransactionManager';
+import { LoopDetector } from '@/services/agent/LoopDetector';
+import { AgentContext } from '@/services/agent/types';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
@@ -14,7 +14,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../MembershipService', () => ({
+vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true })
     }

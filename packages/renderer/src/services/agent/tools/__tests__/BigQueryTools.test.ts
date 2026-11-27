@@ -24,7 +24,7 @@ vi.mock('@/services/firebase', () => ({
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { httpsCallable } from 'firebase/functions';
-import { BigQueryTools } from '../BigQueryTools';
+import { BigQueryTools } from '@/services/agent/tools/BigQueryTools';
 
 // No need to cast again since we defined mockHttpsCallable above
 describe('BigQueryTools (Real BigQuery via Cloud Functions)', () => {

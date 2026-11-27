@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoDirector } from './VideoDirector';
+import { VideoDirector } from '@/modules/creative/services/VideoDirector';
 import type { SessionChunkEvidence } from '@/config/typesafeJudgments';
 
 describe('VideoDirector.triageSessionChunks', () => {

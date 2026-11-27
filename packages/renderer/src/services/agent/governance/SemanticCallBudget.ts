@@ -1,5 +1,5 @@
-import type { ExecutionTokenBudget } from './ExecutionTokenBudget';
-import { TokenEstimator } from './TokenEstimator';
+import type { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
+import { TokenEstimator } from '@/services/agent/governance/TokenEstimator';
 
 export interface SemanticCallAdmission {
     budget: ExecutionTokenBudget;

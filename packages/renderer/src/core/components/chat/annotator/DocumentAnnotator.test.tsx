@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DocumentAnnotator } from './DocumentAnnotator';
+import { DocumentAnnotator } from '@/core/components/chat/annotator/DocumentAnnotator';
 import { AgentService } from '@/services/agent/AgentService';
 
 // Mock pdfjs-dist

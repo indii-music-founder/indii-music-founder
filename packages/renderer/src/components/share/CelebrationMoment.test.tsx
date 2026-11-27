@@ -5,12 +5,12 @@ const { mockShareSheet, mockSetModule } = vi.hoisted(() => ({
     mockShareSheet: vi.fn(),
     mockSetModule: vi.fn(),
 }));
-vi.mock('./ShareSheet', () => ({ ShareSheet: { call: mockShareSheet } }));
+vi.mock('@/components/share/ShareSheet', () => ({ ShareSheet: { call: mockShareSheet } }));
 vi.mock('@/core/store', () => ({
     useStore: (selector: (state: { setModule: typeof mockSetModule }) => unknown) => selector({ setModule: mockSetModule }),
 }));
 
-import { CelebrationMoment } from './CelebrationMoment';
+import { CelebrationMoment } from '@/components/share/CelebrationMoment';
 
 describe('CelebrationMoment', () => {
     beforeEach(() => {

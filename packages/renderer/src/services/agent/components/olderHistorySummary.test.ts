@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withOlderHistorySummary } from './olderHistorySummary';
+import { withOlderHistorySummary } from '@/services/agent/components/olderHistorySummary';
 
 describe('withOlderHistorySummary (ISSUE-1661)', () => {
     it('puts the older-turn summary before the recent turns', () => {

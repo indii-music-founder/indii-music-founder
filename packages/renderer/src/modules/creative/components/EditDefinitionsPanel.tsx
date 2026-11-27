@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Sparkles, AlertCircle, Layers3, Users, Brush, ImagePlus } from 'lucide-react';
-import { STUDIO_COLORS } from '../constants';
-import type { CreativeVaultScope } from '../services/creativeManifest';
+import { STUDIO_COLORS } from '@/modules/creative/constants';
+import type { CreativeVaultScope } from '@/modules/creative/services/creativeManifest';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';

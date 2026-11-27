@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music, Type, UserCheck, ShieldCheck } from 'lucide-react';
-import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
-import { useStore } from '../../store';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { StoreState } from '../../store';
+import { StoreState } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { z } from 'zod';

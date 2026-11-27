@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRealAuthenticatedUserId, isAnonymousOrDemoUser, isDemoUserId } from './authGuards';
+import { getRealAuthenticatedUserId, isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 describe('authGuards', () => {
     it('rejects anonymous and demo users', () => {

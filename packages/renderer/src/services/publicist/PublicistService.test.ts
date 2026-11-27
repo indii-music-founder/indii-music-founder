@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PublicistService } from './PublicistService';
+import { PublicistService } from '@/services/publicist/PublicistService';
 
 
 // Mock Firebase
@@ -17,7 +17,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Mock db instance
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     db: {},
     auth: { currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('token') } },

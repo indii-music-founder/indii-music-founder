@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AgentFeedbackWidget } from './AgentFeedbackWidget';
+import { AgentFeedbackWidget } from '@/components/ui/AgentFeedbackWidget';
 
 const feedback = vi.hoisted(() => ({
     submit: vi.fn(),

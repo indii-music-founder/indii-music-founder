@@ -4,12 +4,12 @@ const mocks = vi.hoisted(() => ({
     persistOrgRecord: vi.fn(),
 }));
 
-vi.mock('../services/RegistrationPersistence', () => ({
+vi.mock('@/modules/registration/services/RegistrationPersistence', () => ({
     persistOrgRecord: mocks.persistOrgRecord,
 }));
 
-import { LocAdapter } from './LocAdapter';
-import type { CatalogTrack } from '../types';
+import { LocAdapter } from '@/modules/registration/adapters/LocAdapter';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 const track: CatalogTrack = {
     id: 'SONIC-master',

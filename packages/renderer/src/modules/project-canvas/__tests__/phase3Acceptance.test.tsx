@@ -20,14 +20,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { useStore } from '@/core/store';
-import { CanvasEdgeLayer } from '../components/edges/CanvasEdgeLayer';
-import { VersionComparisonModal } from '../components/modals/VersionComparisonModal';
-import { LifecycleTemplateService } from '../services/LifecycleTemplateService';
-import { ProjectEntityBlock } from '../components/blocks/ProjectEntityBlock';
-import { CanvasCommentModal } from '../components/comments/CanvasCommentModal';
-import { CanvasSnapshotModal } from '../components/modals/CanvasSnapshotModal';
-import { WorkflowBlock } from '../components/blocks/WorkflowBlock';
-import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasComment } from '../types';
+import { CanvasEdgeLayer } from '@/modules/project-canvas/components/edges/CanvasEdgeLayer';
+import { VersionComparisonModal } from '@/modules/project-canvas/components/modals/VersionComparisonModal';
+import { LifecycleTemplateService } from '@/modules/project-canvas/services/LifecycleTemplateService';
+import { ProjectEntityBlock } from '@/modules/project-canvas/components/blocks/ProjectEntityBlock';
+import { CanvasCommentModal } from '@/modules/project-canvas/components/comments/CanvasCommentModal';
+import { CanvasSnapshotModal } from '@/modules/project-canvas/components/modals/CanvasSnapshotModal';
+import { WorkflowBlock } from '@/modules/project-canvas/components/blocks/WorkflowBlock';
+import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasComment } from '@/modules/project-canvas/types';
 
 // Mock Workflow Persistence
 vi.mock('@/modules/workflow/services/workflowPersistence', () => ({

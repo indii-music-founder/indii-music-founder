@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as opentype from 'opentype.js';
-import { renderTextPath, rasterizeVectorText, assertLatinText } from '../TextVectorRenderer';
+import { renderTextPath, rasterizeVectorText, assertLatinText } from '@/services/typography/TextVectorRenderer';
 
 // ---------------------------------------------------------------------------
 // Deterministic programmatic fixture font. B1 deliberately builds the font at

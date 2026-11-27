@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { CostControlService } from '@/services/billing/CostControlService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -129,7 +129,7 @@ vi.mock('@/config/env', () => ({
     }
 }));
 
-vi.mock('./billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     serverTimestamp: vi.fn(),
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
@@ -212,7 +212,7 @@ describe('FirebaseIntelligenceService', () => {
     });
 
     it('should send safety settings to the backend gateway', async () => {
-        const { STANDARD_SAFETY_SETTINGS } = await import('./config/safety-settings');
+        const { STANDARD_SAFETY_SETTINGS } = await import('@/services/intelligence/config/safety-settings');
 
         await service.generateContent('Safe Prompt', undefined, { temperature: 0.5 });
 
@@ -409,7 +409,7 @@ describe('FirebaseIntelligenceService', () => {
     });
 
     it('prepares stream headers while quota is pending and skips reservation after Stop', async () => {
-        const { TokenUsageService } = await import('./billing/TokenUsageService');
+        const { TokenUsageService } = await import('@/services/intelligence/billing/TokenUsageService');
         const quota = vi.mocked(TokenUsageService.checkQuota);
         let finishQuota!: () => void;
         quota.mockImplementationOnce(() => new Promise(resolve => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGeneratedImagesGallery } from './GenerationMonitor';
+import { buildGeneratedImagesGallery } from '@/modules/mobile-remote/components/GenerationMonitor';
 import type { RemoteCommand, RemoteResponse } from '@/services/agent/RemoteRelayService';
 import { Timestamp } from 'firebase/firestore';
 

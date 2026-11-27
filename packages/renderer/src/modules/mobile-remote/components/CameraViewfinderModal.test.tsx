@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import CameraViewfinderModal, { cropToRatio } from './CameraViewfinderModal';
+import CameraViewfinderModal, { cropToRatio } from '@/modules/mobile-remote/components/CameraViewfinderModal';
 
 describe('camera viewfinder', () => {
     afterEach(() => {

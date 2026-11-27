@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
-import { createCreativeSlice } from './creative';
+import { createCreativeSlice } from '@/core/store/slices/creative';
 import { HistoryItem } from '@/core/types/history';
 
 // ISSUE-1370: openImageInStudio now reads natural dimensions via Image().

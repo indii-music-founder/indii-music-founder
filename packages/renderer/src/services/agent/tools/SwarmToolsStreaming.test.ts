@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { DelegationLoopDetector } from '../LoopDetector';
+import { DelegationLoopDetector } from '@/services/agent/LoopDetector';
 
 /**
  * consult_specialist → UI bridge tests.
@@ -11,7 +11,7 @@ import { DelegationLoopDetector } from '../LoopDetector';
 const mockStream = vi.fn();
 const mockInvoke = vi.fn();
 
-vi.mock('../a2a/A2AClient', () => ({
+vi.mock('@/services/agent/a2a/A2AClient', () => ({
   a2aClient: {
     stream: (...args: unknown[]) => mockStream(...args),
     invoke: (...args: unknown[]) => mockInvoke(...args),
@@ -19,7 +19,7 @@ vi.mock('../a2a/A2AClient', () => ({
   A2ATransportUnavailableError: class extends Error {},
 }));
 
-vi.mock('../governance/AgentIdentity', () => ({
+vi.mock('@/services/agent/governance/AgentIdentity', () => ({
   agentIdentityService: { recordDelegation: vi.fn() },
 }));
 
@@ -46,7 +46,7 @@ describe('consult_specialist streaming bridge', () => {
   });
 
   it('streams deltas through emitToken when a UI sink + streamAgent are present', async () => {
-    const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
+    const { consult_specialist } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
     mockStream.mockReturnValue(gen([
       { type: 'delta', text: 'Hel', done: false },
       { type: 'delta', text: 'lo', done: false },
@@ -67,7 +67,7 @@ describe('consult_specialist streaming bridge', () => {
   });
 
   it('uses the non-streaming invoke() path when no emitToken sink is present', async () => {
-    const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
+    const { consult_specialist } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
     mockInvoke.mockResolvedValue({ text: 'batch reply', agentId: 'marketing' });
 
     const ctx = makeContext(); // no emitToken / streamAgent

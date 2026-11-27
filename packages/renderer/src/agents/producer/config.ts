@@ -1,5 +1,5 @@
 import { AgentConfig } from "@/services/agent/types";
-import systemPrompt from './prompt.md?raw';
+import systemPrompt from '@/agents/producer/prompt.md?raw';
 import { ProducerTools } from "@/services/agent/tools/ProducerTools";
 
 export const ProducerAgent: AgentConfig = {

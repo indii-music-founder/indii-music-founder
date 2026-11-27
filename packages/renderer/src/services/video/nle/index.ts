@@ -2,8 +2,8 @@
  * NLE Real-Time Playback Client Engine (Issue #413).
  */
 
-export * from './MasterAudioClock';
-export * from './VideoTrackDecoder';
-export * from './WebGL2Compositor';
-export * from './NLEMediaProbeService';
-export * from './useNLEPlayback';
+export * from '@/services/video/nle/MasterAudioClock';
+export * from '@/services/video/nle/VideoTrackDecoder';
+export * from '@/services/video/nle/WebGL2Compositor';
+export * from '@/services/video/nle/NLEMediaProbeService';
+export * from '@/services/video/nle/useNLEPlayback';

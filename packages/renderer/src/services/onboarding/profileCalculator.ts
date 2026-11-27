@@ -1,5 +1,5 @@
-import type { UserProfile, BrandKit, ReleaseDetails, SocialLinks } from './types';
-import type { OnboardingPhase } from './types';
+import type { UserProfile, BrandKit, ReleaseDetails, SocialLinks } from '@/services/onboarding/types';
+import type { OnboardingPhase } from '@/services/onboarding/types';
 
 /**
  * Calculates the completeness status of an artist's profile.

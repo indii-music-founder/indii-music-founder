@@ -26,7 +26,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-import { PushNotificationService } from './PushNotificationService';
+import { PushNotificationService } from '@/services/notifications/PushNotificationService';
 
 describe('PushNotificationService foreground listener lifecycle', () => {
     afterEach(() => {

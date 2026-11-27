@@ -21,7 +21,7 @@ import {
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 
 interface CommandPadProps {

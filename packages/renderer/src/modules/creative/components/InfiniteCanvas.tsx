@@ -6,7 +6,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { imageAnalysisService, type DetectedObject } from '@/services/image/ImageAnalysisService';
 import { Loader2, Sparkles, Send, Crop } from 'lucide-react';
-import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
+import { InfiniteCanvasHUD } from '@/modules/creative/components/InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';

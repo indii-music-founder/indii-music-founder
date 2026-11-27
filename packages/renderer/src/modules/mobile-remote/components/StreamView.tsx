@@ -6,15 +6,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import type { HistoryItem } from '@/core/types/history';
 import { StorageService } from '@/services/StorageService';
-import TransportBar from './TransportBar';
+import TransportBar from '@/modules/mobile-remote/components/TransportBar';
 import { motion } from 'motion/react';
 import { Music, Play, Loader2, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { logger } from '@/utils/logger';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
 import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
 export default function StreamView({
     desktopState,

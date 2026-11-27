@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AgentTriad, type AgentContext } from './AgentTriad';
+import { AgentTriad, type AgentContext } from '@/services/agent/harness/AgentTriad';
 
 const context: AgentContext = {
     workflowId: 'workflow-1',

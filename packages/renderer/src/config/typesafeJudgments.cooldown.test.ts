@@ -28,7 +28,7 @@ import {
     judgeTransientError,
     JUDGMENT_FAILURE_COOLDOWN_MS,
     __resetJudgmentCooldownForTests,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 
 describe('judgment failure cooldown', () => {
     beforeEach(() => {
@@ -101,7 +101,7 @@ describe('judgment failure cooldown', () => {
 
     // judgeSkillIntent shares the same cooldown — exercised via the same proxy path.
     async function judgeSkillIntentShim(): Promise<string | null> {
-        const { judgeSkillIntent } = await import('./typesafeJudgments');
+        const { judgeSkillIntent } = await import('@/config/typesafeJudgments');
         return judgeSkillIntent('anything', [{ id: 's', name: 's', description: 's' }]);
     }
 });

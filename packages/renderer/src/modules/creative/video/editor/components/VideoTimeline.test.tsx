@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoTimeline } from './VideoTimeline';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { VideoTimeline } from '@/modules/creative/video/editor/components/VideoTimeline';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 // Mock store
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
 }));
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { ResponsiveLayoutProvider, useResponsiveLayout } from './ResponsiveLayoutProvider';
+import { ResponsiveLayoutProvider, useResponsiveLayout } from '@/providers/ResponsiveLayoutProvider';
 
 /**
  * Regression: dragging a window edge fires native resize events far faster

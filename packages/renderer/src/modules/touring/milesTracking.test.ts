@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTotalMilesFromItinerary, itineraryToMileageTrips } from './milesTracking';
-import type { Itinerary } from './types';
+import { getTotalMilesFromItinerary, itineraryToMileageTrips } from '@/modules/touring/milesTracking';
+import type { Itinerary } from '@/modules/touring/types';
 
 const itinerary: Itinerary = {
     id: 'itinerary-1',

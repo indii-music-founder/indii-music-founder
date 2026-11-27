@@ -31,7 +31,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-import { SocialTools } from '../SocialTools';
+import { SocialTools } from '@/services/agent/tools/SocialTools';
 
 const scheduleLaunchKit = (args: unknown) =>
     (SocialTools as Record<string, (a: unknown) => Promise<any>>).schedule_launch_kit_rollout(args);

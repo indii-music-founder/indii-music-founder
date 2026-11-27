@@ -6,7 +6,7 @@ import { Play, X } from 'lucide-react';
 import { env } from '@/config/env';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { getConsentPreferences } from './CookieConsentBanner';
+import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 /**

@@ -1,6 +1,6 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { Megaphone, Briefcase, Mic, Share2, Users, BarChart } from 'lucide-react';
-import CampaignDashboard from './components/CampaignDashboard';
+import CampaignDashboard from '@/modules/marketing/components/CampaignDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
@@ -9,11 +9,11 @@ import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 // Brand, Publicist, Social, CRM, and Analytics keep their module ids (deep
 // links still land on working surfaces) but are no longer separate nav
 // destinations — they mount here as specialist tabs of the department.
-const BrandManagerLazy = lazy(() => import('./components/BrandManager'));
-const PublicistDashboardLazy = lazy(() => import('../publicist/PublicistDashboard'));
-const SocialDashboardLazy = lazy(() => import('../social/SocialDashboard'));
-const CRMDashboardLazy = lazy(() => import('../crm/CRMDashboard'));
-const GrowthIntelligenceLazy = lazy(() => import('../analytics/GrowthIntelligenceDashboard'));
+const BrandManagerLazy = lazy(() => import('@/modules/marketing/components/BrandManager'));
+const PublicistDashboardLazy = lazy(() => import('@/modules/publicist/PublicistDashboard'));
+const SocialDashboardLazy = lazy(() => import('@/modules/social/SocialDashboard'));
+const CRMDashboardLazy = lazy(() => import('@/modules/crm/CRMDashboard'));
+const GrowthIntelligenceLazy = lazy(() => import('@/modules/analytics/GrowthIntelligenceDashboard'));
 
 type MarketingTab = 'departments' | 'brand' | 'publicist' | 'social' | 'crm' | 'analytics';
 

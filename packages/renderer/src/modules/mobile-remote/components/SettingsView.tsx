@@ -28,11 +28,11 @@ import {
 } from '@/hooks/useAutoSleep';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
-import { buildMobileRemoteUrl } from '../routing';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
+import { buildMobileRemoteUrl } from '@/modules/mobile-remote/routing';
 import { pushNotificationService } from '@/services/notifications/PushNotificationService';
 import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
 interface SettingsViewProps {
     desktopState: DesktopState | null;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { E2EEncryptionService } from './E2EEncryptionService';
+import { E2EEncryptionService } from '@/services/security/E2EEncryptionService';
 
 function derToPem(derBuffer: ArrayBuffer, type: string) {
   const b64 = Buffer.from(derBuffer).toString('base64');

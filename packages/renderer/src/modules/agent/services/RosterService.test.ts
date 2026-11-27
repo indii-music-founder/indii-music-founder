@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { RosterService, RosterItemSchema } from './RosterService';
-import { Venue } from '../types';
+import { RosterService, RosterItemSchema } from '@/modules/agent/services/RosterService';
+import { Venue } from '@/modules/agent/types';
 import { ZodError } from 'zod';
 
 // Mock dependencies

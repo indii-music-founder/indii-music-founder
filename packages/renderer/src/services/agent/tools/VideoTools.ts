@@ -1,8 +1,8 @@
 
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { logger } from '@/utils/logger';

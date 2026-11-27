@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BOARDROOM_MAX_EXECUTED_AGENTS, GENERATION_RATE_LIMIT } from '@indii/shared';
-import { RateLimiter } from './RateLimiter';
-import { CLIENT_GENERATION_PACING } from './FirebaseIntelligenceService';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
+import { CLIENT_GENERATION_PACING } from '@/services/intelligence/FirebaseIntelligenceService';
 
 describe('client generation pacing vs. server limit', () => {
     beforeEach(() => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { dawIntegrationService } from './DAWIntegrationService';
-import { ExtendedGoldenMetadata } from '../metadata/types';
+import { dawIntegrationService } from '@/services/audio/DAWIntegrationService';
+import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 // Mock JSZip
 vi.mock('jszip', () => {

@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { ref, uploadBytesResumable } from 'firebase/storage';
 import { functions, storage, auth } from '@/services/firebase';
-import { HostedRightsConnectionLifecycle } from './HostedRightsConnectionLifecycle';
+import { HostedRightsConnectionLifecycle } from '@/services/rights/HostedRightsConnectionLifecycle';
 import type { RightsCase, CopyrightWork, CwrBatchInput, SessionInput } from '@indii/shared';
 
 export async function rightsOperation<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {

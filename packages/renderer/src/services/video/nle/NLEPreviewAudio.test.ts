@@ -5,7 +5,7 @@ import {
   NLEPreviewAudio,
   computeAudioSyncAdjustment,
   previewAudioState,
-} from './NLEPreviewAudio';
+} from '@/services/video/nle/NLEPreviewAudio';
 
 vi.mock('@/services/storage/resolveStorageUrl', () => ({
   resolveStorageUrl: vi.fn(async (src: string) => src),

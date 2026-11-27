@@ -8,7 +8,7 @@ import {
     retryPlpSlot,
     PlpBatch,
     PlpVariantSlot,
-} from './plpBatch';
+} from '@/modules/creative/plpBatch';
 
 /**
  * ISSUE-1159: PLP integration test suite for 5 emulator-backed scenarios.

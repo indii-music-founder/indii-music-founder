@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import BrandAssetsDrawer from './BrandAssetsDrawer';
+import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { vi } from 'vitest';

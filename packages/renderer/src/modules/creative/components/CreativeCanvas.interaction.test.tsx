@@ -1,7 +1,7 @@
 // Structural-only legacy suite: test doubles do not verify the production customer path.
 import { render, screen, fireEvent } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CreativeCanvas from './CreativeCanvas';
+import CreativeCanvas from '@/modules/creative/components/CreativeCanvas';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 import { createMockStore } from '@/test/utils';
@@ -47,7 +47,7 @@ vi.mock('@/services/storage/repository', () => ({
     saveAssetToStorage: vi.fn(), saveCanvasStateToStorage: vi.fn(),
     getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../services/CanvasOperationsService', () => ({
+vi.mock('@/modules/creative/services/CanvasOperationsService', () => ({
     canvasOps: {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
@@ -68,7 +68,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         reorderLayer: vi.fn(),
     }
 }));
-vi.mock('../services/VideoDirector', () => ({ VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) } }));
+vi.mock('@/modules/creative/services/VideoDirector', () => ({ VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) } }));
 vi.mock('@/services/image/EditingService', () => ({ Editing: { magicFill: vi.fn() } }));
 
 describe('🖱️ Click: Creative Studio Daisychain', () => {

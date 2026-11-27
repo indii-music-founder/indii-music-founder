@@ -3,17 +3,17 @@ import {
     evaluateLikenessCalibration,
     HUMAN_MODEL_PATH,
     FACE_LANDMARKER_MODEL_PATH
-} from '../FacePipeline';
+} from '@/services/identity/FacePipeline';
 import {
     LikenessFusionService,
     IDENTITY_SIMILARITY_THRESHOLD
-} from '../LikenessFusionService';
+} from '@/services/identity/LikenessFusionService';
 import {
     KNOWN_SAME_PAIRS,
     KNOWN_DIFFERENT_PAIRS,
     ALL_CALIBRATION_PAIRS,
     BASE_LANDMARKS_2D
-} from '../__fixtures__/calibrationFixtures';
+} from '@/services/identity/__fixtures__/calibrationFixtures';
 
 describe('Likeness Calibration Loop & Fixtures (Tool 1 / Likeness Locking)', () => {
     describe('Identity Mode Calibration (Biometric 128-d embeddings)', () => {

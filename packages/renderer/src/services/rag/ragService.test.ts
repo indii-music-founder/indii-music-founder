@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before imports
-vi.mock('../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: vi.fn(),
         generateText: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     }
 }));
 
-vi.mock('../../modules/knowledge/services/KnowledgeRetrievalService', () => ({
+vi.mock('@/modules/knowledge/services/KnowledgeRetrievalService', () => ({
     knowledgeRetrievalService: {
         getDocuments: vi.fn(),
         chat: vi.fn(),
@@ -47,10 +47,10 @@ vi.mock('@/core/config/intelligence-models', () => ({
     ModelIdSchema: { parse: (v: string) => v }
 }));
 
-import { runAgenticWorkflow, processForKnowledgeBase } from './ragService';
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
-import { knowledgeRetrievalService } from '../../modules/knowledge/services/KnowledgeRetrievalService';
-import type { UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
+import { runAgenticWorkflow, processForKnowledgeBase } from '@/services/rag/ragService';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
+import type { UserProfile, AudioAnalysisJob } from '@/modules/workflow/types';
 
 describe('ragService', () => {
     beforeEach(() => {
@@ -101,7 +101,7 @@ describe('ragService', () => {
 
         it('should initialize corpus and query successfully', async () => {
 
-            const mockFiles = [{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' } as import('../../modules/knowledge/services/KnowledgeRetrievalService').FrontendKnowledgeDoc];
+            const mockFiles = [{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' } as import('@/modules/knowledge/services/KnowledgeRetrievalService').FrontendKnowledgeDoc];
 
             vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue(mockFiles);
             vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('This is the answer from RAG.');

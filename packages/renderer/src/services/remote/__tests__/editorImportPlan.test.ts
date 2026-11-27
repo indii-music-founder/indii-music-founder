@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { editorImportPlan } from '../editorImportPlan';
+import { editorImportPlan } from '@/services/remote/editorImportPlan';
 
 const mediaMocks = vi.hoisted(() => ({
     currentModule: 'dashboard' as string,
@@ -54,7 +54,7 @@ vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     },
 }));
 
-import { openRemoteMedia } from '../openRemoteMedia';
+import { openRemoteMedia } from '@/services/remote/openRemoteMedia';
 
 describe('remote editor import intent (pure contract)', () => {
     it('routes an inferred image to the photo editor', () => {

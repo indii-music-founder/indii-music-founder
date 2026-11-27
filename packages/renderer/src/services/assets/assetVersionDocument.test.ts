@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assetVersionDocument } from './assetVersionDocument';
+import { assetVersionDocument } from '@/services/assets/assetVersionDocument';
 
 describe('asset version JSON document serialization (pure data)', () => {
     it('omits absent compliance and provenance without inventing results', () => {

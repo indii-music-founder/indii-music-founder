@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeVideoAspectRatio } from './videoAspectRatio';
+import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 
 describe('normalizeVideoAspectRatio', () => {
     it('prefers 9:16 for square and portrait sources', () => {

@@ -1,5 +1,5 @@
 import { openDB } from 'idb';
-import { auth, db, storage } from '../firebase';
+import { auth, db, storage } from '@/services/firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { UserProfile } from '@/modules/workflow/types';

@@ -4,7 +4,7 @@ import {
     Youtube, Music, GripVertical, ExternalLink
 } from 'lucide-react';
 import { SocialLinks } from '@/types/User';
-import type { TrackEntry } from './types';
+import type { TrackEntry } from '@/modules/marketing/components/brand-manager/types';
 
 // --- Career Stage Selector ---
 

@@ -5,7 +5,7 @@ import {
     computeTrimUpdate,
     snapFrame,
     type ClipDragContext,
-} from './useTimelineDrag';
+} from '@/modules/creative/video/editor/hooks/useTimelineDrag';
 
 const ctx = (overrides: Partial<ClipDragContext>): ClipDragContext => ({
     origin: { startFrame: 30, durationInFrames: 60 },

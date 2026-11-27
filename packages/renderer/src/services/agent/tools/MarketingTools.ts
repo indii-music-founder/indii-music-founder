@@ -8,8 +8,8 @@ import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 // duplicate removed
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 

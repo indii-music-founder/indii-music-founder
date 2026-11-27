@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { WhiskDropZone } from '../WhiskDropZone';
+import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';

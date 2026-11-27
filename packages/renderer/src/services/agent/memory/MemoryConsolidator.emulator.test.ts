@@ -4,11 +4,11 @@ import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDocs, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
 import { expect, it, vi } from 'vitest';
 import type { ConsolidationInsight } from '@/types/AlwaysOnMemory';
-import { MemoryConsolidator } from './MemoryConsolidator';
+import { MemoryConsolidator } from '@/services/agent/memory/MemoryConsolidator';
 
 const firebase = vi.hoisted(() => ({ db: undefined as Firestore | undefined }));
-vi.mock('../../firebase', () => firebase);
-vi.mock('./MemorySummarizer', () => ({ MemorySummarizer: {} }));
+vi.mock('@/services/firebase', () => firebase);
+vi.mock('@/services/agent/memory/MemorySummarizer', () => ({ MemorySummarizer: {} }));
 
 it.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('commits one insight when concurrent workers process the same group', async () => {
     const [host, port] = process.env.FIRESTORE_EMULATOR_HOST!.split(':');

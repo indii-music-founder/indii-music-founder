@@ -3,21 +3,21 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 
 // Mock child view components
-vi.mock('./BoardroomBrowserView', () => ({
+vi.mock('@/modules/boardroom/components/BoardroomBrowserView', () => ({
     BoardroomBrowserView: ({ isVisible }: { isVisible?: boolean }) => (
         <div data-testid="mock-browser-view" data-visible={String(isVisible ?? true)}>Browser View</div>
     ),
 }));
 
-vi.mock('./BoardroomModulePreview', () => ({
+vi.mock('@/modules/boardroom/components/BoardroomModulePreview', () => ({
     BoardroomModulePreview: () => <div data-testid="mock-module-view">Module View</div>,
 }));
 
-vi.mock('./BoardroomWorkbenchView', () => ({
+vi.mock('@/modules/boardroom/components/BoardroomWorkbenchView', () => ({
     BoardroomWorkbenchView: () => <div data-testid="mock-workbench-view">Workbench View</div>,
 }));
 
-vi.mock('./BoardroomAgentFeedView', () => ({
+vi.mock('@/modules/boardroom/components/BoardroomAgentFeedView', () => ({
     BoardroomAgentFeedView: () => <div data-testid="mock-agent-feed-view">Agent Feed View</div>,
 }));
 
@@ -41,7 +41,7 @@ vi.mock('zustand/react/shallow', () => ({
     useShallow: (fn: unknown) => fn,
 }));
 
-import { BoardroomWorkspacePane } from './BoardroomWorkspacePane';
+import { BoardroomWorkspacePane } from '@/modules/boardroom/components/BoardroomWorkspacePane';
 
 describe('BoardroomWorkspacePane', () => {
     beforeEach(() => {

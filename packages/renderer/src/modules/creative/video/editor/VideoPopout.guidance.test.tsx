@@ -33,7 +33,7 @@ vi.mock('@/config/typesafeJudgments', () => ({
     judgePreviewErrorGuidance: mocks.judge,
 }));
 
-vi.mock('./hooks/useCompiledVideoPreview', () => ({
+vi.mock('@/modules/creative/video/editor/hooks/useCompiledVideoPreview', () => ({
     useCompiledVideoPreview: mocks.preview,
 }));
 
@@ -44,11 +44,11 @@ const storeState = {
     setPreviewArtifactUrl: vi.fn(),
 };
 
-vi.mock('../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: (selector: (state: typeof storeState) => unknown) => selector(storeState),
 }));
 
-import VideoPopout from './VideoPopout';
+import VideoPopout from '@/modules/creative/video/editor/VideoPopout';
 
 beforeEach(() => {
     vi.clearAllMocks();

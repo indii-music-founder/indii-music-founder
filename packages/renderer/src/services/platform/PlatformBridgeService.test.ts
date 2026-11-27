@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ElectronPlatformAdapter, platformBridge } from './PlatformBridgeService';
+import { ElectronPlatformAdapter, platformBridge } from '@/services/platform/PlatformBridgeService';
 
 describe('PlatformBridgeService', () => {
     const mockSelectDirectory = vi.fn();

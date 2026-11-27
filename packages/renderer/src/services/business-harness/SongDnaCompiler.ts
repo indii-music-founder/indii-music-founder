@@ -1,9 +1,9 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
-import type { HarnessCompiler, HarnessContext } from './HarnessCompiler';
-import { createHarnessRun, type HarnessRun } from './types';
-import { buildReleaseDna } from '../release-harness/ReleaseHarnessAdapters';
-import type { ReleaseHarnessInput } from '../release-harness/types';
+import type { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
+import { createHarnessRun, type HarnessRun } from '@/services/business-harness/types';
+import { buildReleaseDna } from '@/services/release-harness/ReleaseHarnessAdapters';
+import type { ReleaseHarnessInput } from '@/services/release-harness/types';
 
 export interface SongDnaInput {
   audioProfile?: AudioIntelligenceProfile;

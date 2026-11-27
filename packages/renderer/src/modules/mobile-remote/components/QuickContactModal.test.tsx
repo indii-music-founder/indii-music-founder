@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import QuickContactModal from './QuickContactModal';
+import QuickContactModal from '@/modules/mobile-remote/components/QuickContactModal';
 
 const mockToast = vi.hoisted(() => ({
     success: vi.fn(),

@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DropCampaignWizard } from './DropCampaignWizard';
+import { DropCampaignWizard } from '@/modules/merchandise/components/DropCampaignWizard';
 
 const mocks = vi.hoisted(() => ({ createDraft: vi.fn() }));
 

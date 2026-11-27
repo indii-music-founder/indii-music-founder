@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SubmitStepTimeoutError, withStepDeadline } from './submitDeadline';
+import { SubmitStepTimeoutError, withStepDeadline } from '@/modules/publishing/hooks/submitDeadline';
 
 describe('withStepDeadline (ISSUE-1707)', () => {
     beforeEach(() => { vi.useFakeTimers(); });

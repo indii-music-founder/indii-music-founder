@@ -29,7 +29,7 @@ vi.mock('zustand/react/shallow', () => ({
     useShallow: (fn: unknown) => fn,
 }));
 
-import { BoardroomStarterCards, EXECUTIVE_STARTER_CARDS } from './BoardroomStarterCards';
+import { BoardroomStarterCards, EXECUTIVE_STARTER_CARDS } from '@/modules/boardroom/components/BoardroomStarterCards';
 
 describe('BoardroomStarterCards', () => {
     beforeEach(() => {

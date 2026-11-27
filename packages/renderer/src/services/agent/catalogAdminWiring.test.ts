@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TOOL_RISK_REGISTRY } from './ToolRiskRegistry';
-import { DistributionAgent } from './definitions/DistributionAgent';
-import { PublishingAgent } from './definitions/PublishingAgent';
+import { TOOL_RISK_REGISTRY } from '@/services/agent/ToolRiskRegistry';
+import { DistributionAgent } from '@/services/agent/definitions/DistributionAgent';
+import { PublishingAgent } from '@/services/agent/definitions/PublishingAgent';
 
 /**
  * Post-Mastering Administrative Engine (P3) wiring contract:

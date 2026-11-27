@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { runCreativeVisionCheck, toCreativeBrandKit } from './BrandVisionQC';
+import { runCreativeVisionCheck, toCreativeBrandKit } from '@/services/agent/governance/BrandVisionQC';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import type { BrandKit } from '@/types/User';

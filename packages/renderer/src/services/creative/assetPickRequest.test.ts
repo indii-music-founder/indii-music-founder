@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAssetPickRequest } from './assetPickRequest';
+import { useAssetPickRequest } from '@/services/creative/assetPickRequest';
 
 describe('assetPickRequest (ISSUE-1707)', () => {
     beforeEach(() => useAssetPickRequest.setState({ request: null, requestVersion: 0, guard: null }));

@@ -4,7 +4,7 @@ import {
     getWorkflowFromStorage,
     saveWorkflowToStorage,
 } from '@/services/storage/repository';
-import { SavedWorkflow } from '../types';
+import { SavedWorkflow } from '@/modules/workflow/types';
 
 const assertCurrentUser = (userId: string) => {
     if (!auth.currentUser || auth.currentUser.uid !== userId) {

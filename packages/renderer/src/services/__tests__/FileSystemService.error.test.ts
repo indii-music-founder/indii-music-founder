@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeFileSystemError } from '../FileSystemService';
+import { describeFileSystemError } from '@/services/FileSystemService';
 
 // ISSUE-1390: "Failed to create file/folder" after painting was a dead-end
 // alert. Rules proven (emulator, live ruleset): file_nodes writes require a

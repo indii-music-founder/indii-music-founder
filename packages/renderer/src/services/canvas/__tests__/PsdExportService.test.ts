@@ -5,8 +5,8 @@ import {
     canvasDocToPsd,
     readPsd,
     type RenderedRaster,
-} from '../PsdExportService';
-import { createDocFromImage, type CanvasDoc, type RasterLayer, type TextLayer } from '../CanvasDoc';
+} from '@/services/canvas/PsdExportService';
+import { createDocFromImage, type CanvasDoc, type RasterLayer, type TextLayer } from '@/services/canvas/CanvasDoc';
 
 function solidRaster(width: number, height: number, channel: number): RenderedRaster {
     const data = new Uint8ClampedArray(width * height * 4);

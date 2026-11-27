@@ -1,11 +1,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 import { MembershipService } from '@/services/MembershipService';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
-vi.mock('../tools/index', () => ({
+vi.mock('@/services/agent/tools/index', () => ({
     TOOL_REGISTRY: {
         save_memory: vi.fn(),
         recall_memories: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('../tools/index', () => ({
 }));
 
 // Mock ModelArmor to prevent prompt rejections
-vi.mock('../governance/ModelArmor', () => ({
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
     ModelArmor: {
         scanInput: vi.fn().mockResolvedValue({ allowed: true }),
         scanOutput: vi.fn().mockResolvedValue({ allowed: true })

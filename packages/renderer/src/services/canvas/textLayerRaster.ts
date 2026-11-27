@@ -7,10 +7,10 @@
  * image model never draws brand letters.
  */
 
-import { isBundledArtworkFont, renderBundledArtworkText } from './BundledArtworkFonts';
+import { isBundledArtworkFont, renderBundledArtworkText } from '@/services/canvas/BundledArtworkFonts';
 import { FontLibrary } from '@/services/typography/FontLibrary';
 import { renderTextPath, rasterizeVectorText } from '@/services/typography/TextVectorRenderer';
-import type { TextLayer } from './CanvasDoc';
+import type { TextLayer } from '@/services/canvas/CanvasDoc';
 
 export interface RenderedRaster {
     width: number;

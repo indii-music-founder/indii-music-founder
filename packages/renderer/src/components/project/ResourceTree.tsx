@@ -10,7 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
-import { FileTreeNode } from './FileTreeNode';
+import { FileTreeNode } from '@/components/project/FileTreeNode';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
 import { logger } from '@/utils/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';

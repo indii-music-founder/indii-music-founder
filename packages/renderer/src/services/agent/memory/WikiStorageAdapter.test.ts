@@ -25,7 +25,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { warn: vi.fn(), info: vi.fn() },
 }));
 
-import { WikiStorageAdapter } from './WikiStorageAdapter';
+import { WikiStorageAdapter } from '@/services/agent/memory/WikiStorageAdapter';
 
 describe('WikiStorageAdapter', () => {
     beforeEach(() => {

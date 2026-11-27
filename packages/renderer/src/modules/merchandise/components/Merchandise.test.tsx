@@ -1,15 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
-import { StandardMerch } from './StandardMerch';
-import { ProMerch } from './ProMerch';
-import MerchDashboard from '../MerchDashboard';
-import { useMerchandise } from '../hooks/useMerchandise';
-import { MerchProduct } from '../types';
+import { StandardMerch } from '@/modules/merchandise/components/StandardMerch';
+import { ProMerch } from '@/modules/merchandise/components/ProMerch';
+import MerchDashboard from '@/modules/merchandise/MerchDashboard';
+import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock the hook
-vi.mock('../hooks/useMerchandise', () => ({
+vi.mock('@/modules/merchandise/hooks/useMerchandise', () => ({
     useMerchandise: vi.fn(),
 }));
 

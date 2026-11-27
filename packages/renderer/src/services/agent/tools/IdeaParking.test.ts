@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { IdeaParkingService } from './IdeaParking';
+import { IdeaParkingService } from '@/services/agent/tools/IdeaParking';
 
 describe('IdeaParkingService — v1.5 Consent-based Dial Promotion', () => {
     it('offerIdea returns a parked idea with metadata', () => {

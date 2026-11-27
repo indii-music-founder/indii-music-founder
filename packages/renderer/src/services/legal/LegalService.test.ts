@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LegalService } from './LegalService';
+import { LegalService } from '@/services/legal/LegalService';
 import { useStore } from '@/core/store';
 import { ContractStatus } from '@/modules/legal/types';
 import { addDoc, getDocs } from 'firebase/firestore';

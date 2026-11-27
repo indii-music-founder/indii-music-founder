@@ -15,8 +15,8 @@ import {
   resolveEntryCommand,
   type EntryCommandDefinition,
   type EntryCommandSurface,
-} from './EntryCommandRegistry';
-import { entryCommandSyncService } from './EntryCommandSyncService';
+} from '@/services/commands/EntryCommandRegistry';
+import { entryCommandSyncService } from '@/services/commands/EntryCommandSyncService';
 import { requestSettingsSection } from '@/modules/settings/SettingsNavigation';
 import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 

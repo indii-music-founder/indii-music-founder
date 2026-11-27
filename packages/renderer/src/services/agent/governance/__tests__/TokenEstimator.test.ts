@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { TokenEstimator } from '../TokenEstimator';
+import { TokenEstimator } from '@/services/agent/governance/TokenEstimator';
 import type { Content } from '@/shared/types/ai.dto';
 
 const NO_TOOLS: never[] = [];

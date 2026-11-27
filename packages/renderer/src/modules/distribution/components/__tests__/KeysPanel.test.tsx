@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { KeysPanel } from '../KeysPanel';
+import { KeysPanel } from '@/modules/distribution/components/KeysPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { isrcService } from '@/services/distribution/ISRCService';
 import { useStore } from '@/core/store';

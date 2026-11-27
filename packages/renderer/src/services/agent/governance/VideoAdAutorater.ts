@@ -7,7 +7,7 @@ import {
     runCreativeVisionCheck,
     type CreativeBrandKit,
     type VisionCheckResult,
-} from './BrandVisionQC';
+} from '@/services/agent/governance/BrandVisionQC';
 
 /**
  * VideoAdAutorater — Level 5 Multimodal Ad Cut Judge (Score /10 + BrandVisionQC)

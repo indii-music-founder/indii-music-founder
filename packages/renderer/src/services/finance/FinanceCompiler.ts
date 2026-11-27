@@ -9,9 +9,9 @@ import {
   HarnessFinding,
   HarnessScore
 } from '@indii/shared';
-import { activityValueService } from '../business-harness/ActivityValueService';
+import { activityValueService } from '@/services/business-harness/ActivityValueService';
 import type { Expense } from '@/modules/finance/schemas';
-import type { PayoutRecord, RecoupmentBalance } from './RoyaltyService';
+import type { PayoutRecord, RecoupmentBalance } from '@/services/finance/RoyaltyService';
 
 export interface MileageTripInput {
   userId: string;

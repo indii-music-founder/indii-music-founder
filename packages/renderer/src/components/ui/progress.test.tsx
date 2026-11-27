@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Progress } from './progress';
+import { Progress } from '@/components/ui/progress';
 
 describe('Progress value contract', () => {
     it('keeps ARIA range values consistent with the rendered progress when attributes are forwarded', () => {

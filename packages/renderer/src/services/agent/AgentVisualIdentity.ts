@@ -3,7 +3,7 @@ import {
     getDepartmentOf,
     isHead,
     isWorker,
-} from './departments';
+} from '@/services/agent/departments';
 
 export type AgentVisualRole = 'head' | 'worker' | 'independent' | 'unknown';
 

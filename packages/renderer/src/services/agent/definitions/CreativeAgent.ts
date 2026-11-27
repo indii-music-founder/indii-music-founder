@@ -1,20 +1,20 @@
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { DirectorTools } from '../tools/DirectorTools';
-import { CoreTools } from '../tools/CoreTools';
-import { CanvasTools } from '../tools/CanvasTools';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
+import { CoreTools } from '@/services/agent/tools/CoreTools';
+import { CanvasTools } from '@/services/agent/tools/CanvasTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { McpTools } from '../tools/McpTools';
-import { QUEUE_RELEASE_CANVAS_RENDER_DECLARATION, AUDIT_ASSET_RESOLUTIONS_DECLARATION } from '../tools/McpToolDeclarations';
-import { StorageTools } from '../tools/StorageTools';
-import { VideoProjectTools } from '../tools/VideoProjectTools';
-import { VideoTools } from '../tools/VideoTools';
-import { EditorTools } from '../tools/EditorTools';
-import { BlenderTools } from '../tools/BlenderTools';
-import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
-import { ArtifactTools, CREATE_ARTIFACT_DECLARATION } from '../tools/ArtifactTools';
-import { BoardroomFontTools, BOARDROOM_FONT_DOWNLOAD } from '../tools/BoardroomFontTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { McpTools } from '@/services/agent/tools/McpTools';
+import { QUEUE_RELEASE_CANVAS_RENDER_DECLARATION, AUDIT_ASSET_RESOLUTIONS_DECLARATION } from '@/services/agent/tools/McpToolDeclarations';
+import { StorageTools } from '@/services/agent/tools/StorageTools';
+import { VideoProjectTools } from '@/services/agent/tools/VideoProjectTools';
+import { VideoTools } from '@/services/agent/tools/VideoTools';
+import { EditorTools } from '@/services/agent/tools/EditorTools';
+import { BlenderTools } from '@/services/agent/tools/BlenderTools';
+import { PRINT_TOOL_DECLARATIONS } from '@/services/agent/definitions/PrintToolDeclarations';
+import { ArtifactTools, CREATE_ARTIFACT_DECLARATION } from '@/services/agent/tools/ArtifactTools';
+import { BoardroomFontTools, BOARDROOM_FONT_DOWNLOAD } from '@/services/agent/tools/BoardroomFontTools';
 
 const creativeRetrievalConfig = {
     canvases: {

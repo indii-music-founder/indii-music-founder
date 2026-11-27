@@ -1,14 +1,14 @@
-import { createAgent } from '../sdk/AgentBuilder';
-import { PublicistService } from '../../publicist/PublicistService';
+import { createAgent } from '@/services/agent/sdk/AgentBuilder';
+import { PublicistService } from '@/services/publicist/PublicistService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publicist/prompt.md?raw';
-import { UniversalTools } from '../tools/UniversalTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { McpTools } from '../tools/McpTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { McpTools } from '@/services/agent/tools/McpTools';
 
 
 
@@ -359,7 +359,7 @@ export const PublicistAgent = createAgent('publicist')
     }, async (args: { artistName: string, shortBio: string, pressShotUrls: string[], featuredTracks?: string[], contactEmail: string }) => {
         try {
             const { useStore } = await importWithRetry(() => import('@/core/store'));
-            const { epkGeneratorService } = await importWithRetry(() => import('../../marketing/EPKGeneratorService'));
+            const { epkGeneratorService } = await importWithRetry(() => import('@/services/marketing/EPKGeneratorService'));
             
             // Perform real store update
             const store = useStore.getState();

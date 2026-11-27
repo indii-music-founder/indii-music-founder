@@ -3,8 +3,8 @@ import { Edit2, X, Check, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
-import { SocialLinksManager } from './BrandSubComponents';
-import type { BrandManagerTabProps } from './types';
+import { SocialLinksManager } from '@/modules/marketing/components/brand-manager/BrandSubComponents';
+import type { BrandManagerTabProps } from '@/modules/marketing/components/brand-manager/types';
 
 interface IdentityPanelProps extends BrandManagerTabProps {}
 

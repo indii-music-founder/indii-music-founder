@@ -7,7 +7,7 @@ import {
 import {
     PERSONA_FADER_SOURCES,
     type PersonaFaderSource,
-} from './PersonaFaderResolution';
+} from '@/services/persona/PersonaFaderResolution';
 
 export const PERSONA_RESPONSE_METADATA_KEY = 'personaResponse';
 

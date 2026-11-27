@@ -10,10 +10,10 @@ import {
     updateDoc,
     orderBy
 } from 'firebase/firestore';
-import { FirestoreService } from './FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
-import { auth } from './firebase';
+import { auth } from '@/services/firebase';
 import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 import { DEFAULT_PROJECT_ID, LEGACY_DEFAULT_PROJECT_ID, isDefaultProject } from '@/core/constants';
 import type { User } from 'firebase/auth';
@@ -164,7 +164,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
     async deleteNode(id: string): Promise<void> {
         try {
-            const { trashService } = await import('./trash/TrashService');
+            const { trashService } = await import('@/services/trash/TrashService');
             await trashService.moveToTrash(
                 { type: 'file_nodes', targetId: id },
                 { actor: 'user', reason: 'User requested node deletion' }
@@ -207,7 +207,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
         }
 
         try {
-            const { trashService } = await import('./trash/TrashService');
+            const { trashService } = await import('@/services/trash/TrashService');
             // Children first keeps the tree navigable if any individual move fails.
             for (const id of Array.from(idsToDelete).reverse()) {
                 await trashService.moveToTrash(

@@ -15,17 +15,17 @@
 import { StateCreator } from 'zustand';
 
 // Sub-module imports
-import { AgentUISlice, buildAgentUIState } from './agentUISlice';
-import { AgentSessionSlice, buildAgentSessionState } from './agentSessionSlice';
-import { AgentTaskSlice, buildAgentTaskState } from './agentTaskSlice';
-import { AgentOrchestrationSlice, buildAgentOrchestrationState } from './agentOrchestrationSlice';
+import { AgentUISlice, buildAgentUIState } from '@/core/store/slices/agent/agentUISlice';
+import { AgentSessionSlice, buildAgentSessionState } from '@/core/store/slices/agent/agentSessionSlice';
+import { AgentTaskSlice, buildAgentTaskState } from '@/core/store/slices/agent/agentTaskSlice';
+import { AgentOrchestrationSlice, buildAgentOrchestrationState } from '@/core/store/slices/agent/agentOrchestrationSlice';
 
 // Combined interface for the root store
 export interface AgentSlice extends AgentUISlice, AgentSessionSlice, AgentTaskSlice, AgentOrchestrationSlice { }
 
 // Type re-exports for backward compatibility
-export type { AgentMode, ApprovalRequest } from './agentUISlice';
-export type { AgentMessage, AgentThought, ConversationSession } from './agentSessionSlice';
+export type { AgentMode, ApprovalRequest } from '@/core/store/slices/agent/agentUISlice';
+export type { AgentMessage, AgentThought, ConversationSession } from '@/core/store/slices/agent/agentSessionSlice';
 
 /**
  * Composed StateCreator that merges all 3 agent sub-slices.

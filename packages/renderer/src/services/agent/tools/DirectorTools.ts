@@ -3,12 +3,12 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { ToolFunctionArgs, AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { ToolFunctionArgs, AnyToolFunction } from '@/services/agent/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { ToolExecutionContext } from '../ToolExecutionContext';
-import { MusicTools } from './MusicTools';
-import { CanvasTools } from './CanvasTools';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
+import { MusicTools } from '@/services/agent/tools/MusicTools';
+import { CanvasTools } from '@/services/agent/tools/CanvasTools';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
@@ -197,7 +197,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 sourceImages = [resolved];
             }
         } else if (context?.assetReferences?.length || context?.attachments?.length || context?.boardroomExecution?.sourceId) {
-            const { resolveAgentAssetUrl } = await importWithRetry(() => import('./CommerceTools'));
+            const { resolveAgentAssetUrl } = await importWithRetry(() => import('@/services/agent/tools/CommerceTools'));
             const resolvedUrl = await resolveAgentAssetUrl(context?.boardroomExecution?.sourceId, context);
             if (resolvedUrl && !resolvedUrl.startsWith('[elided ')) {
                 const match = resolvedUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -768,7 +768,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         scene?: 'studio' | 'lifestyle' | 'flat';
         aspectRatio?: string;
     }, context) => {
-        const { CommerceTools } = await import('./CommerceTools');
+        const { CommerceTools } = await import('@/services/agent/tools/CommerceTools');
         return CommerceTools.generate_mockup!(args, context);
     }),
 
@@ -779,7 +779,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         trackId?: string;
         overrideReason?: string;
     }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.render_distribution_bundle!(args);
     }),
 
@@ -790,7 +790,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         fit?: 'cover' | 'contain-blur-pad';
         download?: boolean;
     }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.export_platform_assets!(args);
     }),
 
@@ -798,7 +798,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         assetIndex?: number;
         assetId?: string;
     }) => {
-        const { BrandTools } = await import('./BrandTools');
+        const { BrandTools } = await import('@/services/agent/tools/BrandTools');
         return BrandTools.scan_brand_compliance!(args);
     }),
 
@@ -811,12 +811,12 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         compliance?: import('@/services/assets/AssetVersionService').AssetVersionCompliance;
         tags?: string[];
     }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.record_asset_version!(args);
     }),
 
     promote_asset_version: wrapTool('promote_asset_version', async (args: { assetId: string; versionId: string }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.promote_asset_version!(args);
     }),
 
@@ -827,7 +827,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         licenseNotes?: string;
         disclosureRequired?: boolean;
     }) => {
-        const { MediaTools } = await import('./MediaTools');
+        const { MediaTools } = await import('@/services/agent/tools/MediaTools');
         return MediaTools.set_asset_rights!(args);
     }),
 

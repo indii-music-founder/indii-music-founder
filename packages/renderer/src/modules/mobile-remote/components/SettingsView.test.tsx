@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import SettingsView from './SettingsView';
+import SettingsView from '@/modules/mobile-remote/components/SettingsView';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
 
 const mocks = vi.hoisted(() => ({
@@ -42,7 +42,7 @@ vi.mock('@/services/agent/RemoteRelayService', async (importOriginal) => {
     };
 });
 
-vi.mock('../haptics', () => ({
+vi.mock('@/modules/mobile-remote/haptics', () => ({
     triggerHaptic: vi.fn(),
 }));
 

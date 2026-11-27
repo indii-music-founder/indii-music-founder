@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mediaAssetDataService } from './MediaAssetDataService';
-import { MOCK_METADATA } from './IngestionNotificationService.test'; // Reuse mock metadata
+import { mediaAssetDataService } from '@/services/distribution/proprietary-ingestion/MediaAssetDataService';
+import { MOCK_METADATA } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService.test'; // Reuse mock metadata
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('MediaAssetDataService', () => {

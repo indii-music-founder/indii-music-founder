@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { ExpenseItem } from './ExpenseItem';
+import { ExpenseItem } from '@/modules/finance/components/ExpenseItem';
 import { Expense } from '@/services/finance/FinanceService';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';

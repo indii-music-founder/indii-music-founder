@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { financeCompiler } from './FinanceCompiler';
+import { financeCompiler } from '@/services/finance/FinanceCompiler';
 
 describe('FinanceCompiler', () => {
   it('aggregates receipt -> expense -> cost line properly', () => {

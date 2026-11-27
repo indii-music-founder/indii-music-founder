@@ -1,4 +1,4 @@
-import { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
+import { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
 import {
     SHARE_UNITS_PER_PERCENT,
     TOTAL_SHARE_UNITS,
@@ -13,7 +13,7 @@ import {
   HarnessInputRef,
   createHarnessRun,
   HarnessAgentBrief,
-} from '../business-harness/types';
+} from '@/services/business-harness/types';
 
 export interface PublishingCoWriter {
   id: string;

@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import {
     collection,
     getDocs,
@@ -13,13 +13,13 @@ import {
     doc as firestoreDoc,
     getCountFromServer,
 } from 'firebase/firestore';
-import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { FirebaseIntelligenceService as AIService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { cleanPrompt } from '@/utils/prompt';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { GenerationConfig } from '@/shared/types/ai.dto';
-import { MemoryConsolidator } from './MemoryConsolidator';
-import { MemoryIngestionPipeline, memoryIngestionPipeline } from './MemoryIngestionPipeline';
-import { AgentEventBus } from '../governance/AgentEventBus';
+import { MemoryConsolidator } from '@/services/agent/memory/MemoryConsolidator';
+import { MemoryIngestionPipeline, memoryIngestionPipeline } from '@/services/agent/memory/MemoryIngestionPipeline';
+import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryConfig,

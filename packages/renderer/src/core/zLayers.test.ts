@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { Z_LAYER, zLayerValue } from './zLayers';
+import { Z_LAYER, zLayerValue } from '@/core/zLayers';
 
 const src = (relative: string) => readFileSync(resolve(__dirname, '..', relative), 'utf8');
 

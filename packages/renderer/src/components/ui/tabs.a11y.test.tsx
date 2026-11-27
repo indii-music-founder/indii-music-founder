@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { describe, it, expect, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import * as matchers from 'vitest-axe/matchers'

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DevOpsAgent } from './DevOpsAgent';
+import { DevOpsAgent } from '@/services/agent/definitions/DevOpsAgent';
 
 describe('DevOpsAgent', () => {
     beforeEach(() => {

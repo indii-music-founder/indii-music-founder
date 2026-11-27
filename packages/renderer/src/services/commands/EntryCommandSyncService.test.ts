@@ -33,8 +33,8 @@ vi.mock('firebase/firestore', () => ({
   where: (...args: unknown[]) => firestoreMocks.where(...(args as [string, string, unknown])),
 }));
 
-import { clearCustomEntryCommands, resolveEntryCommand } from './EntryCommandRegistry';
-import { entryCommandSyncService } from './EntryCommandSyncService';
+import { clearCustomEntryCommands, resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
+import { entryCommandSyncService } from '@/services/commands/EntryCommandSyncService';
 
 describe('EntryCommandSyncService', () => {
   beforeEach(() => {

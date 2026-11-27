@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { agentGraphService } from '../AgentGraphService';
-import { agentGraphStateService } from '../AgentGraphStateService';
-import { agentService } from '../../AgentService';
-import { memoryBankService } from '../../memory/MemoryBankService';
-import { AgentGraph, AgentContext } from '../../types';
+import { agentGraphService } from '@/services/agent/orchestration/AgentGraphService';
+import { agentGraphStateService } from '@/services/agent/orchestration/AgentGraphStateService';
+import { agentService } from '@/services/agent/AgentService';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
+import { AgentGraph, AgentContext } from '@/services/agent/types';
 import { runTransaction } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../AgentGraphStateService', () => ({
+vi.mock('@/services/agent/orchestration/AgentGraphStateService', () => ({
     agentGraphStateService: {
         createExecution: vi.fn(),
         getExecution: vi.fn(),
@@ -17,13 +17,13 @@ vi.mock('../AgentGraphStateService', () => ({
     },
 }));
 
-vi.mock('../../AgentService', () => ({
+vi.mock('@/services/agent/AgentService', () => ({
     agentService: {
         delegateTask: vi.fn(),
     },
 }));
 
-vi.mock('../../memory/MemoryBankService', () => ({
+vi.mock('@/services/agent/memory/MemoryBankService', () => ({
     memoryBankService: {
         searchMemories: vi.fn().mockResolvedValue({ results: [] }),
         addMemory: vi.fn().mockResolvedValue([{ id: 'mem-123' }]),
@@ -31,7 +31,7 @@ vi.mock('../../memory/MemoryBankService', () => ({
     },
 }));
 
-vi.mock('../../governance/AgentEventBus', () => ({
+vi.mock('@/services/agent/governance/AgentEventBus', () => ({
     AgentEventBus: {
         emitGraphEvent: vi.fn(),
         emitNodeEvent: vi.fn(),

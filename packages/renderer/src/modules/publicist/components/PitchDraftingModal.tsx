@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Copy, Send, RefreshCw, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import { Contact, Campaign } from '../types';
+import { Contact, Campaign } from '@/modules/publicist/types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { useToast } from '@/core/context/ToastContext';
 

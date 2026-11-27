@@ -1,9 +1,9 @@
-import { AgentConfig } from "../types";
+import { AgentConfig } from "@/services/agent/types";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import systemPrompt from '@agents/brand/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { BrandTools } from '../tools/BrandTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { BrandTools } from '@/services/agent/tools/BrandTools';
 
 const brandRetrievalConfig = {
     brand_guidelines: {
@@ -298,10 +298,10 @@ export const BrandAgent: AgentConfig = {
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { McpTools } from '../tools/McpTools';
-import { FETCH_BRAND_KIT_DECLARATION } from '../tools/McpToolDeclarations';
+import { McpTools } from '@/services/agent/tools/McpTools';
+import { FETCH_BRAND_KIT_DECLARATION } from '@/services/agent/tools/McpToolDeclarations';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(BrandAgent);

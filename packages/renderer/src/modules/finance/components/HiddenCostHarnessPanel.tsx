@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Car, Clock, DollarSign, Guitar, PieChart, Shield } from 'lucide-react';
-import type { Expense } from '../schemas';
-import { isPaidExpense } from '../schemas';
+import type { Expense } from '@/modules/finance/schemas';
+import { isPaidExpense } from '@/modules/finance/schemas';
 import { hiddenCostHarnessService } from '@/services/business-harness';
 
 export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {

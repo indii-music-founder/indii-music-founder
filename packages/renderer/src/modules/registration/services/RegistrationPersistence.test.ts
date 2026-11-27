@@ -16,7 +16,7 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: () => 'MOCK_TIMESTAMP',
 }));
 
-import { persistOrgRecord } from './RegistrationPersistence';
+import { persistOrgRecord } from '@/modules/registration/services/RegistrationPersistence';
 
 describe('persistOrgRecord', () => {
     beforeEach(() => vi.clearAllMocks());

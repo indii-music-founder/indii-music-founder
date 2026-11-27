@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
+import { areFeedItemPropsEqual, FeedItemProps } from '@/modules/social/components/SocialFeed.utils';
 import { SocialPost } from '@/services/social/types';
 
 const mockPost: SocialPost = {

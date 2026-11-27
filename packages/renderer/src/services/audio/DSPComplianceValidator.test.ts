@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DSPComplianceValidator } from './DSPComplianceValidator';
+import { DSPComplianceValidator } from '@/services/audio/DSPComplianceValidator';
 
 /**
  * ISSUE-997: neither the browser (RMS-derived loudness, unweighted peak) nor

@@ -1,7 +1,7 @@
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
-import { knowledgeRetrievalService, FrontendKnowledgeDoc } from '../../modules/knowledge/services/KnowledgeRetrievalService';
-import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
+import { knowledgeRetrievalService, FrontendKnowledgeDoc } from '@/modules/knowledge/services/KnowledgeRetrievalService';
+import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '@/modules/workflow/types';
 import { logger } from '@/utils/logger';
 
 interface Attribution {

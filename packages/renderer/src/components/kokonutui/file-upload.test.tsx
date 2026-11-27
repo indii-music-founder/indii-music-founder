@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import FileUpload from './file-upload';
+import FileUpload from '@/components/kokonutui/file-upload';
 
 // Mock motion to skip animations
 vi.mock('motion/react', () => ({

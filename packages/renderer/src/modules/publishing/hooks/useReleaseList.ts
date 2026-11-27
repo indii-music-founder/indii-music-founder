@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useReleases } from './useReleases';
-import { useReleaseWorkspace } from './useReleaseWorkspace';
+import { useReleases } from '@/modules/publishing/hooks/useReleases';
+import { useReleaseWorkspace } from '@/modules/publishing/hooks/useReleaseWorkspace';
 
 export function useReleaseList() {
     const workspace = useReleaseWorkspace();

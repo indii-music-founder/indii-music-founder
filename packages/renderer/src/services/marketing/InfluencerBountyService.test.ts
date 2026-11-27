@@ -51,7 +51,7 @@ describe('InfluencerBountyService', () => {
     });
 
     it('passes the selected action through when creating a bounty link', async () => {
-        const { influencerBountyService } = await import('./InfluencerBountyService');
+        const { influencerBountyService } = await import('@/services/marketing/InfluencerBountyService');
 
         const result = await influencerBountyService.generateBountyLink('@artist', 'Lead Song', 75, 'TikTok');
 
@@ -99,7 +99,7 @@ describe('InfluencerBountyService', () => {
             ],
         });
 
-        const { influencerBountyService } = await import('./InfluencerBountyService');
+        const { influencerBountyService } = await import('@/services/marketing/InfluencerBountyService');
 
         const links = await influencerBountyService.listBountyLinks();
 
@@ -113,7 +113,7 @@ describe('InfluencerBountyService', () => {
     });
 
     it('rejects tracking and payout requests honestly', async () => {
-        const { influencerBountyService } = await import('./InfluencerBountyService');
+        const { influencerBountyService } = await import('@/services/marketing/InfluencerBountyService');
 
         await expect(influencerBountyService.trackEvent('REF-1234', 'click')).rejects.toThrow(
             'Influencer bounty tracking is not available until the event pipeline is deployed.'

@@ -1,4 +1,4 @@
-import type { ToolFunctionResult } from '../types';
+import type { ToolFunctionResult } from '@/services/agent/types';
 
 /** A reporting-only tool batch is complete when every report has a durable receipt. */
 export function getDurableReportReceipt(

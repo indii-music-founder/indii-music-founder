@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 describe('Specialist Agent Tools', () => {
     it('DirectorAgent should have visual generation tools', async () => {

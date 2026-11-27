@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { X, Image as ImageIcon, Sparkles, Loader2, Search } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import CreativeGallery from '../../components/CreativeGallery';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface FrameSelectionModalProps {

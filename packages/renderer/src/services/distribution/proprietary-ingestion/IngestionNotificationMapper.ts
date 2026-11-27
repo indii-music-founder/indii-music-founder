@@ -12,7 +12,7 @@ import {
       ReleaseId,
       TitleText,
       GenreWithSubGenre,
-} from './types/ern';
+} from '@/services/distribution/proprietary-ingestion/types/ern';
 import {
       IngestionMessageHeader,
       SystemIdentity,
@@ -22,7 +22,7 @@ import {
       CommercialModelType,
       UseType,
       AIDisclosureType,
-} from './types/common';
+} from '@/services/distribution/proprietary-ingestion/types/common';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
 

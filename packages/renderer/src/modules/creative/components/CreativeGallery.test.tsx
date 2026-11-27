@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import CreativeGallery from './CreativeGallery';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
 import { useStore } from '@/core/store';
 
 // Mock the store

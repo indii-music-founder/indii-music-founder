@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseInspirationSuggestions, WhiskService } from './WhiskService';
+import { parseInspirationSuggestions, WhiskService } from '@/services/WhiskService';
 import { WhiskState } from '@/core/store/slices/creative';
 import { firebaseConfig } from '@/config/env';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';

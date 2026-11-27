@@ -3,10 +3,10 @@ import { ReleaseLaunchKitSchema, type ScoredAdVariantRecord } from '@indii/share
 import {
     CampaignIntelligence,
     attachSmartLinkAttribution,
-} from './CampaignIntelligenceService';
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+} from '@/services/marketing/CampaignIntelligenceService';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
-vi.mock('../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateStructuredData: vi.fn(),
         generateImage: vi.fn(),

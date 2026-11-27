@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { TourRouteOptimizer } from './TourRouteOptimizer';
+import { TourRouteOptimizer } from '@/modules/touring/components/TourRouteOptimizer';
 
 const { mockSaveItinerary, mockSuccess, mockError } = vi.hoisted(() => ({
     mockSaveItinerary: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
-vi.mock('../hooks/useTouring', () => ({
+vi.mock('@/modules/touring/hooks/useTouring', () => ({
     useTouring: () => ({
         saveItinerary: mockSaveItinerary,
     }),
@@ -52,7 +52,7 @@ vi.mock('@/components/ui/Modal', () => ({
     Modal: ({ children, isOpen }: { children: React.ReactNode; isOpen: boolean }) => (isOpen ? <>{children}</> : null),
 }));
 
-vi.mock('./TourMap', () => ({
+vi.mock('@/modules/touring/components/TourMap', () => ({
     TourMap: () => <div data-testid="tour-map" />,
 }));
 

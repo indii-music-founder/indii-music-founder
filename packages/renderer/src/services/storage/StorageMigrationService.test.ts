@@ -1,14 +1,14 @@
 // Legacy structural-only contract checks; no genuine migration acceptance.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { StorageMigrationService } from './StorageMigrationService';
+import { StorageMigrationService } from '@/services/storage/StorageMigrationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { auth, db, storage } from '../firebase';
-import { initDB } from './repository';
+import { auth, db, storage } from '@/services/firebase';
+import { initDB } from '@/services/storage/repository';
 import { uploadBytes } from 'firebase/storage';
 import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
   auth: {
     currentUser: null,
@@ -31,7 +31,7 @@ vi.mock('firebase/storage', () => ({
   uploadBytes: vi.fn(),
 }));
 
-vi.mock('./repository', () => ({
+vi.mock('@/services/storage/repository', () => ({
   serverTimestamp: vi.fn(),
   initDB: vi.fn(),
 }));

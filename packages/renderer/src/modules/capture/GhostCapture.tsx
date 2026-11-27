@@ -6,8 +6,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
-import { CaptureButtons } from './components/CaptureButtons';
-import { CapturePreview } from './components/CapturePreview';
+import { CaptureButtons } from '@/modules/capture/components/CaptureButtons';
+import { CapturePreview } from '@/modules/capture/components/CapturePreview';
 
 /**
  * GhostCapture — Rapid asset capture with preview preparation.

@@ -1,11 +1,11 @@
-import { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
+import { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
 import { 
   createHarnessRun, 
   HarnessRun, 
   HarnessFinding, 
   HarnessApprovalGate, 
   HarnessAgentBrief 
-} from '../business-harness/types';
+} from '@/services/business-harness/types';
 import { judgeCollaboratorRoleSemantics } from '@/config/typesafeJudgments';
 
 export type SplitApprovalStatus = 'approved' | 'disputed' | 'pending';

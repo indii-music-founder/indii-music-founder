@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { FirestoreService } from '@/services/FirestoreService';
-import type { StoreState } from '../types';
+import type { StoreState } from '@/core/store/types';
 import { logger } from '@/utils/logger';
 import { where } from 'firebase/firestore';
 

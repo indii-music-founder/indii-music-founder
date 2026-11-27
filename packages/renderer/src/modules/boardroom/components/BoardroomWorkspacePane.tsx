@@ -4,16 +4,16 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Maximize2, Minimize2, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { BoardroomBrowserView } from './BoardroomBrowserView';
-import { BoardroomModulePreview } from './BoardroomModulePreview';
-import { BoardroomWorkbenchView } from './BoardroomWorkbenchView';
-import { BoardroomAgentFeedView } from './BoardroomAgentFeedView';
+import { BoardroomBrowserView } from '@/modules/boardroom/components/BoardroomBrowserView';
+import { BoardroomModulePreview } from '@/modules/boardroom/components/BoardroomModulePreview';
+import { BoardroomWorkbenchView } from '@/modules/boardroom/components/BoardroomWorkbenchView';
+import { BoardroomAgentFeedView } from '@/modules/boardroom/components/BoardroomAgentFeedView';
 import type { BoardroomWorkspaceTab } from '@/core/store/slices/boardroomSlice';
 import {
     judgeBoardroomWorkspaceRecommendation,
     type BoardroomWorkspaceRecommendation,
 } from '@/config/typesafeJudgments';
-import { BOARDROOM_WORKSPACE_TABS } from '../constants/boardroomWorkspaceTabs';
+import { BOARDROOM_WORKSPACE_TABS } from '@/modules/boardroom/constants/boardroomWorkspaceTabs';
 
 const WORKSPACE_JUDGE_SETTLE_MS = 750;
 

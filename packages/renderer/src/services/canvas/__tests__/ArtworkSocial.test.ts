@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createDocFromImage, type RasterLayer } from '../CanvasDoc';
-import { normalizeCanvasDoc } from '../CanvasDocValidation';
-import { resizeArtworkDocument, artworkExportDimensions, getViewportProxy } from '../ArtworkGeometry';
-import { ARTWORK_SOCIAL_SIZE, requireSocialArtworkSize } from '../ArtworkSocial';
+import { createDocFromImage, type RasterLayer } from '@/services/canvas/CanvasDoc';
+import { normalizeCanvasDoc } from '@/services/canvas/CanvasDocValidation';
+import { resizeArtworkDocument, artworkExportDimensions, getViewportProxy } from '@/services/canvas/ArtworkGeometry';
+import { ARTWORK_SOCIAL_SIZE, requireSocialArtworkSize } from '@/services/canvas/ArtworkSocial';
 
 describe('artwork social framing (pure document logic)', () => {
     it('uses the existing social feed preset', () => {

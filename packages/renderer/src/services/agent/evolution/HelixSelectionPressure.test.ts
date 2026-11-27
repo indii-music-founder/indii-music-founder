@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EvolutionEngine } from './EvolutionEngine';
-import { AgentGene, EvolutionConfig } from './types';
+import { EvolutionEngine } from '@/services/agent/evolution/EvolutionEngine';
+import { AgentGene, EvolutionConfig } from '@/services/agent/evolution/types';
 
 // Mock secureRandomInt for deterministic tournament selection
 // secureRandomInt(min, max) returns a value in [min, max) (exclusive upper bound)

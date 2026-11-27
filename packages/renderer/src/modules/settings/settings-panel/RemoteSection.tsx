@@ -13,7 +13,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, QrCode, Copy, Check, RefreshCw, Info, Wifi, FolderPlus, Trash2, HardDrive } from 'lucide-react';
-import { SectionHeader, SettingRow } from './SettingsShared';
+import { SectionHeader, SettingRow } from '@/modules/settings/settings-panel/SettingsShared';
 import { auth } from '@/services/firebase';
 import { isPrivateIP } from '@/services/agent/RemoteRelayService';
 import {

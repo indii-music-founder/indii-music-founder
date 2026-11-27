@@ -1,4 +1,4 @@
-import { NEUTRAL_ADJUSTMENTS, type AdjustmentStack, type RasterLayer } from './CanvasDoc';
+import { NEUTRAL_ADJUSTMENTS, type AdjustmentStack, type RasterLayer } from '@/services/canvas/CanvasDoc';
 
 const PRESETS: Record<NonNullable<RasterLayer['look']>['id'], Partial<AdjustmentStack>> = {
     original: {},

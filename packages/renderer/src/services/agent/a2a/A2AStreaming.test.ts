@@ -9,8 +9,8 @@ import { importWithRetry } from '@/utils/dynamicImport';
  * reversion to batch — the exact gap that made streaming "batch, not token-by-token".
  */
 
-vi.mock('./A2AConfig', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./A2AConfig')>();
+vi.mock('@/services/agent/a2a/A2AConfig', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/agent/a2a/A2AConfig')>();
   return {
     ...actual,
     resolveA2AConfig: vi.fn().mockResolvedValue({ mode: 'loopback', baseUrl: '' }),
@@ -34,7 +34,7 @@ function resetClient(client: unknown) {
  *  interfere via leftover key state. */
 async function resetSingletons() {
   const { e2eEncryptionService } = await importWithRetry(() => import('@/services/security/E2EEncryptionService'));
-  const { a2aRouter } = await importWithRetry(() => import('./A2ARouter'));
+  const { a2aRouter } = await importWithRetry(() => import('@/services/agent/a2a/A2ARouter'));
   const enc = e2eEncryptionService as unknown as Record<string, { clear?: () => void }>;
   enc.keyPairs?.clear?.();
   enc.publicKeyRegistry?.clear?.();
@@ -50,7 +50,7 @@ describe('A2A streaming (real crypto loopback)', () => {
   });
 
   it('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
-    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
+    const { a2aClient } = await importWithRetry(() => import('@/services/agent/a2a/A2AClient'));
     resetClient(a2aClient);
 
     // Each chunk exceeds the 120-char flush threshold → one delta envelope each,
@@ -89,7 +89,7 @@ describe('A2A streaming (real crypto loopback)', () => {
   });
 
   it('falls back to a single batch envelope when no streamAgent is provided', async () => {
-    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
+    const { a2aClient } = await importWithRetry(() => import('@/services/agent/a2a/A2AClient'));
     resetClient(a2aClient);
 
     const runAgent = vi.fn().mockResolvedValue({ text: 'batch result' });

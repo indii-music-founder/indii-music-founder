@@ -7,7 +7,7 @@
  */
 
 import type { Tool } from '@/shared/types/ai.dto';
-import type { IntelligenceContext } from '../IntelligenceContext';
+import type { IntelligenceContext } from '@/services/intelligence/IntelligenceContext';
 import type { GenerationConfig, GenerateImageOptions } from '@/shared/types/ai.dto';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 

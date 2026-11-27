@@ -13,7 +13,7 @@ import {
     MusicMetadataAsset,
     SplitSheetAsset,
     ReleasePackageAsset
-} from '../types';
+} from '@/modules/workflow/types';
 import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';

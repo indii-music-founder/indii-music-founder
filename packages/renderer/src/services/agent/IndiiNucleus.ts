@@ -1,9 +1,9 @@
-import { livingFileService } from './living/LivingFileService';
-import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
+import { livingFileService } from '@/services/agent/living/LivingFileService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { getFineTunedModel } from './fine-tuned-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 
 export interface NucleusContext {
   soul: string;

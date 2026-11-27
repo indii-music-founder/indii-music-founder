@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
-import { workflowStateService } from '../WorkflowStateService';
+import { workflowStateService } from '@/services/agent/WorkflowStateService';
 import { WorkflowStepStatusEnum, normalizeWorkflowStepStatus } from '@indii/shared';
-import { ArmorViolation } from './ModelArmor';
+import { ArmorViolation } from '@/services/agent/governance/ModelArmor';
 
 export interface OptimizationSuggestion {
     id: string;

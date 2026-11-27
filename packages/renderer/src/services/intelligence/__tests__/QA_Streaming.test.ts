@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 
 const mockGenerateContentStream = vi.fn();
 const mockGenerateContent = vi.fn();
@@ -42,7 +42,7 @@ vi.mock('@/config/env', () => ({
     }
 }));
 
-vi.mock('../billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(undefined),

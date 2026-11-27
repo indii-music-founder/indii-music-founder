@@ -1,4 +1,4 @@
-import { FirestoreService } from '../../FirestoreService';
+import { FirestoreService } from '@/services/FirestoreService';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type {
@@ -6,7 +6,7 @@ import type {
     AgentGraph,
     WorkflowExecutionStatus,
     WorkflowStepStatus,
-} from '../types';
+} from '@/services/agent/types';
 
 /**
  * AgentGraphStateService — Persistent Graph Execution State Machine

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { VideoRenderReceipt } from '@/services/video/RenderService';
-import type { StoryboardProject } from '../schemas/storyboard';
-import { StoryboardVideoIdentityService } from './StoryboardVideoIdentityService';
+import type { StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
+import { StoryboardVideoIdentityService } from '@/modules/creative/video/services/StoryboardVideoIdentityService';
 
 const recordingEntityId = 'recording:internal-1';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveNextActionFacts } from './nextActionFacts';
+import { deriveNextActionFacts } from '@/components/layout/nextActionFacts';
 import type { DashboardRelease } from '@/services/distribution/types/distributor';
 import type { EarningsSummary } from '@/services/revenue/schema';
 

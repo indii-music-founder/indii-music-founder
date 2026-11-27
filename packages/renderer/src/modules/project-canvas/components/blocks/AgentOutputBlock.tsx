@@ -24,7 +24,7 @@ import {
     Calendar,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface AgentOutputBlockProps {
     block: ProjectCanvasBlock;

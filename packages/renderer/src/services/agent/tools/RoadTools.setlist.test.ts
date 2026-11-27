@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RoadTools } from './RoadTools';
+import { RoadTools } from '@/services/agent/tools/RoadTools';
 
 const mocks = vi.hoisted(() => ({
     auth: { currentUser: { uid: 'user-1' } as { uid: string } | null },
@@ -14,7 +14,7 @@ vi.mock('@/services/touring/SetlistDraftService', () => ({
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: { generateStructuredData: vi.fn() },
 }));
-vi.mock('./MapsTools', () => ({ MapsTools: {} }));
+vi.mock('@/services/agent/tools/MapsTools', () => ({ MapsTools: {} }));
 vi.mock('@/utils/dynamicImport', () => ({ importWithRetry: vi.fn() }));
 
 describe('RoadTools log_live_setlist_for_pro', () => {

@@ -7,7 +7,7 @@ import type {
   ReleaseDna,
   ReleaseStrategy,
   ReleaseStrategyId,
-} from './types';
+} from '@/services/release-harness/types';
 
 const STRATEGY_NAMES: Record<ReleaseStrategyId, string> = {
   distribution_first_release: 'Distribution-First Release',

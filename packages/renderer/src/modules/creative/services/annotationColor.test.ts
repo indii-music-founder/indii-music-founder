@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { annotationColor } from './annotationColor';
-import { STUDIO_COLORS } from '../constants';
+import { annotationColor } from '@/modules/creative/services/annotationColor';
+import { STUDIO_COLORS } from '@/modules/creative/constants';
 
 describe('annotation color identity (pure geometry metadata)', () => {
     it.each(STUDIO_COLORS)('recognizes $name brush strokes and filled shapes', color => {

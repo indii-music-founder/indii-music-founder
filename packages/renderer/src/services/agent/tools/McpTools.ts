@@ -1,6 +1,6 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { mcpClientService } from '../harness/McpClientService';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import { mcpClientService } from '@/services/agent/harness/McpClientService';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 /**
  * Creates a generic wrapper for frontend Agent Builders to call a backend MCP tool.

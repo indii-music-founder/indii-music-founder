@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
-import { TalkButton } from './TalkButton';
+import { TalkButton } from '@/core/components/command-bar/TalkButton';
 import { voiceService } from '@/services/intelligence/VoiceService';
 
 vi.mock('@/services/intelligence/VoiceService', () => ({

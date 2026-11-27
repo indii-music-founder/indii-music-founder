@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 
 // 1. Hoisted mocks
 const mocks = vi.hoisted(() => ({
@@ -49,7 +49,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},

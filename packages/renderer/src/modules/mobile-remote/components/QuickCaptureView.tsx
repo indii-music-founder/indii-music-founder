@@ -5,15 +5,15 @@ import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agen
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { EncounterService } from '@/services/encounters/EncounterService';
-import QuickContactModal from './QuickContactModal';
-import CameraViewfinderModal from './CameraViewfinderModal';
+import QuickContactModal from '@/modules/mobile-remote/components/QuickContactModal';
+import CameraViewfinderModal from '@/modules/mobile-remote/components/CameraViewfinderModal';
 import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
-import { JevRemoteHintBar } from './JevRemoteHintBar';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
 export interface QuickCaptureAttachment {
     url: string;

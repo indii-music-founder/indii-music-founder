@@ -1,10 +1,10 @@
 // useStore removed
 import type { AppSlice } from '@/core/store';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 
 export const ProjectTools = {
     create_project: wrapTool('create_project', async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EntryCommandHydrationCache } from './EntryCommandHydrationCache';
+import { EntryCommandHydrationCache } from '@/services/commands/EntryCommandHydrationCache';
 
 describe('command hydration lifetime tokens (pure bookkeeping)', () => {
   it('invalidates completed keys and rejects late completion after reset', () => {

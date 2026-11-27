@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { IngestionNotificationService } from './IngestionNotificationService';
-import { IngestionNotificationMapper } from './IngestionNotificationMapper';
+import { IngestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
+import { IngestionNotificationMapper } from '@/services/distribution/proprietary-ingestion/IngestionNotificationMapper';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 export const MOCK_METADATA: ExtendedGoldenMetadata = {
     trackTitle: 'Midnight City',

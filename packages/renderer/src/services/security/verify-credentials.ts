@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 
-import { credentialService } from './CredentialService.ts';
-import { DistributorId } from '../distribution/types/distributor.ts';
+import { credentialService } from '@/services/security/CredentialService.ts';
+import { DistributorId } from '@/services/distribution/types/distributor.ts';
 
 async function verifyCredentials() {
     logger.debug('🔐 Verifying Credential Service (Keytar)...');

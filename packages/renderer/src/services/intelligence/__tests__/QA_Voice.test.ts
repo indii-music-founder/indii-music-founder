@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 
 // Hoist mocks
 const { mockGenerateSpeech, mockHttpsCallable } = vi.hoisted(() => {
@@ -49,12 +49,12 @@ vi.mock('@/config/env', () => ({
     }
 }));
 
-vi.mock('../appcheck', () => ({
+vi.mock('@/services/intelligence/appcheck', () => ({
     isAppCheckConfigured: () => true,
     isAppCheckError: vi.fn()
 }));
 
-vi.mock('../billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(undefined),

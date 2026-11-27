@@ -7,7 +7,7 @@ import {
     type PrintPlan,
     type PrintVerdict,
 } from '@/services/print/PrintSpec';
-import { Modal } from './Modal';
+import { Modal } from '@/components/ui/Modal';
 import { calculateCoverBox } from '@indii/shared';
 
 interface PrintSpecProps {

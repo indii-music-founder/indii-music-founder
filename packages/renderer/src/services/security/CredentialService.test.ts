@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CredentialService } from './CredentialService';
-import type { Credentials } from './CredentialService';
+import { CredentialService } from '@/services/security/CredentialService';
+import type { Credentials } from '@/services/security/CredentialService';
 
 describe('CredentialService', () => {
     let service: CredentialService;

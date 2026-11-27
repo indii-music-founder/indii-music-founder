@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RequestTracingService } from './RequestTracingService';
+import { RequestTracingService } from '@/services/observability/RequestTracingService';
 
 describe('RequestTracingService', () => {
   let service: RequestTracingService;

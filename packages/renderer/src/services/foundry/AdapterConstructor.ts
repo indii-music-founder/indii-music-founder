@@ -7,8 +7,8 @@ import {
   DecimalMoney,
   parseMoneyAmount,
 } from '@indii/shared';
-import { DistroKidStatementAdapter } from './adapters/DistroKidStatementAdapter';
-import { TuneCoreStatementAdapter } from './adapters/TuneCoreStatementAdapter';
+import { DistroKidStatementAdapter } from '@/services/foundry/adapters/DistroKidStatementAdapter';
+import { TuneCoreStatementAdapter } from '@/services/foundry/adapters/TuneCoreStatementAdapter';
 
 export interface DeterministicAdapter {
   readonly formatId: string;

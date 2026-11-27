@@ -1,6 +1,6 @@
 import React from 'react';
 import { Star } from 'lucide-react';
-import { MerchProduct } from '../types';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { OptimizedImage } from '@/core/components/ui/OptimizedImage';
 
 interface StandardProductCardProps {

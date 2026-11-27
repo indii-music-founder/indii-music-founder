@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { enhancedTilePixels } from '../enhancedTilePixels';
+import { enhancedTilePixels } from '@/services/upscale/enhancedTilePixels';
 
 // Literal numeric packing checks only; no model/GPU/canvas/customer fixture.
 // These checks do not establish successful enhancement or print acceptance.

@@ -20,7 +20,7 @@ vi.mock('@/services/firebase', () => ({
     db: { project: 'test' },
 }));
 
-import { RoyaltyPayoutService } from '../RoyaltyPayoutService';
+import { RoyaltyPayoutService } from '@/services/finance/RoyaltyPayoutService';
 
 describe('RoyaltyPayoutService backend boundary', () => {
     let service: RoyaltyPayoutService;

@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions, auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
 import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
-import { getPrintPreset } from './PrintSpec';
+import { getPrintPreset } from '@/services/print/PrintSpec';
 import type { ExportResult } from '@/services/export/AssetExporter';
 
 /** A direct browser download avoids large callable responses and CORS copies. */

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { SectionHeader, SettingRow, Toggle, SelectDropdown } from './SettingsShared';
+import { SectionHeader, SettingRow, Toggle, SelectDropdown } from '@/modules/settings/settings-panel/SettingsShared';
 
 const NotificationsSection: React.FC = () => {
     const { userProfile, updatePreferences } = useStore(useShallow((s: StoreState) => ({

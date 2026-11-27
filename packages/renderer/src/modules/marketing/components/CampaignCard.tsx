@@ -1,5 +1,5 @@
 import React from 'react';
-import { CampaignAsset, CampaignStatus } from '../types';
+import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
 import { Calendar, ChevronRight, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 

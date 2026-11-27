@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Radio, PlusCircle, AlertTriangle } from 'lucide-react';
-import { ReleaseStatusCard } from './ReleaseStatusCard';
-import { SubmitReleaseModal } from './SubmitReleaseModal';
+import { ReleaseStatusCard } from '@/modules/distribution/components/ReleaseStatusCard';
+import { SubmitReleaseModal } from '@/modules/distribution/components/SubmitReleaseModal';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 import type { DashboardRelease } from '@/services/distribution/types/distributor';
 

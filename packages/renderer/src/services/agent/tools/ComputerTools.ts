@@ -1,5 +1,5 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 import type { DocumentReference } from 'firebase/firestore';
@@ -221,7 +221,7 @@ export const ComputerTools = {
                 return toolError('A non-empty goal is required.', 'COMPUTER_DRIVE_INVALID_GOAL');
             }
 
-            const { computerAgentDriver } = await importWithRetry(() => import('../ComputerAgentDriver'));
+            const { computerAgentDriver } = await importWithRetry(() => import('@/services/agent/ComputerAgentDriver'));
             const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
             const { collection, addDoc, updateDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 

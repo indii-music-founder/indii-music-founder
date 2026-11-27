@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/core/context/ToastContext";
 import { CampaignIntelligence } from "@/services/marketing/CampaignIntelligenceService";
-import { ScheduledPost, PostEnhancement, EnhancementType } from "../types";
+import { ScheduledPost, PostEnhancement, EnhancementType } from "@/modules/marketing/types";
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 interface IntelligenceEnhancePostModalProps {
   post: ScheduledPost;

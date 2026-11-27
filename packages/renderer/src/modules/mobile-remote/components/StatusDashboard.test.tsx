@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import StatusDashboard from './StatusDashboard';
+import StatusDashboard from '@/modules/mobile-remote/components/StatusDashboard';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['whileTap', 'initial', 'animate', 'transition'];
@@ -25,7 +25,7 @@ vi.mock('@/lib/utils', () => ({
     cn: (...args: Array<string | false | null | undefined>) => args.filter(Boolean).join(' '),
 }));
 
-vi.mock('../MobileRemote', () => ({
+vi.mock('@/modules/mobile-remote/MobileRemote', () => ({
     triggerHaptic: vi.fn(),
 }));
 

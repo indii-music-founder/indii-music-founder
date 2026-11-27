@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UnifiedCommandMenu } from './UnifiedCommandMenu';
+import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { Modal } from '@/components/ui/Modal';
 import { useStore } from '@/core/store';
 import { judgeCommandIntent } from '@/config/typesafeJudgments';

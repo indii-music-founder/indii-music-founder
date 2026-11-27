@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AudioAnalysisService } from './AudioAnalysisService';
+import { AudioAnalysisService } from '@/services/audio/AudioAnalysisService';
 
 describe('AudioAnalysisService full-file cache identity', () => {
     it('does not collide when files differ after the first megabyte', async () => {

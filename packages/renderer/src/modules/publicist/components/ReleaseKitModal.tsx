@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Copy, Check } from 'lucide-react';
-import { PUBLICIST_TOOLS, UNRESOLVED_MEDIA_CONTACT } from '../tools';
+import { PUBLICIST_TOOLS, UNRESOLVED_MEDIA_CONTACT } from '@/modules/publicist/tools';
 import { logger } from '@/utils/logger';
 
 interface ReleaseKitModalProps {

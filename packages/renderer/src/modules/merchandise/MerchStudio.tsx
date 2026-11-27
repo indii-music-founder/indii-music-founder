@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate, useMatch } from 'react-router-dom';
-import MerchDashboard from './MerchDashboard';
-import MerchDesigner from './MerchDesigner';
+import MerchDashboard from '@/modules/merchandise/MerchDashboard';
+import MerchDesigner from '@/modules/merchandise/MerchDesigner';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /**

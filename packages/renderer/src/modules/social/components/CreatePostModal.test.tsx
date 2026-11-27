@@ -2,8 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import CreatePostModal from './CreatePostModal';
-import { SOCIAL_TOOLS } from '../tools';
+import CreatePostModal from '@/modules/social/components/CreatePostModal';
+import { SOCIAL_TOOLS } from '@/modules/social/tools';
 
 // Extend expect with jest-axe matchers
 expect.extend(toHaveNoViolations);
@@ -19,7 +19,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock BrandAssetsDrawer to avoid testing its internal a11y issues here
-vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
+vi.mock('@/modules/creative/components/BrandAssetsDrawer', () => ({
     default: ({ onSelect }: { onSelect: (asset: { url: string; storageUri?: string; description?: string }) => void }) => (
         <button data-testid="brand-assets-drawer" onClick={() => onSelect({
             url: 'data:image/png;base64,temporary',
@@ -33,7 +33,7 @@ vi.mock('@/services/storage/resolveStorageUrl', () => ({
     resolveStorageUrl: vi.fn(async () => 'https://cdn.example.test/feed.png'),
 }));
 
-vi.mock('../tools', () => ({
+vi.mock('@/modules/social/tools', () => ({
     SOCIAL_TOOLS: {
         write_social_copy: vi.fn(),
         suggest_instagram_hashtags: vi.fn(),

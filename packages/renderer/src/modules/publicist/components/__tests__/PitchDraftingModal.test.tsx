@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { PitchDraftingModal } from '../PitchDraftingModal';
+import { PitchDraftingModal } from '@/modules/publicist/components/PitchDraftingModal';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
-import type { Contact } from '../../types';
+import type { Contact } from '@/modules/publicist/types';
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { PromptInput, PromptInputActions, PromptInputAction, PromptInputTextarea } from './prompt-input'
+import { PromptInput, PromptInputActions, PromptInputAction, PromptInputTextarea } from '@/components/ui/prompt-input'
 import { describe, it, expect } from 'vitest'
 import React from 'react'
 

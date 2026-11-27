@@ -3,9 +3,9 @@ import { Upload, Search, Loader2, Book, Sparkles, X, StickyNote, Brain } from 'l
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/core/context/ToastContext';
-import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
-import { DocumentCard } from './components/DocumentCard';
-import { KnowledgeChat } from './components/KnowledgeChat';
+import { knowledgeBaseService, KnowledgeDoc } from '@/modules/knowledge/services/KnowledgeBaseService';
+import { DocumentCard } from '@/modules/knowledge/components/DocumentCard';
+import { KnowledgeChat } from '@/modules/knowledge/components/KnowledgeChat';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';

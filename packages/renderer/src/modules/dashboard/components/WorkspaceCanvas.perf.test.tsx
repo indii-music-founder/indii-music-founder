@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { WorkspaceCanvas } from './WorkspaceCanvas';
+import { WorkspaceCanvas } from '@/modules/dashboard/components/WorkspaceCanvas';
 import { vi } from 'vitest';
 
 // Mock motion/react for tests

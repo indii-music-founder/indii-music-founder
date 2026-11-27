@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NarrativeTools } from '../NarrativeTools';
-import { DirectorTools } from '../DirectorTools';
-import { VideoTools } from '../VideoTools';
+import { NarrativeTools } from '@/services/agent/tools/NarrativeTools';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
+import { VideoTools } from '@/services/agent/tools/VideoTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { useStore } from '@/core/store';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutTemplate, X, ArrowRight } from 'lucide-react';
-import { WORKFLOW_TEMPLATES } from '../services/workflowTemplates';
+import { WORKFLOW_TEMPLATES } from '@/modules/workflow/services/workflowTemplates';
 
 interface WorkflowTemplateModalProps {
     onClose: () => void;

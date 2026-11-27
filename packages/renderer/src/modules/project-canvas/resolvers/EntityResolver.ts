@@ -19,7 +19,7 @@ import type {
     EntityReference,
     HydratedEntityResult,
     NonAuthoritativeSnapshot,
-} from '../types';
+} from '@/modules/project-canvas/types';
 
 export interface ResolvedAssetData {
     assetId: string;
@@ -109,9 +109,9 @@ export class EntityResolver {
      */
     private static async resolveProjectEntity(
         ref: EntityReference
-    ): Promise<HydratedEntityResult<import('../types').ResolvedProjectEntityData>> {
+    ): Promise<HydratedEntityResult<import('@/modules/project-canvas/types').ResolvedProjectEntityData>> {
         const store = useStore.getState();
-        const entityType = (ref.versionId || 'artist') as import('../types').ProjectEntityType;
+        const entityType = (ref.versionId || 'artist') as import('@/modules/project-canvas/types').ProjectEntityType;
 
         if (entityType === 'artist') {
             const userProfile = store.userProfile;

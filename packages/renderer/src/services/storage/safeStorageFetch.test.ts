@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { safeStorageFetch } from './safeStorageFetch';
+import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
 
 const mockFetchStorageAssetForCanvas = vi.fn();
 

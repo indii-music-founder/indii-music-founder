@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ProductSkillRegistry, parseSkillDocument, ProductSkill } from './ProductSkillRegistry';
-import { consult_product_skill, list_product_skills } from '../tools/SwarmTools';
+import { ProductSkillRegistry, parseSkillDocument, ProductSkill } from '@/services/agent/skills/ProductSkillRegistry';
+import { consult_product_skill, list_product_skills } from '@/services/agent/tools/SwarmTools';
 
 describe('ProductSkillRegistry', () => {
     describe('parseSkillDocument', () => {

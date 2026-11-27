@@ -10,7 +10,7 @@ vi.mock('@/services/agent/governance/ToolApprovalService', () => ({ toolApproval
     approve: mocks.approve, deny: mocks.deny, canApproveInThisSession: mocks.canApprove,
 } }));
 vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: mocks.success, error: mocks.error, warning: mocks.warning }) }));
-import { WIDGET_RENDERERS } from './CustomDashboardWidgets';
+import { WIDGET_RENDERERS } from '@/modules/dashboard/components/CustomDashboardWidgets';
 
 describe('dashboard approval widget', () => {
     beforeEach(() => {

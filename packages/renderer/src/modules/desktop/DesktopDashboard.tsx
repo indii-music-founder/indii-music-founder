@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Monitor, Cpu, Wifi, Keyboard, Database, Network, Power } from 'lucide-react';
-import { SettingCard } from './components/SettingCard';
+import { SettingCard } from '@/modules/desktop/components/SettingCard';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function DesktopDashboard() {

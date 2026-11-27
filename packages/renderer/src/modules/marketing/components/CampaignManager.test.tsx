@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CampaignManager from './CampaignManager';
-import { CampaignStatus } from '../types';
+import CampaignManager from '@/modules/marketing/components/CampaignManager';
+import { CampaignStatus } from '@/modules/marketing/types';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
@@ -29,7 +29,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(() => vi.fn(() => Promise.resolve({ data: { posts: [] } }))),
 }));
 
-vi.mock('./EditableCopyModal', () => ({
+vi.mock('@/modules/marketing/components/EditableCopyModal', () => ({
     default: ({ post, onClose, onSave }: any) => (
         <div data-testid="editable-copy-modal">
             <button onClick={onClose}>Close Modal</button>
@@ -40,7 +40,7 @@ vi.mock('./EditableCopyModal', () => ({
 }));
 
 // Mock child components to simplify testing the container logic
-vi.mock('./CampaignList', () => ({
+vi.mock('@/modules/marketing/components/CampaignList', () => ({
     default: ({ campaigns, onSelectCampaign, onCreateNew }: any) => (
         <div data-testid="campaign-list">
             <button onClick={onCreateNew}>Create New</button>
@@ -54,7 +54,7 @@ vi.mock('./CampaignList', () => ({
     __esModule: true,
 }));
 
-vi.mock('./CampaignDetail', () => ({
+vi.mock('@/modules/marketing/components/CampaignDetail', () => ({
     default: ({ campaign, onBack, onExecute, onEditPost }: any) => (
         <div data-testid="campaign-detail">
             <h1>{campaign.title}</h1>

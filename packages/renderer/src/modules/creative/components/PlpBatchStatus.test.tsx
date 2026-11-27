@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { completePlpSlot, createPlpBatch, failPlpSlot, setPlpLaunchStatus } from '../plpBatch';
-import PlpBatchStatus from './PlpBatchStatus';
+import { completePlpSlot, createPlpBatch, failPlpSlot, setPlpLaunchStatus } from '@/modules/creative/plpBatch';
+import PlpBatchStatus from '@/modules/creative/components/PlpBatchStatus';
 import * as judgments from '@/config/typesafeJudgments';
 
 describe('PlpBatchStatus', () => {

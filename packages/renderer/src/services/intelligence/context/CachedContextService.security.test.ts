@@ -22,7 +22,7 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: mocks.httpsCallable,
 }));
 
-import { CachedContextService } from './CachedContextService';
+import { CachedContextService } from '@/services/intelligence/context/CachedContextService';
 
 describe('CachedContextService secure persistence', () => {
     beforeEach(() => {

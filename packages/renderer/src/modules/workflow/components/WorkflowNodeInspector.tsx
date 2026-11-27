@@ -5,7 +5,7 @@ import { X, Sparkles, Save, Loader2, Layers, Maximize2, ChevronDown, ChevronUp }
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
-import type { WorkflowAuditionVariant, SubgraphNodeData } from '../types';
+import type { WorkflowAuditionVariant, SubgraphNodeData } from '@/modules/workflow/types';
 
 export default function WorkflowNodeInspector() {
     const { nodes, edges, setNodes, setEdges, selectedNodeId, setSelectedNodeId } = useStore(useShallow(state => ({
@@ -81,7 +81,7 @@ export default function WorkflowNodeInspector() {
         setIsAuditioning(true);
         setVariants([]);
         try {
-            const { auditionWorkflowVariants } = await import('../services/workflowGenerator');
+            const { auditionWorkflowVariants } = await import('@/modules/workflow/services/workflowGenerator');
             const result = await auditionWorkflowVariants(selectedNode, songContext || prompt || 'independent music artist release');
             setVariants(result);
             setShowAudition(true);
@@ -107,7 +107,7 @@ export default function WorkflowNodeInspector() {
         if (!selectedNodeId) return;
         setIsExpanding(true);
         try {
-            const { expandSubgraph } = await import('../services/workflowGenerator');
+            const { expandSubgraph } = await import('@/modules/workflow/services/workflowGenerator');
             const updated = expandSubgraph({ id: 'canvas', name: '', description: '', createdAt: '', updatedAt: '', viewport: { x: 0, y: 0, zoom: 1 }, nodes, edges }, selectedNodeId);
             setNodes(updated.nodes);
             setEdges(updated.edges);

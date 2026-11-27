@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { CodeBlock } from './CodeBlock';
+import { CodeBlock } from '@/core/components/chat/CodeBlock';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';

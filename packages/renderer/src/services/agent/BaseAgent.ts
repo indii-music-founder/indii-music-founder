@@ -1,4 +1,4 @@
-import { delegatedAgentResult, unauthorizedToolFailure } from './executionFailure';
+import { delegatedAgentResult, unauthorizedToolFailure } from '@/services/agent/executionFailure';
 import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
 import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt, streamImageTargetForRequest } from '@/services/intelligence/StreamPayloadGuard';
@@ -23,39 +23,39 @@ import {
     ToolFunctionArgs,
     ToolFunctionResult,
     validateHubAndSpoke
-} from './types';
+} from '@/services/agent/types';
 import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
-import { executionTokenBudget, inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
+import { executionTokenBudget, inheritExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
-import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
-import { ExecutionContextFactory } from './context/AgentExecutionContext';
-import { ToolExecutionContext } from './ToolExecutionContext';
-import { toolError } from './utils/ToolUtils';
-import { getDurableReportReceipt } from './utils/durableReportReceipt';
-import { recordToolOutcome } from './governance/ToolOutcomeAudit';
-import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
+import { LoopDetector, DelegationLoopDetector } from '@/services/agent/LoopDetector';
+import { ExecutionContextFactory } from '@/services/agent/context/AgentExecutionContext';
+import { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
+import { toolError } from '@/services/agent/utils/ToolUtils';
+import { getDurableReportReceipt } from '@/services/agent/utils/durableReportReceipt';
+import { recordToolOutcome } from '@/services/agent/governance/ToolOutcomeAudit';
+import { completedBoardroomToolResult } from '@/services/agent/orchestration/BoardroomActionPlan';
 import { cancelledPrintResponse, finishedPrintResponse } from '@/services/upscale/PrintPreparationControl';
-import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
-import { AgentEventBus } from './governance/AgentEventBus';
-import { getFineTunedModel } from './fine-tuned-models';
-import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
-import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
-import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from './ToolRiskRegistry';
-import { toolApprovalService } from './governance/ToolApprovalService';
-import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
+import { ToolPoolAssembler } from '@/services/agent/governance/ToolPoolAssembler';
+import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
+import { agentIdentityService, type AgentIdentityCard } from '@/services/agent/governance/AgentIdentity';
+import { validateAgentCommunication } from '@/services/agent/governance/AgentCommunicationPolicy';
+import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from '@/services/agent/ToolRiskRegistry';
+import { toolApprovalService } from '@/services/agent/governance/ToolApprovalService';
+import { artistOperatingProfileService } from '@/services/agent/governance/ArtistOperatingProfileService';
 import { hasAutonomousComputerControl } from '@indii/shared';
-import { agentNoteService } from './AgentNoteService';
+import { agentNoteService } from '@/services/agent/AgentNoteService';
 import { AppErrorCode } from '@/shared/types/errors';
-import { recordToolCapabilityOutcome } from './capabilityTruth';
+import { recordToolCapabilityOutcome } from '@/services/agent/capabilityTruth';
 
-import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
-import { getAgentStreamingService } from './AgentStreamingService';
-import { getReflectionLoop } from './ReflectionLoop';
+import { AgentPromptBuilder } from '@/services/agent/builders/AgentPromptBuilder';
+import { getAgentStreamingService } from '@/services/agent/AgentStreamingService';
+import { getReflectionLoop } from '@/services/agent/ReflectionLoop';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { latestGeneratedItem } from './galleryAssets';
+import { latestGeneratedItem } from '@/services/agent/galleryAssets';
 
 const BOARDROOM_SINGLE_OWNER_TOOL_NAMES = new Set(['generate_image', 'indii_image_gen']);
 
@@ -163,7 +163,7 @@ export class BaseAgent implements SpecializedAgent {
         let finalResponse = rawText;
 
         // Guardrail against ungrounded engineering roadmap/deficit hallucinations
-        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
+        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('@/services/agent/capabilityTruth'));
         const hallucinationCheck = detectUngroundedEngineeringHallucination(finalResponse);
         const overclaimCheck = detectCapabilityOverclaim(finalResponse);
         if (hallucinationCheck.hasHallucination) {
@@ -173,7 +173,7 @@ export class BaseAgent implements SpecializedAgent {
         if (overclaimCheck.hasOverclaim) {
             logger.warn(`[BaseAgent] 🛡️ Intercepted capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
             finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
-            void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+            void import('@/services/agent/truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
                 reportOverclaimIfNeeded({
                     snippet: overclaimCheck.snippet || finalResponse,
                     source: 'deterministic',
@@ -183,7 +183,7 @@ export class BaseAgent implements SpecializedAgent {
             ).catch(() => undefined);
         }
 
-        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
+        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('@/services/agent/governance/ModelArmor'));
         const outputCheck = await ModelArmor.scanOutput(finalResponse, getDefaultPolicy());
         if (outputCheck.redactedResponse) {
             finalResponse = outputCheck.redactedResponse;
@@ -192,7 +192,7 @@ export class BaseAgent implements SpecializedAgent {
         // TypeSafe/Jev guardrail — screens for hallucinations before user sees response.
         // Fully soft-fail: times out after 2s, never throws, passes through on any error.
         try {
-            const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
+            const { jevGuardrailService } = await importWithRetry(() => import('@/services/agent/guardrails/JevGuardrailService'));
             const guardrailResult = await Promise.race([
                 jevGuardrailService.screen({
                     text: finalResponse,
@@ -283,7 +283,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             approve_local_asset_folder: async () => {
                 try {
-                    const { desktopFileIndexService } = await importWithRetry(() => import('./DesktopFileIndexService'));
+                    const { desktopFileIndexService } = await importWithRetry(() => import('@/services/agent/DesktopFileIndexService'));
                     const folder = await desktopFileIndexService.approveFolder();
                     if (!folder) return { success: false, message: 'No folder was approved. Ask the creator to select a folder in the Studio dialog.' };
                     return { success: true, data: { folderId: folder.id, label: folder.label }, message: `Approved ${folder.label} for local asset discovery.` };
@@ -298,7 +298,7 @@ export class BaseAgent implements SpecializedAgent {
                     : undefined;
                 if (!query) return toolError('Provide words to search in previously approved folder names.', 'INVALID_LOCAL_ASSET_QUERY');
                 try {
-                    const { desktopFileIndexService } = await importWithRetry(() => import('./DesktopFileIndexService'));
+                    const { desktopFileIndexService } = await importWithRetry(() => import('@/services/agent/DesktopFileIndexService'));
                     const assets = await desktopFileIndexService.search(query, extensions);
                     return {
                         success: true,
@@ -313,14 +313,14 @@ export class BaseAgent implements SpecializedAgent {
             // — including remote-driven conversations — can persist to and
             // read back the creator's notes).
             save_note: async (args: Record<string, unknown>) => {
-                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                const { NotesTools } = await importWithRetry(() => import('@/services/agent/tools/NotesTools'));
                 return await NotesTools.save_note({
                     title: typeof args.title === 'string' ? args.title : undefined,
                     content: typeof args.content === 'string' ? args.content : '',
                 });
             },
             save_media_note: async (args: Record<string, unknown>) => {
-                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                const { NotesTools } = await importWithRetry(() => import('@/services/agent/tools/NotesTools'));
                 return await NotesTools.save_media_note({
                     url: typeof args.url === 'string' ? args.url : '',
                     noteId: typeof args.noteId === 'string' ? args.noteId : undefined,
@@ -328,7 +328,7 @@ export class BaseAgent implements SpecializedAgent {
                 });
             },
             list_notes: async (args: Record<string, unknown>) => {
-                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                const { NotesTools } = await importWithRetry(() => import('@/services/agent/tools/NotesTools'));
                 return await NotesTools.list_notes({
                     query: typeof args.query === 'string' ? args.query : undefined,
                     limit: typeof args.limit === 'number' ? args.limit : undefined,
@@ -338,7 +338,7 @@ export class BaseAgent implements SpecializedAgent {
             // founder-only in chat, but every user can file a report with a
             // short reference ID. Detail stays in the report document.
             report_error: async (args: Record<string, unknown>) => {
-                const { ErrorReportTools } = await importWithRetry(() => import('./tools/ErrorReportTools'));
+                const { ErrorReportTools } = await importWithRetry(() => import('@/services/agent/tools/ErrorReportTools'));
                 return await ErrorReportTools.report_error({
                     agentId: this.id,
                     summary: typeof args.summary === 'string' ? args.summary : '',
@@ -517,7 +517,7 @@ export class BaseAgent implements SpecializedAgent {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
                 // Delegate to the shared SwarmTools implementation
-                const { consult_specialist: swarmToolImpl } = await importWithRetry(() => import('./tools/SwarmTools'));
+                const { consult_specialist: swarmToolImpl } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
                 const task = typeof args.task === 'string' ? args.task : '';
                 const specialistContext = { ...context, agentIdentity: this.identityCard || undefined };
                 inheritExecutionTokenBudget(context, specialistContext);
@@ -526,7 +526,7 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { targetAgentId, task, delayMinutes } = args as { targetAgentId: string; task: string; delayMinutes: number };
-                const { proactiveService } = await importWithRetry(() => import('./ProactiveService'));
+                const { proactiveService } = await importWithRetry(() => import('@/services/agent/ProactiveService'));
                 const executeAt = Date.now() + (delayMinutes * 60000);
                 const taskId = await proactiveService.scheduleTask(targetAgentId, task, executeAt);
                 return {
@@ -538,7 +538,7 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             subscribe_to_event: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { eventType, task } = args as { eventType: string; task: string };
-                const { proactiveService } = await importWithRetry(() => import('./ProactiveService'));
+                const { proactiveService } = await importWithRetry(() => import('@/services/agent/ProactiveService'));
                 // Cast to EventType — runtime validation happens inside proactiveService.subscribeToEvent
                 const taskId = await proactiveService.subscribeToEvent(this.id, eventType as import('@/core/events').EventType, task);
                 return {
@@ -676,14 +676,14 @@ export class BaseAgent implements SpecializedAgent {
                 : task;
 
             if (capabilityIntent !== undefined) {
-                const { isCapabilityQuestion, isDepartmentAuditOrReadinessQuestion, buildDepartmentAuditReport, buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('./capabilityTruth'));
+                const { isCapabilityQuestion, isDepartmentAuditOrReadinessQuestion, buildDepartmentAuditReport, buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('@/services/agent/capabilityTruth'));
                 if (isCapabilityQuestion(capabilityIntent)) {
                     let responseText = '';
                     if (isDepartmentAuditOrReadinessQuestion(capabilityIntent)) {
                         responseText = buildDepartmentAuditReport({ query: capabilityIntent });
                     } else {
-                        const { loadCapabilitySnapshot } = await importWithRetry(() => import('./CapabilitySnapshotService'));
-                        const { agentRegistry } = await importWithRetry(() => import('./registry'));
+                        const { loadCapabilitySnapshot } = await importWithRetry(() => import('@/services/agent/CapabilitySnapshotService'));
+                        const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
                         const registeredTools = (this.authorizedTools || []).filter(
                             tool => typeof this.functions?.[tool] === 'function',
                         );
@@ -726,7 +726,7 @@ export class BaseAgent implements SpecializedAgent {
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     onComplete: async (metadata) => {
                         let fullText = streamingService.getState().tokens.join('');
-                        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
+                        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('@/services/agent/capabilityTruth'));
                         const hallucinationCheck = detectUngroundedEngineeringHallucination(fullText);
                         const overclaimCheck = detectCapabilityOverclaim(fullText);
                         if (hallucinationCheck.hasHallucination) {
@@ -736,7 +736,7 @@ export class BaseAgent implements SpecializedAgent {
                         if (overclaimCheck.hasOverclaim) {
                             logger.warn(`[BaseAgent] 🛡️ Intercepted streaming capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
                             fullText = sanitizeAgentCapabilityOutput(fullText);
-                            void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+                            void import('@/services/agent/truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
                                 reportOverclaimIfNeeded({
                                     snippet: overclaimCheck.snippet || fullText,
                                     source: 'deterministic',
@@ -747,7 +747,7 @@ export class BaseAgent implements SpecializedAgent {
                         }
 
                         try {
-                            const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
+                            const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('@/services/agent/governance/ModelArmor'));
                             const outputCheck = await ModelArmor.scanOutput(fullText, getDefaultPolicy());
                             if (outputCheck.redactedResponse) {
                                 fullText = outputCheck.redactedResponse;
@@ -757,7 +757,7 @@ export class BaseAgent implements SpecializedAgent {
                         }
 
                         try {
-                            const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
+                            const { jevGuardrailService } = await importWithRetry(() => import('@/services/agent/guardrails/JevGuardrailService'));
                             const guardrailResult = await Promise.race([
                                 jevGuardrailService.screen({
                                     text: fullText,
@@ -776,7 +776,7 @@ export class BaseAgent implements SpecializedAgent {
 
                         // Store in memory (Phase 2 integration) — fire-and-forget so
                         // Boardroom seats settle and hand off without waiting on network ingest.
-                        void importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'))
+                        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
                             .then(({ alwaysOnMemoryEngine }) =>
                                 alwaysOnMemoryEngine.ingest(
                                     `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
@@ -824,7 +824,7 @@ export class BaseAgent implements SpecializedAgent {
             : task;
 
         if (capabilityIntent !== undefined) {
-            const { isCapabilityQuestion, isDepartmentAuditOrReadinessQuestion, buildDepartmentAuditReport, buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('./capabilityTruth'));
+            const { isCapabilityQuestion, isDepartmentAuditOrReadinessQuestion, buildDepartmentAuditReport, buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('@/services/agent/capabilityTruth'));
             if (isCapabilityQuestion(capabilityIntent)) {
                 if (isDepartmentAuditOrReadinessQuestion(capabilityIntent)) {
                     return {
@@ -832,8 +832,8 @@ export class BaseAgent implements SpecializedAgent {
                         toolCalls: [],
                     };
                 }
-                const { loadCapabilitySnapshot } = await importWithRetry(() => import('./CapabilitySnapshotService'));
-                const { agentRegistry } = await importWithRetry(() => import('./registry'));
+                const { loadCapabilitySnapshot } = await importWithRetry(() => import('@/services/agent/CapabilitySnapshotService'));
+                const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
                 const registeredTools = (this.authorizedTools || []).filter(
                     tool => typeof this.functions?.[tool] === 'function',
                 );
@@ -1024,14 +1024,14 @@ ${capabilitiesBlock}
         const ctxRecord = context as Record<string, any>;
 
         if (ctxRecord?.conversationMode === 'boardroom') {
-            const { agentRegistry } = await importWithRetry(() => import('./registry'));
+            const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
             boardroomSection = `\n## BOARDROOM COMMUNICATION PROTOCOL\nYou are participating in a Boardroom meeting. Respond from your department's perspective. Managers may share factual notes with seated peer managers, but may NEVER delegate tasks to them or command another department's employees.\n\n[SEATED_AGENTS]: ${seatedNames}. Use share_note only for relevant information. If a needed manager is absent, tell the user to seat them.\n`;
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {
-            const { getDepartmentOf } = await importWithRetry(() => import('./departments'));
+            const { getDepartmentOf } = await importWithRetry(() => import('@/services/agent/departments'));
             const dept = getDepartmentOf(this.id);
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DEPARTMENT mode. You can ONLY coordinate with agents in the [${dept?.displayName || 'Unknown'}] department. Do NOT promise to contact other departments. Explicitly refuse external department requests.\n`;
         }
@@ -1042,7 +1042,7 @@ ${capabilitiesBlock}
         // Prefer structured history with token-aware truncation over raw character slicing.
         if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
             const { ContextManager } = await importWithRetry(() => import('@/services/intelligence/context/ContextManager'));
-            const { agentRegistry } = await importWithRetry(() => import('./registry'));
+            const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
             const speakerLabels = new WeakMap<object, string>();
             // Convert AgentMessage[] to Content[], preserving speaker labels for multi-seat turns (ISSUE-1685)
             const contentHistory = context.chatHistory.map(msg => {
@@ -1072,7 +1072,7 @@ ${capabilitiesBlock}
                 return `${role}: ${text}`;
             }).join('\n\n');
             // ISSUE-1661: keep the older-conversation summary the pipeline built.
-            const { withOlderHistorySummary } = await importWithRetry(() => import('./components/olderHistorySummary'));
+            const { withOlderHistorySummary } = await importWithRetry(() => import('@/services/agent/components/olderHistorySummary'));
             safeHistory = withOlderHistorySummary(safeHistory, (context as { historicalSummary?: unknown } | undefined)?.historicalSummary);
         } else {
             // Fallback: Naive slicing if no structured history is available
@@ -1090,13 +1090,13 @@ ${capabilitiesBlock}
         // names (the founder caught exactly this in a Boardroom self-review).
         let capabilityTruthSection: string | undefined;
         try {
-            const { loadCapabilitySnapshot } = await importWithRetry(() => import('./CapabilitySnapshotService'));
-            const { buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('./capabilityTruth'));
-            const { listHeadIds } = await importWithRetry(() => import('./departments'));
+            const { loadCapabilitySnapshot } = await importWithRetry(() => import('@/services/agent/CapabilitySnapshotService'));
+            const { buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('@/services/agent/capabilityTruth'));
+            const { listHeadIds } = await importWithRetry(() => import('@/services/agent/departments'));
             const snapshot = await loadCapabilitySnapshot();
             const registeredTools = (this.authorizedTools || [])
                 .filter(tool => typeof this.functions?.[tool] === 'function');
-            const { agentRegistry } = await importWithRetry(() => import('./registry'));
+            const { agentRegistry } = await importWithRetry(() => import('@/services/agent/registry'));
             const summary = buildCapabilitySummary({
                 authorizedTools: registeredTools,
                 registeredSpecialistIds: agentRegistry.getAll().map(agent => agent.id),
@@ -1291,7 +1291,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 }
 
                 // Prepare request contents
-                const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
+                const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('@/services/agent/governance/ModelArmor'));
                 // Only scan the new task/input to prevent false positives from the agent's own history
                 // (e.g., identity locks repeating "ignore previous instructions")
                 const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
@@ -1375,7 +1375,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 }
 
                 // Pre-flight Token Estimation (Primitive #5)
-                const { TokenEstimator } = await importWithRetry(() => import('./governance/TokenEstimator'));
+                const { TokenEstimator } = await importWithRetry(() => import('@/services/agent/governance/TokenEstimator'));
                 const tokenEstimate = TokenEstimator.estimate(
                     requestContents,
                     undefined,

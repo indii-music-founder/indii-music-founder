@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
-import { useFocusTrap } from './useFocusTrap';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 function FocusHarness({ active = true }: { active?: boolean }) {
     const ref = useFocusTrap(active);

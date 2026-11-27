@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PublicistAgent } from './PublicistAgent';
-import { PublicistService } from '../../publicist/PublicistService';
+import { PublicistAgent } from '@/services/agent/definitions/PublicistAgent';
+import { PublicistService } from '@/services/publicist/PublicistService';
 
-vi.mock('../../publicist/PublicistService', () => ({
+vi.mock('@/services/publicist/PublicistService', () => ({
     PublicistService: {
         addCampaign: vi.fn(),
         subscribeToCampaigns: vi.fn(),

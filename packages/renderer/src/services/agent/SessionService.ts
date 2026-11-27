@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 
-import { FirestoreService } from '../FirestoreService';
-import { SessionPersistenceConflict } from './SessionPersistenceConflict';
+import { FirestoreService } from '@/services/FirestoreService';
+import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
 import type { ConversationSession, AgentMessage } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
-import { OrganizationService } from '../OrganizationService';
-import { auth } from '../firebase';
+import { OrganizationService } from '@/services/OrganizationService';
+import { auth } from '@/services/firebase';
 import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId, doc, serverTimestamp, writeBatch, runTransaction, getDocFromServer, getDocsFromServer } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
-import { platformBridge } from '../platform/PlatformBridgeService';
-import { storeSessionAttachments, loadSessionAttachment, type StoredSessionAttachment } from './SessionAttachmentStorage';
+import { platformBridge } from '@/services/platform/PlatformBridgeService';
+import { storeSessionAttachments, loadSessionAttachment, type StoredSessionAttachment } from '@/services/agent/SessionAttachmentStorage';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {

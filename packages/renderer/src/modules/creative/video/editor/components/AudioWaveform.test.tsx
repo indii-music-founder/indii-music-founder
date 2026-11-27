@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
-import { AudioWaveform } from './AudioWaveform';
+import { AudioWaveform } from '@/modules/creative/video/editor/components/AudioWaveform';
 import * as audioPeaks from '@/utils/audioPeaks';
 
 // Mock getAudioData

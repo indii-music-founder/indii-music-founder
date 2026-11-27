@@ -5,7 +5,7 @@ import {
     DynamicModuleContainer,
     getDeterministicLayout,
     type DynamicComponentKey,
-} from './DynamicModuleContainer';
+} from '@/components/layout/DynamicModuleContainer';
 
 describe('DynamicModuleContainer & Layout Assembler', () => {
     describe('getDeterministicLayout', () => {

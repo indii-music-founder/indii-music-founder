@@ -1,6 +1,6 @@
 import React from 'react';
-import { CampaignAsset } from '../types';
-import CampaignCard from './CampaignCard';
+import { CampaignAsset } from '@/modules/marketing/types';
+import CampaignCard from '@/modules/marketing/components/CampaignCard';
 import { Plus, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { EmptyState } from '@/components/shared/EmptyState';

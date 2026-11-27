@@ -8,7 +8,7 @@ import {
     compileProjectForWebPreview,
     releaseWebPreviewResources,
     rewriteCompiledHtmlForWebPlayer,
-} from './webPreviewCompiler';
+} from '@/services/video/webPreviewCompiler';
 
 const COMPILED_DOC = `<!doctype html>
 <html lang="en"><head><meta charset="UTF-8" />

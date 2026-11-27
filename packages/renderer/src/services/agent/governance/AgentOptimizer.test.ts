@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AgentOptimizer } from './AgentOptimizer';
+import { AgentOptimizer } from '@/services/agent/governance/AgentOptimizer';
 
 const mockGetExecutionsByUser = vi.hoisted(() => vi.fn());
 
-vi.mock('../WorkflowStateService', () => ({
+vi.mock('@/services/agent/WorkflowStateService', () => ({
     workflowStateService: {
         getExecutionsByUser: mockGetExecutionsByUser,
     },

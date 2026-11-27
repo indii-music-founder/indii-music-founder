@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Modal } from '@/components/ui/Modal';
-import { QuickNotesDrawer } from '../QuickNotesDrawer';
+import { QuickNotesDrawer } from '@/modules/notes/components/QuickNotesDrawer';
 import type { Note } from '@/core/store/slices/notesSlice';
 
 const mockUseStore = vi.fn();

@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { useSurfaceIcon } from './useSurfaceIcon';
+import { useSurfaceIcon } from '@/hooks/useSurfaceIcon';
 
 const linkHref = (selector: string): string | null =>
     document.querySelector<HTMLLinkElement>(selector)?.getAttribute('href') ?? null;

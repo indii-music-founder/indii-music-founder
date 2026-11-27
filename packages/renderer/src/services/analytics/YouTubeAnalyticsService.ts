@@ -29,7 +29,7 @@ import {
     reauthenticateWithPopup,
     linkWithPopup,
 } from 'firebase/auth';
-import type { PlatformData, StreamDataPoint, RegionData } from './types';
+import type { PlatformData, StreamDataPoint, RegionData } from '@/services/analytics/types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

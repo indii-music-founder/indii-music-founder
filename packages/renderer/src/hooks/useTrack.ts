@@ -6,7 +6,7 @@ import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { logger } from '@/utils/logger';
-import type { ClientTrackRecord } from './useTrackLibrary';
+import type { ClientTrackRecord } from '@/hooks/useTrackLibrary';
 
 export function useTrack(fingerprint: string | undefined | null) {
     const { user } = useStore(useShallow(state => ({

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ToolPoolAssembler } from '../ToolPoolAssembler';
+import { ToolPoolAssembler } from '@/services/agent/governance/ToolPoolAssembler';
 import {
     READ_ONLY_DISCUSSION_ROSTER_TOOLS,
     TOOL_RISK_REGISTRY,
     isAllowedInReadOnlyDiscussion,
     resolveToolRiskMetadata,
-} from '../../ToolRiskRegistry';
+} from '@/services/agent/ToolRiskRegistry';
 
 describe('read-only discussion roster exemption', () => {
     it('allows read tools and the Boardroom roster tools only', () => {

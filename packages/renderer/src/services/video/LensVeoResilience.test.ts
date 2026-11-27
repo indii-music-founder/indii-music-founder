@@ -3,7 +3,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 
 // Hoisted mocks must be defined before imports
 const mocks = vi.hoisted(() => ({
@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // Mock modules
-vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage,

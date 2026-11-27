@@ -19,9 +19,9 @@ import {
     History,
     Split,
 } from 'lucide-react';
-import type { CanvasToolType } from '../store/projectCanvasSlice';
-import type { CanvasPresenceState } from '../types';
-import { CollaboratorPills } from './presence/CanvasPresenceLayer';
+import type { CanvasToolType } from '@/modules/project-canvas/store/projectCanvasSlice';
+import type { CanvasPresenceState } from '@/modules/project-canvas/types';
+import { CollaboratorPills } from '@/modules/project-canvas/components/presence/CanvasPresenceLayer';
 
 interface CanvasToolbarProps {
     activeTool: CanvasToolType;

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { getText } from './utils';
+import { getText } from '@/core/components/chat/utils';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 

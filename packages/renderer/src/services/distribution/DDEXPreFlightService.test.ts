@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { judgeDDEXPreFlight } from '@/config/typesafeJudgments';
 import type { GoldenMetadata } from '@/services/metadata/types';
-import { DDEXPreFlightService } from './DDEXPreFlightService';
+import { DDEXPreFlightService } from '@/services/distribution/DDEXPreFlightService';
 
 vi.mock('@/config/typesafeJudgments', () => ({
     judgeDDEXPreFlight: vi.fn(async (payload: { dspTarget: string }) => ({

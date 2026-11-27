@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AnalyticsService } from './AnalyticsService';
+import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({

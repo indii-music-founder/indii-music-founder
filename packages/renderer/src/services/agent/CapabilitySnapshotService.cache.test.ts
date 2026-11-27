@@ -4,7 +4,7 @@ const call = vi.hoisted(() => vi.fn());
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => call) }));
 vi.mock('@/services/firebase', () => ({ functions: {}, auth: { currentUser: { uid: 'owner-1' } } }));
 
-import { loadCapabilitySnapshot, resetCapabilitySnapshotCache } from './CapabilitySnapshotService';
+import { loadCapabilitySnapshot, resetCapabilitySnapshotCache } from '@/services/agent/CapabilitySnapshotService';
 
 function freshSnapshot(ttlMs = 60_000) {
     const now = Date.now();

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CatalogFact, CatalogImportSession } from '@indii/shared';
 import { INITIAL_METADATA } from '@/services/metadata/types';
 import type { CatalogTrack } from '@/modules/registration/types';
-import { ExistingCatalogIntelligenceService } from './ExistingCatalogIntelligenceService';
+import { ExistingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
 
 const now = '2026-09-22T12:00:00.000Z';
 const provenance = { state: 'UNKNOWN' as const, sourceType: 'IMPORT' as const, sourceId: 'statement-1', evidence: [], observedAt: now };

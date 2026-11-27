@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createStore, type StoreApi } from 'zustand';
-import { createAuthSlice, AuthSlice } from './authSlice';
+import { createAuthSlice, AuthSlice } from '@/core/store/slices/authSlice';
 import type { UserCredential } from 'firebase/auth';
 import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential } from 'firebase/auth';
 import { setDoc } from 'firebase/firestore';

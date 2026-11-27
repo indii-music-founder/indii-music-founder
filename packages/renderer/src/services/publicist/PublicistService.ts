@@ -8,9 +8,9 @@ import {
     doc,
     updateDoc
 } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Campaign, Contact } from '../../modules/publicist/types';
-import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
+import { db } from '@/services/firebase';
+import { Campaign, Contact } from '@/modules/publicist/types';
+import { CampaignSchema, ContactSchema } from '@/modules/publicist/schema';
 import { logger } from '@/utils/logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { evaluateAesthetic, hasAestheticIdentity } from './AestheticVisionEngine';
+import { evaluateAesthetic, hasAestheticIdentity } from '@/services/brand/AestheticVisionEngine';
 import type { BrandKit } from '@/types/User';
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({

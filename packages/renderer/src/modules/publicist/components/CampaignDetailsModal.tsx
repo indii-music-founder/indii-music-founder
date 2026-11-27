@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, Calendar, BarChart2, Disc } from 'lucide-react';
-import { Campaign } from '../types';
+import { Campaign } from '@/modules/publicist/types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';

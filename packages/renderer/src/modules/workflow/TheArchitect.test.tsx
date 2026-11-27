@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { validateConnection } from './utils/validationUtils';
+import { validateConnection } from '@/modules/workflow/utils/validationUtils';
 import { Node } from 'reactflow';
 
 // Mock nodeRegistry
-vi.mock('./services/nodeRegistry', () => ({
+vi.mock('@/modules/workflow/services/nodeRegistry', () => ({
     getJobDefinition: (dept: string, jobId: string) => {
         if (dept === 'Music' && jobId === 'generate-track') {
             return {

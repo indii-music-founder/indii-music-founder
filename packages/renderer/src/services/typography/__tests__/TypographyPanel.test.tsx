@@ -11,7 +11,7 @@ vi.mock('@/core/store', () => {
     return { useStore: { getState: () => mockStore } };
 });
 
-import TypographyPanel from '../TypographyPanel';
+import TypographyPanel from '@/services/typography/TypographyPanel';
 import { FontLibrary } from '@/services/typography/FontLibrary';
 
 function buildFont(): opentype.Font {

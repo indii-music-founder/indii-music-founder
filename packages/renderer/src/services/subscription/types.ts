@@ -8,7 +8,7 @@ import {
   BillingPeriodConfig,
   BILLING_PERIODS,
   calculateBillingTotal,
-} from './SubscriptionTier';
+} from '@/services/subscription/SubscriptionTier';
 export {
   SubscriptionTier,
   type BillingPeriod,

@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import AI_Input_Search from './ai-input-search';
+import AI_Input_Search from '@/components/kokonutui/ai-input-search';
 
 expect.extend(toHaveNoViolations);
 

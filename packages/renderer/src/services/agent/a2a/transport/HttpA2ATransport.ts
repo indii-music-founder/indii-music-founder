@@ -1,4 +1,4 @@
-import { A2ATransport, RouterCallContext } from './A2ATransport';
+import { A2ATransport, RouterCallContext } from '@/services/agent/a2a/transport/A2ATransport';
 import { MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { logger } from '@/utils/logger';
 import { fetchWithRetry } from '@/lib/fetchWithRetry';

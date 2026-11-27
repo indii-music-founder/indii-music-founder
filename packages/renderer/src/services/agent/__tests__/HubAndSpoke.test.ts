@@ -6,9 +6,9 @@ import {
     HUB_AGENT_ID,
     SPOKE_AGENT_IDS,
     VALID_AGENT_IDS
-} from '../types';
-import { sameDepartment } from '../departments';
-import { INDII_MESSAGES } from '../constants';
+} from '@/services/agent/types';
+import { sameDepartment } from '@/services/agent/departments';
+import { INDII_MESSAGES } from '@/services/agent/constants';
 
 describe('Hub-and-Spoke Architecture', () => {
     describe('Agent Identification', () => {

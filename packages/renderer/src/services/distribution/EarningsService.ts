@@ -4,7 +4,7 @@ import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import type { EarningsDocument } from '@/types/firestore';
 import type { DateRange } from '@/services/distribution/proprietary-ingestion/types/common';
-import type { DistributorEarnings, DistributorId } from './types/distributor';
+import type { DistributorEarnings, DistributorId } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 
 /**

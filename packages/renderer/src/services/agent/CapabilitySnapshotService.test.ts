@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
     createFailClosedCapabilitySnapshot,
     parseFreshCapabilitySnapshot,
-} from './CapabilitySnapshotService';
+} from '@/services/agent/CapabilitySnapshotService';
 
 const NOW = Date.parse('2026-07-30T12:00:00.000Z');
 

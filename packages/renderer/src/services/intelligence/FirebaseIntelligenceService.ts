@@ -1,13 +1,13 @@
-import { resolveModelThinkingConfig } from './generators/thinkingConfig';
+import { resolveModelThinkingConfig } from '@/services/intelligence/generators/thinkingConfig';
 import { getToken as getAppCheckToken } from 'firebase/app-check';
 import { httpsCallable } from 'firebase/functions';
 import { appCheck, getAppCheck, auth, functions, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
-import { assertContentsWithinStreamBudget } from './StreamPayloadGuard';
+import { assertContentsWithinStreamBudget } from '@/services/intelligence/StreamPayloadGuard';
 import { APPROVED_MODELS, INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
-import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
+import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from '@/services/intelligence/config/RemoteIntelligenceConfig';
 import {
     FunctionCallPart,
     GenerateContentResponse,
@@ -30,20 +30,20 @@ import {
     Tool,
 } from '@/shared/types/ai.dto';
 
-import { CircuitBreaker } from './utils/CircuitBreaker';
-import { BREAKER_CONFIGS } from './config/breaker-configs';
-import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
-import { InputSanitizer } from './utils/InputSanitizer';
-import { TokenUsageService } from './billing/TokenUsageService';
+import { CircuitBreaker } from '@/services/intelligence/utils/CircuitBreaker';
+import { BREAKER_CONFIGS } from '@/services/intelligence/config/breaker-configs';
+import { STANDARD_SAFETY_SETTINGS } from '@/services/intelligence/config/safety-settings';
+import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
+import { TokenUsageService } from '@/services/intelligence/billing/TokenUsageService';
 import { logger } from '@/utils/logger';
-import { RateLimiter } from './RateLimiter';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
 import { BOARDROOM_MAX_EXECUTED_AGENTS, GENERATION_RATE_LIMIT } from '@indii/shared';
 import { secureRandomInt } from '@/utils/crypto-random';
 import { CostControlService } from '@/services/billing/CostControlService';
-import { estimateAgentStreamCost } from './billing/estimateAgentStreamCost';
+import { estimateAgentStreamCost } from '@/services/intelligence/billing/estimateAgentStreamCost';
 
 // Extracted sub-modules
-import { isAppCheckError, isAppCheckConfigured } from './appcheck';
+import { isAppCheckError, isAppCheckConfigured } from '@/services/intelligence/appcheck';
 import {
     generateText as hlGenerateText,
     generateStructuredData as hlGenerateStructuredData,
@@ -55,20 +55,20 @@ import {
     analyzeAudio as hlAnalyzeAudio,
     analyzeFileURI as hlAnalyzeFileURI,
     parseJSON as hlParseJSON,
-} from './generators/HighLevelAPI';
-import { generateImage as imgGenerate } from './generators/ImageGenerator';
-import { generateSpeech as speechGenerate } from './generators/SpeechGenerator';
+} from '@/services/intelligence/generators/HighLevelAPI';
+import { generateImage as imgGenerate } from '@/services/intelligence/generators/ImageGenerator';
+import { generateSpeech as speechGenerate } from '@/services/intelligence/generators/SpeechGenerator';
 import {
     embedContent as embeddingEmbed,
     batchEmbedContents as embeddingBatchEmbed,
-} from './generators/EmbeddingGenerator';
-import { GeminiFileService } from './GeminiFileService';
-import type { IntelligenceContext } from './IntelligenceContext';
+} from '@/services/intelligence/generators/EmbeddingGenerator';
+import { GeminiFileService } from '@/services/intelligence/GeminiFileService';
+import type { IntelligenceContext } from '@/services/intelligence/IntelligenceContext';
 import type {
     FileDataPart,
     ExtendedGenerativeModel,
     ChatMessage,
-} from './types';
+} from '@/services/intelligence/types';
 
 type GenerateContentResult = WrappedResponse;
 type LiveGenerativeModel = never;
@@ -199,7 +199,7 @@ const extractText = (payload: BackendStreamPayload): string => {
 };
 
 // Re-export ChatMessage for backward compatibility
-export type { ChatMessage } from './types';
+export type { ChatMessage } from '@/services/intelligence/types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;

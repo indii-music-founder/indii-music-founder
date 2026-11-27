@@ -1,6 +1,6 @@
 /** Pure validation/arithmetic tests; no network, account or customer fixtures. */
 import { describe, expect, it } from 'vitest';
-import { CurrencyConversionService, FxRateUnavailableError, parseFxSnapshot, assertFreshFxSnapshot, requirePositiveFxRate, normalizeCurrencyCode, RATE_CACHE_TTL, MAX_REFERENCE_AGE } from './CurrencyConversionService';
+import { CurrencyConversionService, FxRateUnavailableError, parseFxSnapshot, assertFreshFxSnapshot, requirePositiveFxRate, normalizeCurrencyCode, RATE_CACHE_TTL, MAX_REFERENCE_AGE } from '@/services/distribution/CurrencyConversionService';
 
 describe('CurrencyConversionService safe initial state', () => {
   it('has no invented market rates before a provider response', () => {

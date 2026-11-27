@@ -8,7 +8,7 @@ import {
     CURRENT_CANVAS_SCHEMA_VERSION,
     type ProjectCanvasBlock,
     type ProjectCanvasEdge,
-} from '../types';
+} from '@/modules/project-canvas/types';
 
 describe('Project Canvas Schema Validation', () => {
     describe('ProjectCanvasDocumentSchema', () => {

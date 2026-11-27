@@ -8,7 +8,7 @@ import type { Schema } from '@/shared/types/ai.dto';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { TourMap } from '@/modules/touring/components/TourMap';
-import type { BrandManagerTabProps, AnalysisResult, HealthHistoryEntry } from './types';
+import type { BrandManagerTabProps, AnalysisResult, HealthHistoryEntry } from '@/modules/marketing/components/brand-manager/types';
 
 interface HealthPanelProps extends BrandManagerTabProps {}
 

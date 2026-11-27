@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { NLETrackScrubCanvas } from './NLETrackScrubCanvas';
+import { NLETrackScrubCanvas } from '@/modules/creative/video/editor/components/NLETrackScrubCanvas';
 
 describe('NLETrackScrubCanvas (Timeline Track Filmstrip Scrub Canvas)', () => {
   beforeEach(() => {

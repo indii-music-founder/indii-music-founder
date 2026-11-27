@@ -12,7 +12,7 @@ import {
     DropdownMenuSubContent,
     DropdownMenuSeparator,
     DropdownMenuLabel
-} from './DropdownMenu';
+} from '@/components/ui/DropdownMenu';
 
 describe('DropdownMenu Component', () => {
     it('renders trigger button and opens content with submenus', async () => {

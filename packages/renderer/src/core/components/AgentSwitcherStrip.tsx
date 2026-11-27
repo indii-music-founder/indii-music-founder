@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import { AgentSelector } from './AgentSelector';
+import { AgentSelector } from '@/core/components/AgentSelector';
 
 export const AgentSwitcherStrip = () => {
     const [showSelector, setShowSelector] = useState(false);

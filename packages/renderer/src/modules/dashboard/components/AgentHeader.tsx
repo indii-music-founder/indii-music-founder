@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusPill } from './StatusPill';
+import { StatusPill } from '@/modules/dashboard/components/StatusPill';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';

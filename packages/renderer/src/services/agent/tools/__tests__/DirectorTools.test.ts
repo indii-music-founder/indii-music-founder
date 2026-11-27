@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DirectorTools } from '../DirectorTools';
+import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';

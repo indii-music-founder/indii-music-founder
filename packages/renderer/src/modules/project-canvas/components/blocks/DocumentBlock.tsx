@@ -21,7 +21,7 @@ import {
     X,
     Calendar,
 } from 'lucide-react';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface DocumentBlockProps {
     block: ProjectCanvasBlock;

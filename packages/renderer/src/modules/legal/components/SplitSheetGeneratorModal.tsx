@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Users, Percent, Download, Save, Plus, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractPDFService } from '@/services/legal/ContractPDFService';
-import { ContractStatus } from '../types';
+import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 
 interface Collaborator {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { auth } from '@/services/firebase';
 import { CloudStorageService } from '@/services/CloudStorageService';
-import { AudioPersistenceService, PersistedAudioMetadata } from './AudioPersistenceService';
+import { AudioPersistenceService, PersistedAudioMetadata } from '@/services/audio/AudioPersistenceService';
 
 const { mockDeleteStorageUri, mockResolveStorageUrl } = vi.hoisted(() => ({
     mockDeleteStorageUri: vi.fn(),

@@ -7,7 +7,7 @@
  */
 
 import * as fabric from 'fabric';
-import type { FabricFilterDescriptor } from './CanvasDoc';
+import type { FabricFilterDescriptor } from '@/services/canvas/CanvasDoc';
 
 const FILTER_CTORS = {
     Brightness: fabric.filters.Brightness,

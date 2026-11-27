@@ -12,7 +12,7 @@ vi.mock('@/services/security/ErrorReportTriageService', () => ({
     },
 }));
 
-import { ErrorReportsPanel } from '../ErrorReportsPanel';
+import { ErrorReportsPanel } from '@/modules/devops/components/ErrorReportsPanel';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 const REPORT = {

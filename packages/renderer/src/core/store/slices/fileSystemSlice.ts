@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import type { StoreState } from '../types';
+import type { StoreState } from '@/core/store/types';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';

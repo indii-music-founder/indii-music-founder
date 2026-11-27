@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentService } from './AgentService';
-import { agentRegistry } from './registry';
+import { AgentService } from '@/services/agent/AgentService';
+import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
@@ -100,7 +100,7 @@ vi.mock('./MemoryService', () => ({
 }));
 
 // Mock AlwaysOnMemoryEngine to avoid "Engine not started" errors
-vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingest: vi.fn().mockResolvedValue('Mock Ingest'),
         start: vi.fn().mockResolvedValue(undefined),
@@ -135,7 +135,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 }));
 
 // Mock TraceService to avoid noisy errors and Firestore dependency
-vi.mock('./observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),
@@ -163,8 +163,8 @@ vi.mock('@/services/MembershipService', () => ({
 }));
 
 // Mock agentRegistry to avoid dynamic imports hanging in CI
-vi.mock('./registry', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('./registry')>();
+vi.mock('@/services/agent/registry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/services/agent/registry')>();
     return {
         ...actual,
         agentRegistry: {

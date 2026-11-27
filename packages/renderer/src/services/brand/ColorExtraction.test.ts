@@ -5,7 +5,7 @@ import {
     quantizeRgbPixels,
     rgbToHex,
     srgbToLab,
-} from './ColorExtraction';
+} from '@/services/brand/ColorExtraction';
 
 /**
  * Reference pairs from Sharma, Wu & Dalal (2005), "The CIEDE2000 Color-Difference

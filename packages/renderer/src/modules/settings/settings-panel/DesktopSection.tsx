@@ -39,7 +39,7 @@ import {
     ExternalLink,
     Sparkles,
 } from 'lucide-react';
-import { SectionHeader, SettingRow, SelectDropdown } from './SettingsShared';
+import { SectionHeader, SettingRow, SelectDropdown } from '@/modules/settings/settings-panel/SettingsShared';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { getColorForModule } from '@/core/theme/moduleColors';

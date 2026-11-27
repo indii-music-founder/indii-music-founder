@@ -2,11 +2,11 @@ import React from 'react';
 import { Music2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CatalogIntelligenceReport } from '@indii/shared';
-import type { CatalogTrack, TrackRegistrationState } from '../types';
+import type { CatalogTrack, TrackRegistrationState } from '@/modules/registration/types';
 import {
   CanonicalCatalogIntelligenceSummary,
   type CanonicalCatalogIntelligenceStatus,
-} from './CanonicalCatalogIntelligenceSummary';
+} from '@/modules/registration/components/CanonicalCatalogIntelligenceSummary';
 
 interface CatalogRailProps {
   tracks: CatalogTrack[];

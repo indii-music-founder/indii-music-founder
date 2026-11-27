@@ -6,7 +6,7 @@ import {
     isBackendResolvableStorageUri,
     resolveMediaDurationSeconds,
     durationSecondsToFrames,
-} from './mediaMetadata';
+} from '@/modules/creative/video/editor/utils/mediaMetadata';
 
 const mockCallable = vi.fn();
 

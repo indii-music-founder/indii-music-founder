@@ -8,7 +8,7 @@ import {
     sameDepartment,
     listHeadIds,
     listWorkerIds,
-} from '../departments';
+} from '@/services/agent/departments';
 
 describe('Department registry — Phase 1 hierarchical agent system', () => {
     describe('coverage', () => {

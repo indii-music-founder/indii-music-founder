@@ -4,7 +4,7 @@ import type {
     BlenderStatus,
     BlenderRenderRequest,
     BlenderTemplateInfo
-} from './types';
+} from '@/services/blender/types';
 
 export const FALLBACK_TEMPLATES: BlenderTemplateInfo[] = [
     {

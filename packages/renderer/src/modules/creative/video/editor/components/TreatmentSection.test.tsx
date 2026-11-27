@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { VideoClip } from '../../store/videoEditorStore';
-import { TreatmentSection } from './VideoPropertySections';
+import type { VideoClip } from '@/modules/creative/video/store/videoEditorStore';
+import { TreatmentSection } from '@/modules/creative/video/editor/components/VideoPropertySections';
 
-vi.mock('../../store/videoEditorStore', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../store/videoEditorStore')>();
+vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/modules/creative/video/store/videoEditorStore')>();
     return {
         ...actual,
         useVideoEditorStore: vi.fn((selector?: (state: unknown) => unknown) => {

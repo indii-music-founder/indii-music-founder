@@ -1,5 +1,5 @@
 import { AgentConfig } from "@/services/agent/types";
-import systemPrompt from './prompt.md?raw';
+import systemPrompt from '@/agents/director/prompt.md?raw';
 import { VideoTools } from '@/services/agent/tools/VideoTools';
 import { NarrativeTools } from '@/services/agent/tools/NarrativeTools';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';

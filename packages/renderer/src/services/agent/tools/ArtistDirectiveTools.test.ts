@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { read_artist_directive, refine_artist_directive } from './ArtistDirectiveTools';
-import { artistDirectiveService } from '../skills/ArtistDirectiveService';
+import { read_artist_directive, refine_artist_directive } from '@/services/agent/tools/ArtistDirectiveTools';
+import { artistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 import { DEFAULT_ARTIST_MASTER_DIRECTIVE } from '@indii/shared';
 
-vi.mock('../skills/ArtistDirectiveService', () => ({
+vi.mock('@/services/agent/skills/ArtistDirectiveService', () => ({
     artistDirectiveService: {
         getDirective: vi.fn(),
         refineSection: vi.fn(),

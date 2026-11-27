@@ -17,7 +17,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { wcpInstance } from './WebSocketControlPlane';
+import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 import type { ConversationSession, AgentMessage } from '@/core/store/slices/agent';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

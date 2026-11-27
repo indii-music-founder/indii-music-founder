@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
-import { BoardroomWorkbenchView } from './BoardroomWorkbenchView';
+import { BoardroomWorkbenchView } from '@/modules/boardroom/components/BoardroomWorkbenchView';
 
 const store: Record<string, any> = {
     boardroomWorkbenchTarget: null as BoardroomWorkbenchTarget,

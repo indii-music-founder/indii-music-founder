@@ -4,7 +4,7 @@ import {
     ScheduledPostSchema,
     CampaignExecutionRequestSchema,
     CampaignExecutionResponseSchema,
-} from './schemas';
+} from '@/modules/marketing/schemas';
 
 describe('Marketing Schemas', () => {
     describe('CampaignStatusSchema', () => {

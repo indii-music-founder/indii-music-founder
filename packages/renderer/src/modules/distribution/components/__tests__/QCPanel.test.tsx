@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QCPanel } from '../QCPanel';
+import { QCPanel } from '@/modules/distribution/components/QCPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { localAudioMetadataService } from '@/services/audio/LocalAudioMetadataService';

@@ -18,7 +18,7 @@ import type {
     ViralScoreBreakdown,
     BreakoutProbability,
     StreamDataPoint,
-} from './types';
+} from '@/services/analytics/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Normalization benchmarks — based on music industry engagement averages

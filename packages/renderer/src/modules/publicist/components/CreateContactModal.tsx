@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { User, Star, X, Loader2 } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
-import { Contact } from '../types';
+import { Contact } from '@/modules/publicist/types';
 import { logger } from '@/utils/logger';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 

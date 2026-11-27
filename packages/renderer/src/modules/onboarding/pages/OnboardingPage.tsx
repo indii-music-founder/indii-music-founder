@@ -10,16 +10,16 @@ import {
     Loader2,
     Upload
 } from 'lucide-react';
-import { useOnboarding } from '../hooks/useOnboarding';
-import { ProfileProgressPanel } from '../components/ProfileProgressPanel';
-import { BrandKitPreview } from '../components/BrandKitPreview';
+import { useOnboarding } from '@/modules/onboarding/hooks/useOnboarding';
+import { ProfileProgressPanel } from '@/modules/onboarding/components/ProfileProgressPanel';
+import { BrandKitPreview } from '@/modules/onboarding/components/BrandKitPreview';
 import {
     MultipleChoiceRenderer,
     IndustryInsightCard,
     CreativeDirectionCard,
     DistributorInfoCard
-} from '../components/GenerativeUIComponents';
-import { StepStepper } from '../components/StepStepper';
+} from '@/modules/onboarding/components/GenerativeUIComponents';
+import { StepStepper } from '@/modules/onboarding/components/StepStepper';
 import { determinePhase } from '@/services/onboarding/onboardingService';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 

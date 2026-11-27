@@ -5,12 +5,12 @@
  * Phase 4 "Bank Layer" Agent with Tax Compliance Officer capabilities.
  */
 
-import { AgentConfig } from "../types";
-import { DistributionTools } from '../tools/DistributionTools';
-import { CatalogAdminTools } from '../tools/CatalogAdminTools';
-import { MusicTools } from '../tools/MusicTools';
-import { UniversalTools } from '../tools/UniversalTools';
-import { FormatFoundryTools } from '../tools/FormatFoundryTools';
+import { AgentConfig } from "@/services/agent/types";
+import { DistributionTools } from '@/services/agent/tools/DistributionTools';
+import { CatalogAdminTools } from '@/services/agent/tools/CatalogAdminTools';
+import { MusicTools } from '@/services/agent/tools/MusicTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
+import { FormatFoundryTools } from '@/services/agent/tools/FormatFoundryTools';
 import systemPrompt from '@agents/distribution/prompt.md?raw';
 
 
@@ -435,10 +435,10 @@ export const DistributionAgent: AgentConfig = {
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { McpTools } from '../tools/McpTools';
-import { DRAFT_DSP_METADATA_DECLARATION } from '../tools/McpToolDeclarations';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { McpTools } from '@/services/agent/tools/McpTools';
+import { DRAFT_DSP_METADATA_DECLARATION } from '@/services/agent/tools/McpToolDeclarations';
 
 
 // Freeze the schema to prevent cross-test contamination

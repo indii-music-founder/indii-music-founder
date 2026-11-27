@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CompletedRenderReceipt, IndiiVideoProject } from '@indii/shared';
 
 import { useStore } from '@/core/store';
-import { createRendererExecutionAdapter, executeVideoRenderDispatch } from '../rendererExecutionAdapter';
+import { createRendererExecutionAdapter, executeVideoRenderDispatch } from '@/services/remote/rendererExecutionAdapter';
 
 const project: IndiiVideoProject = {
     id: 'project-1', name: 'Project', width: 1920, height: 1080, fps: 30,

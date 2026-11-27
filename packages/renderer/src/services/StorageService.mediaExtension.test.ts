@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./firebase', () => ({ db: {}, storage: {}, auth: { currentUser: null } }));
+vi.mock('@/services/firebase', () => ({ db: {}, storage: {}, auth: { currentUser: null } }));
 
-import { mediaExtension } from './StorageService';
+import { mediaExtension } from '@/services/StorageService';
 
 describe('mediaExtension (ISSUE-1693)', () => {
     it('keeps the real audio format', () => {

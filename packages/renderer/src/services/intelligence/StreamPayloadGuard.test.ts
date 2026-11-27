@@ -7,7 +7,7 @@ import {
     compressStreamImageAttachments,
     elideBase64Payloads,
     sanitizeObjectForPrompt,
-} from './StreamPayloadGuard';
+} from '@/services/intelligence/StreamPayloadGuard';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import type { Content } from '@/shared/types/ai.dto';

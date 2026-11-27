@@ -1,4 +1,4 @@
-import type { ToolFunctionResult } from '../types';
+import type { ToolFunctionResult } from '@/services/agent/types';
 
 /** A tool outcome and the acknowledgement of its approval record are separate facts. */
 export function unconfirmedApprovalResult(result: ToolFunctionResult, approvalId: string): ToolFunctionResult {

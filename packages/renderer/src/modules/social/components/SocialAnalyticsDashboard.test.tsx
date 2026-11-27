@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import SocialAnalyticsDashboard from './SocialAnalyticsDashboard';
+import SocialAnalyticsDashboard from '@/modules/social/components/SocialAnalyticsDashboard';
 import {
     syncInstagramStats,
     syncSpotifyStats,

@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ScreenControl } from './ScreenControlService';
+import { ScreenControl } from '@/services/screen/ScreenControlService';
 
 const ORIGIN = 'https://indii.music';
 

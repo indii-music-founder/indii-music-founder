@@ -14,11 +14,11 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     getResponseText: vi.fn(() => 'Mock legal analysis'),
 }));
 
-vi.mock('../fine-tuned-models', () => ({
+vi.mock('@/services/agent/fine-tuned-models', () => ({
     getFineTunedModel: vi.fn(() => 'legal-model'),
 }));
 
-import { UniversalTools } from './UniversalTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
 
 /**
  * ISSUE-832: document_query() used to fall back to `contracts[0]` whenever

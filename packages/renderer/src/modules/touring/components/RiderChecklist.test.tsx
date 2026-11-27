@@ -1,8 +1,8 @@
 
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RiderChecklist } from './RiderChecklist';
-import { useRider } from '../hooks/useRider';
+import { RiderChecklist } from '@/modules/touring/components/RiderChecklist';
+import { useRider } from '@/modules/touring/hooks/useRider';
 
 // Mock Lucide icons
 vi.mock('lucide-react', async (importOriginal) => {
@@ -20,7 +20,7 @@ vi.mock('lucide-react', async (importOriginal) => {
 });
 
 // Mock hooks
-vi.mock('../hooks/useRider', () => ({
+vi.mock('@/modules/touring/hooks/useRider', () => ({
     useRider: vi.fn(),
 }));
 

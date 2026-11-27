@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { Layout, Trash2, Edit2, Check } from 'lucide-react';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface FrameBlockProps {
     block: ProjectCanvasBlock;

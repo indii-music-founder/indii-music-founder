@@ -1,17 +1,17 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { HistoryItem, useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
-import { CanvasHeader } from './CanvasHeader';
-import { CanvasEditorPortal } from './CanvasEditorPortal';
-import { CanvasToolbar } from './CanvasToolbar';
-import AnnotationPalette from './AnnotationPalette';
-import EditDefinitionsPanel from './EditDefinitionsPanel';
-import LayersPanel from './LayersPanel';
-import { CanvasViewport } from './CanvasViewport';
-import { CanvasActionRail } from './CanvasActionRail';
+import { CanvasHeader } from '@/modules/creative/components/CanvasHeader';
+import { CanvasEditorPortal } from '@/modules/creative/components/CanvasEditorPortal';
+import { CanvasToolbar } from '@/modules/creative/components/CanvasToolbar';
+import AnnotationPalette from '@/modules/creative/components/AnnotationPalette';
+import EditDefinitionsPanel from '@/modules/creative/components/EditDefinitionsPanel';
+import LayersPanel from '@/modules/creative/components/LayersPanel';
+import { CanvasViewport } from '@/modules/creative/components/CanvasViewport';
+import { CanvasActionRail } from '@/modules/creative/components/CanvasActionRail';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { canvasOps } from '../services/CanvasOperationsService';
-import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
+import { canvasOps } from '@/modules/creative/services/CanvasOperationsService';
+import { useCreativeCanvas } from '@/modules/creative/hooks/useCreativeCanvas';
 import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
 import { printUpscaleMethodLabel } from '@/services/upscale/printUpscalePlan';
 import { useToast } from '@/core/context/ToastContext';

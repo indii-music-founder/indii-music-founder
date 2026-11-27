@@ -1,4 +1,4 @@
-import type { AgentExecutionFailure, AgentResponse, ToolFunctionResult } from './types';
+import type { AgentExecutionFailure, AgentResponse, ToolFunctionResult } from '@/services/agent/types';
 
 /** A permission denial is terminal for this execution, independent of model wording. */
 export function unauthorizedToolFailure(agentId: string, toolName: string): AgentExecutionFailure {

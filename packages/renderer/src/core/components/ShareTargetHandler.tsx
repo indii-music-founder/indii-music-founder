@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { openDB } from 'idb';
 import { Loader2, Share2, FileIcon, ImageIcon, Music, X } from 'lucide-react';
-import { useStore } from '../store';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
 import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';

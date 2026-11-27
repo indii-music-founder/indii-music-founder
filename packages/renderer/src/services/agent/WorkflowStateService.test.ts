@@ -10,14 +10,14 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/services/firebase', () => ({ auth: { get currentUser() { return mocks.currentUser; } }, functions: {} }));
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => mocks.callable) }));
 vi.mock('@/utils/logger', () => ({ logger: { info: vi.fn() } }));
-vi.mock('../FirestoreService', () => ({
+vi.mock('@/services/FirestoreService', () => ({
     FirestoreService: class {
         list = mocks.list;
         get = mocks.get;
     },
 }));
 
-import { workflowStateService } from './WorkflowStateService';
+import { workflowStateService } from '@/services/agent/WorkflowStateService';
 
 describe('WorkflowStateService', () => {
     beforeEach(() => {

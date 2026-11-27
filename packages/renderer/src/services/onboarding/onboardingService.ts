@@ -11,7 +11,7 @@
  * - naturalFallback.ts   → Human-like fallback response generation
  */
 
-import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
@@ -36,27 +36,27 @@ export type {
     ContentPart,
     FunctionCallPart,
     FunctionDeclaration,
-} from './types';
+} from '@/services/onboarding/types';
 
 export {
     OnboardingTools,
     OPTION_WHITELISTS,
-} from './types';
+} from '@/services/onboarding/types';
 
 export {
     calculateProfileStatus,
     determinePhase,
-} from './profileCalculator';
+} from '@/services/onboarding/profileCalculator';
 
 export {
     generateNaturalFallback,
     generateEmptyResponseFallback,
-} from './naturalFallback';
-export type { TopicKey } from './naturalFallback';
+} from '@/services/onboarding/naturalFallback';
+export type { TopicKey } from '@/services/onboarding/naturalFallback';
 
 // Import what we need internally
-import { calculateProfileStatus, determinePhase } from './profileCalculator';
-import { ALL_ONBOARDING_TOOL_DECLARATIONS } from './toolDefinitions';
+import { calculateProfileStatus, determinePhase } from '@/services/onboarding/profileCalculator';
+import { ALL_ONBOARDING_TOOL_DECLARATIONS } from '@/services/onboarding/toolDefinitions';
 import {
     OnboardingTools,
     type OnboardingPhase,
@@ -72,7 +72,7 @@ import {
     type BrandAsset,
     type KnowledgeDocument,
     type ReleaseDetails,
-} from './types';
+} from '@/services/onboarding/types';
 
 
 // --- Main Conversation Runner ---

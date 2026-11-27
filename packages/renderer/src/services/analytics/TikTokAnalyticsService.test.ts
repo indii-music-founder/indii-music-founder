@@ -29,7 +29,7 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-import { TikTokAnalyticsService } from './TikTokAnalyticsService';
+import { TikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsService';
 
 describe('TikTokAnalyticsService', () => {
     let service: TikTokAnalyticsService;

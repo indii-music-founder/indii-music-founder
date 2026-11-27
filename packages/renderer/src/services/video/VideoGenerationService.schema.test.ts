@@ -59,7 +59,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Handle dynamic import used in VideoGenerationService
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
@@ -77,7 +77,7 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
     serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
@@ -88,7 +88,7 @@ vi.mock('uuid', () => ({
 }));
 
 // Import service AFTER mocks
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
     let service: VideoGenerationService;
 

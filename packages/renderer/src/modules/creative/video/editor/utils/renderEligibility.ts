@@ -1,4 +1,4 @@
-import type { VideoProject } from '../../store/videoEditorStore';
+import type { VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 
 /**
  * Prevents the editor from sending preview-only media to the protected cloud

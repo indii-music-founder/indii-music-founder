@@ -34,7 +34,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { error: vi.fn() },
 }));
 
-import { AuditLogDashboard } from './AuditLogDashboard';
+import { AuditLogDashboard } from '@/modules/settings/components/AuditLogDashboard';
 
 describe('AuditLogDashboard', () => {
     beforeEach(() => {

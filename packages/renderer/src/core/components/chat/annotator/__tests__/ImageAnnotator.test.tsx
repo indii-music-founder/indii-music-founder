@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ImageAnnotator } from '../ImageAnnotator';
+import { ImageAnnotator } from '@/core/components/chat/annotator/ImageAnnotator';
 
 const mocks = vi.hoisted(() => ({
     dispatchToolCall: vi.fn()

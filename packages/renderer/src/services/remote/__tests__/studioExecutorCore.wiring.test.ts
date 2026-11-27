@@ -70,7 +70,7 @@ vi.mock('@/services/agent/StudioExecutorLeaseService', () => ({
     },
 }));
 
-vi.mock('../rendererExecutionAdapter', () => ({
+vi.mock('@/services/remote/rendererExecutionAdapter', () => ({
     createRendererExecutionAdapter: () => ({
         wakeStudio: vi.fn(),
         isAgentBusy: () => false,
@@ -88,7 +88,7 @@ vi.mock('../rendererExecutionAdapter', () => ({
     }),
 }));
 
-import { createDefaultStudioExecutorCore } from '../studioExecutorCore.wiring';
+import { createDefaultStudioExecutorCore } from '@/services/remote/studioExecutorCore.wiring';
 
 describe('studioExecutorCore.wiring', () => {
     beforeEach(() => {

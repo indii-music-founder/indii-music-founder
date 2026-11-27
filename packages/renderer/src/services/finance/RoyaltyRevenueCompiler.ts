@@ -1,4 +1,4 @@
-import { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
+import { HarnessCompiler, HarnessContext } from '@/services/business-harness/HarnessCompiler';
 import {
   HarnessRun,
   HarnessScore,
@@ -8,11 +8,11 @@ import {
   HarnessInputRef,
   createHarnessRun,
   HarnessAgentBrief,
-} from '../business-harness/types';
-import { waterfallEngine, WaterfallConfig, WaterfallResult } from './WaterfallEngine';
-import type { RoyaltyPayout } from './RoyaltyPayoutService';
-import type { RevenueReportItem } from './RoyaltyService';
-import type { RevenueStats } from '../revenue/schema';
+} from '@/services/business-harness/types';
+import { waterfallEngine, WaterfallConfig, WaterfallResult } from '@/services/finance/WaterfallEngine';
+import type { RoyaltyPayout } from '@/services/finance/RoyaltyPayoutService';
+import type { RevenueReportItem } from '@/services/finance/RoyaltyService';
+import type { RevenueStats } from '@/services/revenue/schema';
 
 export interface RoyaltyStatementImport {
   id: string;

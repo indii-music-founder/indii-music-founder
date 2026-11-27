@@ -1,6 +1,6 @@
 import type { FabricObject } from 'fabric';
 import { describe, expect, it, vi } from 'vitest';
-import { commitLayerProperty } from './commitLayerProperty';
+import { commitLayerProperty } from '@/modules/merchandise/commitLayerProperty';
 
 describe('commitLayerProperty', () => {
     it('keeps a pre-edit checkpoint and notifies canvas listeners about the edit', () => {

@@ -6,7 +6,7 @@ import { MessageSquare, Trash2, Clock, Search, Activity, FileText, Image as Imag
 import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
-import { FilterItem } from './components/FilterItem';
+import { FilterItem } from '@/modules/history/components/FilterItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { FileNode } from '@/services/FileSystemService';
 

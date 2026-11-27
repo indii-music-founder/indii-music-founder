@@ -5,7 +5,7 @@
  * Fulfills PRODUCTION_200 item #108.
  */
 
-import { fingerprintService } from './FingerprintService';
+import { fingerprintService } from '@/services/audio/FingerprintService';
 import { logger } from '@/utils/logger';
 
 export interface CopyrightMatch {

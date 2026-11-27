@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createHandoffSlice } from './handoffSlice';
-import type { HandoffSlice } from './handoffSlice';
+import { createHandoffSlice } from '@/core/store/slices/handoffSlice';
+import type { HandoffSlice } from '@/core/store/slices/handoffSlice';
 import type { SendToPayload } from '@/types/handoff';
 
 const mocks = vi.hoisted(() => ({

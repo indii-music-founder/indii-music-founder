@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RateLimiter } from './RateLimiter';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
 
 describe('RateLimiter', () => {
     const startTime = 1700000000000;

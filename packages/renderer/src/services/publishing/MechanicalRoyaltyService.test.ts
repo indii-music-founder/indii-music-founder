@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MechanicalRoyaltyService } from './MechanicalRoyaltyService';
+import { MechanicalRoyaltyService } from '@/services/publishing/MechanicalRoyaltyService';
 import { auth } from '@/services/firebase';
 import { getDocs, setDoc, updateDoc, doc, collection } from 'firebase/firestore';
 

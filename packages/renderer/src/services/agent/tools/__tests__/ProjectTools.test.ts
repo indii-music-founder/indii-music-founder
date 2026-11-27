@@ -12,7 +12,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-import { ProjectTools } from '../ProjectTools';
+import { ProjectTools } from '@/services/agent/tools/ProjectTools';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
 

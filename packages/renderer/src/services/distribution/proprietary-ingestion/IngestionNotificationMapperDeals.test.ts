@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { IngestionNotificationMapper } from './IngestionNotificationMapper';
+import { IngestionNotificationMapper } from '@/services/distribution/proprietary-ingestion/IngestionNotificationMapper';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 const BASE_METADATA: ExtendedGoldenMetadata = {

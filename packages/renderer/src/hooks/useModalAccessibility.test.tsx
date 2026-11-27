@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
-import { useModalAccessibility } from './useModalAccessibility';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 function TestDialog({ name, onClose }: { name: string; onClose: () => void }) {
     const ref = useModalAccessibility(true, onClose);

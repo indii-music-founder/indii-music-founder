@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
-import { CampaignStatus } from '../types';
+import { CampaignStatus } from '@/modules/marketing/types';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
