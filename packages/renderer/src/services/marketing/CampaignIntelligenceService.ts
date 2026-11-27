@@ -1,6 +1,22 @@
 import { AutonomousIntelligence as GenAI } from '@/services/intelligence/AutonomousIntelligence';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+
+export type MarketingImageModelTier = 'fast' | 'pro' | 'imagen-fast' | 'imagen-pro';
+
+const MARKETING_IMAGE_MODEL_MAP: Record<MarketingImageModelTier, string> = {
+    fast: INTELLIGENCE_MODELS.IMAGE.FAST,
+    pro: INTELLIGENCE_MODELS.IMAGE.GENERATION,
+    'imagen-fast': INTELLIGENCE_MODELS.IMAGE.IMAGEN_FAST,
+    'imagen-pro': INTELLIGENCE_MODELS.IMAGE.IMAGEN_PRO,
+};
+
+/**
+ * Resolve a marketing image model tier to its policy-approved model identifier.
+ */
+export function resolveMarketingImageModel(tier: MarketingImageModelTier = 'pro'): string {
+    return MARKETING_IMAGE_MODEL_MAP[tier];
+}
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { auth, storage } from '@/services/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
@@ -514,7 +530,8 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
      */
     async generatePostImages(
         posts: ScheduledPost[],
-        onProgress?: (progress: BatchImageProgress) => void
+        onProgress?: (progress: BatchImageProgress) => void,
+        options?: { imageModelTier?: MarketingImageModelTier }
     ): Promise<ScheduledPost[]> {
         const postsNeedingImages = posts.filter(p => !p.imageAsset.imageUrl);
         const total = postsNeedingImages.length;
@@ -524,6 +541,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
         }
 
         const updatedPosts = new Map<string, ScheduledPost>();
+        const targetImageModel = resolveMarketingImageModel(options?.imageModelTier);
 
         // Process sequentially to avoid rate limits
         for (let i = 0; i < total; i++) {
@@ -544,7 +562,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                     ? await this.enhanceImagePrompt(post.imageAsset.caption)
                     : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-                const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
+                const base64 = await GenAI.generateImage(imagePrompt, targetImageModel);
 
                 const imageUrl = await this.persistGeneratedImage(base64);
 
@@ -576,12 +594,18 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
     /**
      * Generate a single image for a post
      */
-    async generateSingleImage(post: ScheduledPost): Promise<string | null> {
+    async generateSingleImage(
+        post: ScheduledPost,
+        options?: { imageModelTier?: MarketingImageModelTier }
+    ): Promise<string | null> {
         const imagePrompt = post.imageAsset.caption
             ? await this.enhanceImagePrompt(post.imageAsset.caption)
             : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-        const base64 = await GenAI.generateImage(imagePrompt, INTELLIGENCE_MODELS.IMAGE.GENERATION);
+        const base64 = await GenAI.generateImage(
+            imagePrompt,
+            resolveMarketingImageModel(options?.imageModelTier)
+        );
 
         return this.persistGeneratedImage(base64);
     }

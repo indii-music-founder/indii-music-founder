@@ -241,8 +241,7 @@ export default function VideoWorkflow() {
         togglePromptBuilder,
         pendingStageHandoff,
         consumeStageHandoff,
-        addCharacterReference,
-        sendToStage
+        addCharacterReference, sendToStage, userProfile
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -266,29 +265,21 @@ export default function VideoWorkflow() {
         togglePromptBuilder: state.togglePromptBuilder,
         pendingStageHandoff: state.pendingStageHandoff,
         consumeStageHandoff: state.consumeStageHandoff,
-        addCharacterReference: state.addCharacterReference,
-        sendToStage: state.sendToStage
+        addCharacterReference: state.addCharacterReference, sendToStage: state.sendToStage, userProfile: state.userProfile
     })));
 
     // Editor Store
     const {
-        viewMode,
-        setViewMode,
-        jobId,
-        setJobId,
-        status: jobStatus,
-        setStatus: setJobStatus,
-        progress: jobProgress,
-        setProgress: setJobProgress
+        viewMode, setViewMode, jobId, setJobId,
+        status: jobStatus, setStatus: setJobStatus,
+        progress: jobProgress, setProgress: setJobProgress,
+        inputAudio, storyboardProject
     } = useVideoEditorStore(useShallow(state => ({
-        viewMode: state.viewMode,
-        setViewMode: state.setViewMode,
-        jobId: state.jobId,
-        setJobId: state.setJobId,
-        status: state.status,
-        setStatus: state.setStatus,
-        progress: state.progress,
-        setProgress: state.setProgress
+        viewMode: state.viewMode, setViewMode: state.setViewMode,
+        jobId: state.jobId, setJobId: state.setJobId,
+        status: state.status, setStatus: state.setStatus,
+        progress: state.progress, setProgress: state.setProgress,
+        inputAudio: state.inputAudio, storyboardProject: state.storyboardProject
     })));
 
     const toast = useToast();
@@ -1366,9 +1357,12 @@ export default function VideoWorkflow() {
                     <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
                         <ErrorBoundary fallback={<div className="p-6 text-red-500">3D Blender Studio Error</div>}>
                             <BlenderVideoPanel
-                                currentAudioPath={useVideoEditorStore.getState().inputAudio || ''}
+                                currentAudioPath={inputAudio || storyboardProject?.audioUrl || ''}
                                 currentCoverArtPath=""
-                                bpm={120}
+                                artistName={userProfile?.displayName || 'Artist'}
+                                trackTitle={storyboardProject?.name || userProfile?.brandKit?.releaseDetails?.title || 'Track'}
+                                bpm={storyboardProject?.bpm && storyboardProject.bpm > 0 ? storyboardProject.bpm : 120}
+                                bpmSource={storyboardProject?.bpm && storyboardProject.bpm > 0 ? 'measured' : 'estimated'}
                                 pendingSaveKey={blenderOwnerUid && currentProjectId ? JSON.stringify([blenderOwnerUid, currentProjectId, currentOrganizationId || 'org-default']) : undefined}
                                 onRenderComplete={async (outPath) => {
                                     if (!blenderOwnerUid || !currentProjectId) throw new Error('Open a signed-in project before saving this video.');

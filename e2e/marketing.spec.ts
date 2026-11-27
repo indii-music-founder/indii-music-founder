@@ -45,4 +45,29 @@ test.describe('Marketing Module', () => {
         const hasAnyButton = await page.locator('button').first().isVisible({ timeout: 3_000 }).catch(() => false); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         expect(hasAnyButton).toBeTruthy();
     });
+
+    test('opens Asset Generator and configures Multi-Shape Ad Matrix mode', async ({ authedPage: page }) => {
+        await page.getByRole('button', { name: 'Release Assets' }).click();
+        await page.getByRole('button', { name: /Asset Generator/i }).click();
+        await page.getByRole('button', { name: /Multi-Shape Ad Matrix/i }).click();
+
+        for (const shape of ['9:16', '1:1', '4:5', '16:9']) {
+            await expect(page.getByRole('button', { name: new RegExp(shape) })).toBeVisible({ timeout: 10_000 });
+        }
+        for (const duration of ['6s', '15s', '30s']) {
+            await expect(page.getByRole('button', { name: duration, exact: true })).toBeVisible();
+        }
+
+        await page.getByRole('button', { name: /Continue/i }).click();
+
+        const compileBtn = page.getByRole('button', { name: /Compile & Score Matrix/i });
+        await expect(compileBtn).toBeVisible();
+        await expect(compileBtn).toBeDisabled();
+
+        await page.getByPlaceholder('E.g., Drop Friday — Out Now').fill('Drop Friday — Out Now');
+        await page.getByPlaceholder('https://... or gs://...').fill('https://cdn.indii.music/hero.mp4');
+
+        await expect(compileBtn).toBeEnabled();
+        await expect(page.locator('text=/Something went wrong|Application Error/')).toBeHidden();
+    });
 });

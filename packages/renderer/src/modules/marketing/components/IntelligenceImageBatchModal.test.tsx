@@ -72,4 +72,62 @@ describe('IntelligenceImageBatchModal (ISSUE-949)', () => {
         expect(onClose).not.toHaveBeenCalled();
         expect(screen.getByRole('button', { name: /Apply & Save/i })).toBeInTheDocument();
     });
+
+    it('lets users switch image model tier and passes the selected tier to batch generation', async () => {
+        const { CampaignIntelligence } = await import('@/services/marketing/CampaignIntelligenceService');
+        vi.mocked(CampaignIntelligence.generatePostImages).mockResolvedValueOnce([
+            {
+                id: 'post-pending-1',
+                platform: 'Instagram',
+                copy: 'Drop Friday',
+                imageAsset: {
+                    assetType: 'image',
+                    title: 'Cover',
+                    imageUrl: 'https://cdn.example.com/new-fast.png',
+                    caption: 'Studio glow',
+                },
+                day: 1,
+                status: CampaignStatus.PENDING,
+            },
+        ]);
+
+        const campaignWithPending: CampaignAsset = {
+            ...TEST_CAMPAIGN,
+            posts: [
+                {
+                    id: 'post-pending-1',
+                    platform: 'Instagram',
+                    copy: 'Drop Friday',
+                    imageAsset: { assetType: 'image', title: 'Cover', imageUrl: '', caption: 'Studio glow' },
+                    day: 1,
+                    status: CampaignStatus.PENDING,
+                },
+            ],
+        };
+
+        render(
+            <IntelligenceImageBatchModal
+                campaign={campaignWithPending}
+                onClose={vi.fn()}
+                onComplete={vi.fn().mockResolvedValue(undefined)}
+            />,
+        );
+
+        const switcher = screen.getByTestId('image-model-switcher');
+        expect(switcher).toBeInTheDocument();
+
+        const proBtn = screen.getByRole('button', { name: /Nano Banana Pro/i });
+        fireEvent.click(proBtn);
+        expect(proBtn).toHaveAttribute('aria-pressed', 'true');
+
+        fireEvent.click(screen.getByRole('button', { name: /Generate 1 Images/i }));
+
+        await waitFor(() => {
+            expect(CampaignIntelligence.generatePostImages).toHaveBeenCalledWith(
+                campaignWithPending.posts,
+                expect.any(Function),
+                { imageModelTier: 'pro' },
+            );
+        });
+    });
 });

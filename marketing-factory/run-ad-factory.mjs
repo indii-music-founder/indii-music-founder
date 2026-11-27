@@ -74,53 +74,73 @@ fs.writeFileSync(
     'utf8',
 );
 
+const smartLinkUrl = brief.smartLinkUrl ?? 'https://indii.music';
+
+function buildAttributedSmartLink(baseUrl, campaignId, platform, variantId) {
+    try {
+        const url = new URL(baseUrl);
+        url.searchParams.set('utm_source', String(platform).toLowerCase());
+        url.searchParams.set('utm_medium', 'social');
+        url.searchParams.set('utm_campaign', campaignId);
+        url.searchParams.set('utm_content', variantId || String(platform).toLowerCase());
+        return url.toString();
+    } catch {
+        return baseUrl;
+    }
+}
+
+const rawSocialPosts = [
+    {
+        platform: 'Instagram',
+        format: 'Reel (9:16 · 15s)',
+        variantId: `${brief.campaignId}_9x16_15s`,
+        copy: `${brief.hookHeadline}\n\n${brief.subHeadline ?? ''}\n\n${brief.ctaText}`.trim(),
+        hashtags: ['#indieartist', '#musicmarketing', '#aimusicvideo', '#indiimusic'],
+    },
+    {
+        platform: 'InstagramStory',
+        format: 'Story (9:16 · 15s)',
+        variantId: `${brief.campaignId}_9x16_15s`,
+        copy: `${brief.hookHeadline} — Tap the link sticker to try it free.`,
+        hashtags: [],
+    },
+    {
+        platform: 'TikTok',
+        format: 'Vertical Hook (9:16 · 15s)',
+        variantId: `${brief.campaignId}_9x16_15s`,
+        copy: `${brief.hookHeadline} 🎬 ${brief.ctaText}`,
+        hashtags: ['#indiemusic', '#musicproducer', '#musicvideo', '#indii'],
+    },
+    {
+        platform: 'YouTubeShorts',
+        format: 'Short (9:16 · 30s)',
+        variantId: `${brief.campaignId}_9x16_30s`,
+        copy: `${brief.title} | ${brief.ctaText}`,
+        hashtags: ['#shorts', '#musicvideo', '#independentartist'],
+    },
+    {
+        platform: 'X',
+        format: 'Square Feed (1:1 · 15s)',
+        variantId: `${brief.campaignId}_1x1_15s`,
+        copy: `${brief.hookHeadline} ${brief.ctaText}`.slice(0, 280),
+        hashtags: ['#indiemusic', '#AI'],
+    },
+    {
+        platform: 'XHeader',
+        format: 'Header Banner (1500x500)',
+        copy: `${brief.brandOrArtistName.toUpperCase()} — ${brief.title.toUpperCase()}`,
+        hashtags: [],
+    },
+];
+
 const socialLaunchKit = {
     campaignId: brief.campaignId,
     title: brief.title,
-    smartLinkUrl: brief.smartLinkUrl ?? 'https://indii.music',
-    posts: [
-        {
-            platform: 'Instagram',
-            format: 'Reel (9:16 · 15s)',
-            variantId: `${brief.campaignId}_9x16_15s`,
-            copy: `${brief.hookHeadline}\n\n${brief.subHeadline ?? ''}\n\n${brief.ctaText}`.trim(),
-            hashtags: ['#indieartist', '#musicmarketing', '#aimusicvideo', '#indiimusic'],
-        },
-        {
-            platform: 'InstagramStory',
-            format: 'Story (9:16 · 15s)',
-            variantId: `${brief.campaignId}_9x16_15s`,
-            copy: `${brief.hookHeadline} — Tap the link sticker to try it free.`,
-            hashtags: [],
-        },
-        {
-            platform: 'TikTok',
-            format: 'Vertical Hook (9:16 · 15s)',
-            variantId: `${brief.campaignId}_9x16_15s`,
-            copy: `${brief.hookHeadline} 🎬 ${brief.ctaText}`,
-            hashtags: ['#indiemusic', '#musicproducer', '#musicvideo', '#indii'],
-        },
-        {
-            platform: 'YouTubeShorts',
-            format: 'Short (9:16 · 30s)',
-            variantId: `${brief.campaignId}_9x16_30s`,
-            copy: `${brief.title} | ${brief.ctaText}`,
-            hashtags: ['#shorts', '#musicvideo', '#independentartist'],
-        },
-        {
-            platform: 'X',
-            format: 'Square Feed (1:1 · 15s)',
-            variantId: `${brief.campaignId}_1x1_15s`,
-            copy: `${brief.hookHeadline} ${brief.ctaText}`.slice(0, 280),
-            hashtags: ['#indiemusic', '#AI'],
-        },
-        {
-            platform: 'XHeader',
-            format: 'Header Banner (1500x500)',
-            copy: `${brief.brandOrArtistName.toUpperCase()} — ${brief.title.toUpperCase()}`,
-            hashtags: [],
-        },
-    ],
+    smartLinkUrl,
+    posts: rawSocialPosts.map((post) => ({
+        ...post,
+        attributedUrl: buildAttributedSmartLink(smartLinkUrl, brief.campaignId, post.platform, post.variantId),
+    })),
     generatedAtIso: new Date().toISOString(),
 };
 

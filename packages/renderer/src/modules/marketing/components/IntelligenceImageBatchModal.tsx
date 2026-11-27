@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ImageIcon, Loader2, Check, AlertCircle, RefreshCw, Play } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
+import { CampaignIntelligence, type MarketingImageModelTier } from '@/services/marketing/CampaignIntelligenceService';
 import { CampaignAsset, ScheduledPost, BatchImageProgress } from '@/modules/marketing/types';
 import { logger } from '@/utils/logger';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
@@ -33,6 +33,14 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState<BatchImageProgress | null>(null);
     const [isApplying, setIsApplying] = useState(false);
+    const [imageModelTier, setImageModelTier] = useState<MarketingImageModelTier>('fast');
+
+    const modelOptions: Array<{ id: MarketingImageModelTier; label: string }> = [
+        { id: 'fast', label: 'Nano Banana 2' },
+        { id: 'pro', label: 'Nano Banana Pro' },
+        { id: 'imagen-fast', label: 'Imagen 4 Fast' },
+        { id: 'imagen-pro', label: 'Imagen 4 Pro' },
+    ];
 
     // Initialize post states
     useEffect(() => {
@@ -81,7 +89,8 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
                         }
                         return state;
                     }));
-                }
+                },
+                { imageModelTier }
             );
 
             // Update states with results
@@ -134,7 +143,7 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
         ));
 
         try {
-            const imageUrl = await CampaignIntelligence.generateSingleImage(postState.post);
+            const imageUrl = await CampaignIntelligence.generateSingleImage(postState.post, { imageModelTier });
 
             setPostStates(prev => prev.map(state =>
                 state.post.id === postId
@@ -241,25 +250,50 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
                     </div>
                 )}
 
-                {/* Stats */}
-                <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gray-600" />
-                        <span className="text-gray-400">Pending: {pendingCount}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
-                        <span className="text-gray-400">Complete: {completedCount}</span>
-                    </div>
-                    {errorCount > 0 && (
+                {/* Stats & Image Model Switcher */}
+                <div className="px-6 py-3 border-b border-gray-800 flex flex-wrap items-center justify-between gap-4 text-sm">
+                    <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500" />
-                            <span className="text-gray-400">Failed: {errorCount}</span>
+                            <div className="w-3 h-3 rounded-full bg-gray-600" />
+                            <span className="text-gray-400">Pending: {pendingCount}</span>
                         </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-blue-500" />
-                        <span className="text-gray-400">Skipped: {skippedCount}</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-green-500" />
+                            <span className="text-gray-400">Complete: {completedCount}</span>
+                        </div>
+                        {errorCount > 0 && (
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500" />
+                                <span className="text-gray-400">Failed: {errorCount}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-blue-500" />
+                            <span className="text-gray-400">Skipped: {skippedCount}</span>
+                        </div>
+                    </div>
+                    <div
+                        data-testid="image-model-switcher"
+                        role="group"
+                        aria-label="Image model tier"
+                        className="flex flex-wrap items-center gap-1.5"
+                    >
+                        {modelOptions.map((option) => (
+                            <button
+                                key={option.id}
+                                type="button"
+                                aria-pressed={imageModelTier === option.id}
+                                disabled={isGenerating}
+                                onClick={() => setImageModelTier(option.id)}
+                                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                                    imageModelTier === option.id
+                                        ? 'bg-green-500/20 border-green-500 text-green-300'
+                                        : 'bg-bg-dark border-gray-700 text-gray-400 hover:text-white'
+                                } disabled:opacity-50`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
