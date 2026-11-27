@@ -15,6 +15,7 @@ export interface VideoFrameExtractionOptions {
     timeoutMs?: number;
     signal?: AbortSignal;
     maxDataUriBytes?: number;
+    maxFrameDimension?: number;
     onProgress?: (update: { stage: VideoFrameExtractionStage; progress: number }) => void;
 }
 
@@ -130,8 +131,11 @@ export async function extractVideoFrameAt(
                 await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
 
                 const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                const scale = options.maxFrameDimension
+                    ? Math.min(1, options.maxFrameDimension / Math.max(video.videoWidth, video.videoHeight))
+                    : 1;
+                canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+                canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
                 const ctx = canvas.getContext('2d');
 
                 if (!ctx) {

@@ -1,4 +1,5 @@
 import { delegatedAgentResult, unauthorizedToolFailure } from '@/services/agent/executionFailure';
+import { buildMeetingRoomProtocol, indexAgentResponse } from '@/services/agent/meetingRoomAgentContext';
 import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
 import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt, streamImageTargetForRequest } from '@/services/intelligence/StreamPayloadGuard';
@@ -774,26 +775,7 @@ export class BaseAgent implements SpecializedAgent {
                             logger.debug(`[BaseAgent] Streaming Jev guardrail skipped (non-fatal): ${guardrailErr}`);
                         }
 
-                        // Store in memory (Phase 2 integration) — fire-and-forget so
-                        // Boardroom seats settle and hand off without waiting on network ingest.
-                        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
-                            .then(({ alwaysOnMemoryEngine }) =>
-                                alwaysOnMemoryEngine.ingest(
-                                    `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
-                                    'agent_output',
-                                    'context',
-                                    context?.meetingRoomSessionId
-                                        ? {
-                                            sessionId: context.meetingRoomSessionId,
-                                            projectId: context.projectId,
-                                            memoryScope: context.meetingRoomIsolateMemory === false ? 'global' : 'room',
-                                        }
-                                        : undefined
-                                )
-                            )
-                            .catch((err: unknown) => {
-                                logger.warn('[BaseAgent] Failed to store streaming response in memory', err);
-                            });
+                        indexAgentResponse(this.name, fullText, context);
 
                         // Optionally evaluate with reflection (Phase 2 integration)
                         if (fullText.length > 0) {
@@ -1035,17 +1017,8 @@ ${capabilitiesBlock}
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
             boardroomSection = `\n## BOARDROOM COMMUNICATION PROTOCOL\nYou are participating in a Boardroom meeting. Respond from your department's perspective. Managers may share factual notes with seated peer managers, but may NEVER delegate tasks to them or command another department's employees.\n\n[SEATED_AGENTS]: ${seatedNames}. Use share_note only for relevant information. If a needed manager is absent, tell the user to seat them.\n`;
-        } else if (ctxRecord?.conversationMode === 'meeting-room') {
-            const { agentRegistry } = await importWithRetry(() => import('./registry'));
-            const seated = ctxRecord.seatedAgents || [];
-            const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
-            const roomTitle = typeof ctxRecord.meetingRoomTitle === 'string' && ctxRecord.meetingRoomTitle.trim()
-                ? ctxRecord.meetingRoomTitle.trim()
-                : 'Meeting Room';
-            const roomBrief = typeof ctxRecord.meetingRoomBrief === 'string' && ctxRecord.meetingRoomBrief.trim()
-                ? `\nRoom Mission Brief: ${ctxRecord.meetingRoomBrief.trim()}`
-                : '';
-            boardroomSection = `\n## MEETING ROOM COLLABORATION PROTOCOL\nYou are collaborating inside the "${roomTitle}" Meeting Room.${roomBrief}\nThis Meeting Room has a stationary, locked roster ([SEATED_AGENTS]) for the life of the room — agents cannot be added or removed after creation. If expertise outside [SEATED_AGENTS] is needed, advise the user to create a new Meeting Room with that team rather than attempting to add or seat agents here.\nBuild directly on peer contributions and shared room assets. Peer participants share factual notes via share_note; do not delegate tasks across departments.\n\n[SEATED_AGENTS]: ${seatedNames}.\n`;
+        } else if (context?.conversationMode === 'meeting-room') {
+            boardroomSection = await buildMeetingRoomProtocol(context);
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {

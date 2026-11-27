@@ -21,6 +21,7 @@ export interface ScoredAdMatrixVariant {
     jevVerdict: AdMatrixJevVerdict;
     jevImproved: boolean;
     evaluation: VideoAdAutoRedoResult;
+    renderUrl?: string;
 }
 
 export interface AdMatrixRunReport {
@@ -78,65 +79,64 @@ export class MultiShapeAdMatrixService {
         options: {
             brandKit?: CreativeBrandKit;
             previewExtractor?: AdMatrixPreviewExtractor;
+            renderVariant?: (variant: CompiledAdMatrixVariant) => Promise<{ keyframes: string[]; renderUrl: string }>;
         } = {},
     ): Promise<AdMatrixRunReport> {
         const initialVariants = compileAdMatrixProjects(brief);
 
-        const scored = await Promise.all(
-            initialVariants.map(async initialVariant => {
-                let activeVariant = initialVariant;
-                let jevVerdict = await judgeAdMatrixCut(
-                    toJevCutState(brief, activeVariant, options.brandKit?.vibe),
+        const scoreVariant = async (initialVariant: CompiledAdMatrixVariant): Promise<ScoredAdMatrixVariant> => {
+            let activeVariant = initialVariant;
+            let jevVerdict = await judgeAdMatrixCut(
+                toJevCutState(brief, activeVariant, options.brandKit?.vibe),
+            );
+            let jevImproved = false;
+
+            if (!jevVerdict.passesPreFlight && jevVerdict.suggestedPatch) {
+                const refinedVariant = compileAdMatrixVariant(
+                    brief,
+                    activeVariant.shape,
+                    activeVariant.durationSeconds,
+                    jevVerdict.suggestedPatch,
                 );
-                let jevImproved = false;
-
-                if (!jevVerdict.passesPreFlight && jevVerdict.suggestedPatch) {
-                    const refinedVariant = compileAdMatrixVariant(
-                        brief,
-                        activeVariant.shape,
-                        activeVariant.durationSeconds,
-                        jevVerdict.suggestedPatch,
-                    );
-                    const refinedVerdict = await judgeAdMatrixCut(
-                        toJevCutState(brief, refinedVariant, options.brandKit?.vibe),
-                    );
-                    if (refinedVerdict.compositeScore >= jevVerdict.compositeScore) {
-                        activeVariant = refinedVariant;
-                        jevVerdict = refinedVerdict;
-                        jevImproved = true;
-                    }
+                const refinedVerdict = await judgeAdMatrixCut(
+                    toJevCutState(brief, refinedVariant, options.brandKit?.vibe),
+                );
+                if (refinedVerdict.compositeScore >= jevVerdict.compositeScore) {
+                    activeVariant = refinedVariant;
+                    jevVerdict = refinedVerdict;
+                    jevImproved = true;
                 }
+            }
 
-                const initialKeyframes = options.previewExtractor
-                    ? await options.previewExtractor.extractKeyframes(activeVariant)
-                    : [];
+            let renderUrl: string | undefined;
+            const capture = async (variant: CompiledAdMatrixVariant) => {
+                if (!options.renderVariant) return options.previewExtractor?.extractKeyframes(variant) ?? [];
+                const rendered = await options.renderVariant(variant);
+                renderUrl = rendered.renderUrl;
+                return rendered.keyframes;
+            };
+            const holdBack = (reason: string): ScoredAdMatrixVariant => ({
+                variant: activeVariant,
+                jevVerdict,
+                jevImproved,
+                evaluation: {
+                    variantId: activeVariant.variantId,
+                    shape: activeVariant.shape,
+                    durationSeconds: activeVariant.durationSeconds,
+                    approved: false,
+                    discardedForRegression: false,
+                    attemptsUsed: 0,
+                    bestScore: null,
+                    brandQc: null,
+                    appliedPatches: [],
+                    history: [{ attempt: 0, overallScore: 0, brandApproved: false, gapsFound: reason }],
+                },
+            });
 
-                // When no frame extractor is attached (e.g. headless planning mode), return
-                // compiled projects with an explicit unrated hold-back so uninspected ads
-                // never auto-approve for paid spend.
+            try {
+                const initialKeyframes = await capture(activeVariant);
                 if (!initialKeyframes.length) {
-                    return {
-                        variant: activeVariant,
-                        jevVerdict,
-                        jevImproved,
-                        evaluation: {
-                            variantId: activeVariant.variantId,
-                            shape: activeVariant.shape,
-                            durationSeconds: activeVariant.durationSeconds,
-                            approved: false,
-                            discardedForRegression: false,
-                            attemptsUsed: 0,
-                            bestScore: null,
-                            brandQc: null,
-                            appliedPatches: [],
-                            history: [{
-                                attempt: 0,
-                                overallScore: 0,
-                                brandApproved: false,
-                                gapsFound: 'Awaiting rendered keyframes for Gemini 4 Neon /10 visual & brand inspection.',
-                            }],
-                        } satisfies VideoAdAutoRedoResult,
-                    };
+                    return holdBack('Awaiting rendered keyframes for Gemini 4 Neon /10 visual & brand inspection.');
                 }
 
                 const evaluation = await VideoAdAutorater.evaluateWithAutoRedo(
@@ -155,15 +155,23 @@ export class MultiShapeAdMatrixService {
                             activeVariant.durationSeconds,
                             patch,
                         );
-                        return options.previewExtractor
-                            ? options.previewExtractor.extractKeyframes(activeVariant)
-                            : [];
+                        return capture(activeVariant);
                     },
                 );
 
-                return { variant: activeVariant, jevVerdict, jevImproved, evaluation };
-            }),
-        );
+                return { variant: activeVariant, jevVerdict, jevImproved, evaluation, ...(renderUrl ? { renderUrl } : {}) };
+            } catch (error) {
+                const reason = error instanceof Error ? error.message : String(error);
+                return holdBack(`Could not render or score this cut: ${reason}`);
+            }
+        };
+
+        const scored: ScoredAdMatrixVariant[] = [];
+        // Limit cloud render and refinement jobs per matrix to two at a time.
+        const batchSize = options.renderVariant ? 2 : initialVariants.length || 1;
+        for (let offset = 0; offset < initialVariants.length; offset += batchSize) {
+            scored.push(...await Promise.all(initialVariants.slice(offset, offset + batchSize).map(scoreVariant)));
+        }
 
         return {
             campaignId: brief.campaignId,

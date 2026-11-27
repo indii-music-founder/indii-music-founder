@@ -48,6 +48,7 @@ import {
     isShortConfirmationUtterance, readyBoardroomSteps, formatBoardroomReceipt, boardroomDependencyField, boardroomRequestedSourceId,
     type BoardroomActionStep, type BoardroomStepReceipt,
 } from '@/services/agent/orchestration/BoardroomActionPlan';
+import { appendRunMessage, findRunMessage, indexRunMessage } from '@/services/agent/runSessionMessages';
 import { MeetingRoomOrchestrator } from '@/services/agent/orchestration/MeetingRoomOrchestrator';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 import { isUserCancellation, errorText, USER_STOPPED_TEXT } from '@/services/agent/flowFailure';
@@ -193,42 +194,6 @@ export class AgentService {
         return this.useStoreCache;
     }
 
-    /**
-     * Append a run message to the session the run started in. The model
-     * message is appended after awaits during which the user can switch
-     * sessions, so the explicit-session append is what keeps a run's
-     * conversation intact. Falls back to the active-session append (which
-     * creates a session if none exists) only when the run had no session.
-     */
-    private appendRunMessage(
-        store: typeof import('@/core/store').useStore,
-        msg: AgentMessage,
-        runSessionId: string | null,
-    ): void {
-        const state = store.getState();
-        if (runSessionId && typeof state.addMessageToSession === 'function') {
-            state.addMessageToSession(runSessionId, msg);
-        } else {
-            state.addAgentMessage(msg);
-        }
-    }
-
-    /** Looks up a message in the run's pinned session first so mid-run session switches never drop thoughts or updates (ISSUE-1669). */
-    private findRunMessage(
-        store: typeof import('@/core/store').useStore,
-        messageId: string,
-        runSessionId: string | null,
-    ): AgentMessage | undefined {
-        const state = store.getState();
-        if (runSessionId) {
-            const sessionMessages = state.sessions?.[runSessionId]?.messages;
-            const foundInSession = sessionMessages?.find(m => m.id === messageId);
-            if (foundInSession) return foundInSession;
-        }
-        return state.agentHistory?.find(m => m.id === messageId);
-    }
-
-
     constructor(
         private readonly personaResponseFinalizer: PersonaAgentResponseFinalizer = finalizePersonaAgentResponse,
     ) {
@@ -239,7 +204,7 @@ export class AgentService {
         this.meetingRoomOrchestrator = new MeetingRoomOrchestrator({
             executor: this.executor,
             orchestrator: this.orchestrator,
-            appendRunMessage: (storeArg, msg, runSessionId) => this.appendRunMessage(storeArg as typeof import('@/core/store').useStore, msg, runSessionId),
+            appendRunMessage,
             notifyLiveConversationIfActive: (agentId, msgText, resId) => this.notifyLiveConversationIfActive(agentId, msgText, resId),
             applyCompletedResponse: (agentId, question, resId, res, updateFn, getMsgFn, extra) =>
                 this.applyCompletedResponse(agentId, question, resId, res, updateFn, getMsgFn, extra),
@@ -479,20 +444,16 @@ export class AgentService {
 
             const store = useStoreInstance || await this.getStore();
             const state = store.getState();
-            const requestedMode = options?.source === 'mobile-remote'
-                ? options.conversationModeOverride ?? state.conversationMode
-                : state.conversationMode;
-            const explicitMeetingRoomId = options?.meetingRoomSessionId
+            const requestedRoomId = options?.meetingRoomSessionId
                 ?? (state.currentModule === 'meeting-rooms' ? state.activeMeetingRoomId : null);
-            const isMeetingRoomSession = Boolean(
-                explicitMeetingRoomId && state.sessions?.[explicitMeetingRoomId]?.namespace === 'meeting-room'
-            );
-            const isBoardroomMode = !isMeetingRoomSession && requestedMode === 'boardroom';
-            logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode, isMeetingRoomSession });
-
-            if (isMeetingRoomSession) {
-                userMsg.source = options?.source || 'meeting-room';
+            const room = requestedRoomId ? state.sessions?.[requestedRoomId] : undefined;
+            const meetingRoom = room?.namespace === 'meeting-room' ? room : undefined;
+            if (requestedRoomId && (!meetingRoom || meetingRoom.isArchived)) {
+                throw new Error('Meeting Room is no longer available.');
             }
+            if (meetingRoom) userMsg.source = options?.source || 'meeting-room';
+            const isBoardroomMode = !meetingRoom && (options?.source === 'mobile-remote'
+                ? options.conversationModeOverride ?? state.conversationMode : state.conversationMode) === 'boardroom';
 
             // The session this run started in. Everything the run appends —
             // user message, model message, streaming updates — must stay in
@@ -505,27 +466,12 @@ export class AgentService {
             const safeDirectSessionId = activeSession?.namespace === 'meeting-room'
                 ? null
                 : (state.activeSessionId ?? null);
-            const runSessionId = isMeetingRoomSession ? explicitMeetingRoomId! : safeDirectSessionId;
+            const runSessionId = meetingRoom?.id ?? safeDirectSessionId;
 
-            this.appendRunMessage(store, userMsg, runSessionId);
+            appendRunMessage(store, userMsg, runSessionId);
 
-            // Tier 2: Index user message for semantic recall (Episodic Indexing)
-            if (state.currentProjectId && runSessionId && redactedText.length > 10) {
-                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
-                const roomIsolation = isMeetingRoomSession
-                    && state.sessions?.[runSessionId]?.meetingRoom?.isolateMemory !== false;
-                alwaysOnMemoryEngine.ingest(
-                    redactedText,
-                    'user_input',
-                    'context',
-                    isMeetingRoomSession
-                        ? {
-                            sessionId: runSessionId,
-                            projectId: state.currentProjectId,
-                            memoryScope: roomIsolation ? 'room' : 'global',
-                        }
-                        : undefined
-                ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
+            if (runSessionId && (meetingRoom || state.currentProjectId) && redactedText.length > 10) {
+                indexRunMessage(redactedText, meetingRoom);
             }
 
             // Every turn resolves current context and executes its selected route.
@@ -543,16 +489,12 @@ export class AgentService {
                 agentId: 'generalist' // Default initially
             };
 
-            if (isBoardroomMode) {
-                this.appendRunMessage(store, msgPayload, runSessionId);
-            } else {
-                this.appendRunMessage(store, msgPayload, runSessionId);
-            }
+            appendRunMessage(store, msgPayload, runSessionId);
 
             // Preparation has its own deadline and Stop fence before execution is admitted.
             let context: PipelineContext;
             try {
-                context = await this.contextPipeline.buildContext(executionSignal);
+                context = await this.contextPipeline.buildContext(executionSignal, meetingRoom?.id ?? null);
                 executionSignal?.throwIfAborted();
             } catch (error) {
                 store.getState().updateAgentMessage(responseId, {
@@ -565,7 +507,7 @@ export class AgentService {
             }
 
             if (context.historyWarning) {
-                this.appendRunMessage(store, {
+                appendRunMessage(store, {
                     id: uuidv4(), role: 'system', text: context.historyWarning, timestamp: Date.now(),
                 }, runSessionId);
             }
@@ -658,7 +600,7 @@ export class AgentService {
                         if (canReplaceOnBoardroomTimeout(existing)) {
                             updateMsg(responseId, { text: BOARDROOM_STILL_RUNNING_TEXT });
                         } else {
-                            this.appendRunMessage(store, {
+                            appendRunMessage(store, {
                                 id: uuidv4(),
                                 role: 'system',
                                 text: BOARDROOM_STILL_RUNNING_TEXT,
@@ -801,7 +743,7 @@ export class AgentService {
 
         // Chat consent cannot safely choose a pending request or re-run the tool proposal.
         // Keep remote/API sends on their existing path; this opens a local UI only.
-        const previousModelMessage = state.agentHistory
+        const previousModelMessage = (context.meetingRoomSessionId ? context.chatHistory ?? [] : state.agentHistory)
             .filter(message => message.id !== responseId && message.role === 'model')
             .at(-1);
         if ((!options?.source || options.source === 'desktop') && !attachments?.length &&
@@ -817,15 +759,14 @@ export class AgentService {
 
         // Annotator / UI tool follow-up actions with forcedAgentId execute directly
         // on the requested specialist without re-entering Boardroom multi-dispatch (ISSUE-1672).
-        if (forcedAgentId && conversationMode !== 'orchestrated') {
+        if (forcedAgentId && !context.meetingRoomSessionId && conversationMode !== 'orchestrated') {
             await this.executeSingleAgentFlow(forcedAgentId, text, effectiveText, attachments, context, responseId, signal, conversationMode === 'boardroom');
             return;
         }
 
         // 0. Dispatch by Mode — Meeting Room takes precedence when targeting a Meeting Room session.
-        const targetMeetingRoomId = options?.meetingRoomSessionId
-            ?? (state.currentModule === 'meeting-rooms' ? state.activeMeetingRoomId : null);
-        if (targetMeetingRoomId && state.sessions?.[targetMeetingRoomId]?.namespace === 'meeting-room') {
+        const targetMeetingRoomId = context.meetingRoomSessionId;
+        if (targetMeetingRoomId) {
             logger.debug('[AgentService] Routing to Meeting Room orchestrator:', { targetMeetingRoomId });
             const rawUserUtterance = this.sanitizeBoardroomUtterance(effectiveText);
             const roomTask: Readonly<BoardroomDispatchTask> = Object.freeze({
@@ -1460,7 +1401,7 @@ export class AgentService {
                     boardroomStepId: step.id,
                     boardroomStepTask: step.task,
                 };
-                this.appendRunMessage(store, { id: messageId, role: 'model', text: '*(Working on the assigned step…)*',
+                appendRunMessage(store, { id: messageId, role: 'model', text: '*(Working on the assigned step…)*',
                     agentId: step.agentId, timestamp: Date.now(), isStreaming: true, thoughts: [],
                     metadata: {
                         ...stepMetadata,
@@ -1528,7 +1469,7 @@ export class AgentService {
                                 return;
                             }
                             if (event.type === 'tool' || event.type === 'tool_result') {
-                                const message = this.findRunMessage(store, messageId, runSessionId);
+                                const message = findRunMessage(store, messageId, runSessionId);
                                 store.getState().updateAgentMessage(messageId, { thoughts: [...(message?.thoughts ?? []), {
                                     id: uuidv4(), type: event.type, toolName: event.toolName, text: elideBase64Payloads(event.content), timestamp: Date.now(),
                                 }] });
@@ -1639,7 +1580,7 @@ export class AgentService {
             thoughts: [],
             agentId: 'system',
         };
-        this.appendRunMessage(useStore, planMessage, runSessionId);
+        appendRunMessage(useStore, planMessage, runSessionId);
 
         let assetContext = '';
         if (referencedAssets.length > 0) {
@@ -1693,7 +1634,7 @@ export class AgentService {
                 const resId = index === 0 ? initialResponseId : uuidv4();
 
                 if (index > 0) {
-                    this.appendRunMessage(useStore, {
+                    appendRunMessage(useStore, {
                         id: resId,
                         role: 'model',
                         text: '*(Reviewing previous discussion...)*',
@@ -1735,7 +1676,7 @@ export class AgentService {
                         isLive => isLive(),
                         delta => { currentStreamedText += delta; },
                         () => currentStreamedText,
-                        () => this.findRunMessage(useStore, resId, runSessionId),
+                        () => findRunMessage(useStore, resId, runSessionId),
                     );
                     // Hard per-seat timeout that also aborts the seat and drops late events (ISSUE-1665).
                     const result = await runSeatWithTimeout(({ signal: seatSignal, isLive }) => this.executor.execute(
@@ -1785,7 +1726,7 @@ export class AgentService {
                             resId,
                             seatResult,
                             (id, updates) => useStore.getState().updateAgentMessage(id, updates),
-                            () => this.findRunMessage(useStore, resId, runSessionId),
+                            () => findRunMessage(useStore, resId, runSessionId),
                             {
                                 ...(planId ? { planId } : {}),
                                 isStreaming: false,
@@ -2360,7 +2301,7 @@ The user will see this plan and can approve it to start execution.`;
                     if (toolName === 'edit_image_with_annotations' && resultAsRecord?.urls && Array.isArray(resultAsRecord.urls) && resultAsRecord.urls.length > 0) {
                         const runSessionId = state.activeSessionId ?? null;
                         const imageMessage = `[Tool: generate_image]\n${JSON.stringify({ urls: resultAsRecord.urls, prompt: args.colorPrompts })}\n[End Tool generate_image]`;
-                        this.appendRunMessage(useStore, {
+                        appendRunMessage(useStore, {
                             id: uuidv4(),
                             role: 'model',
                             agentId,
@@ -2373,7 +2314,7 @@ The user will see this plan and can approve it to start execution.`;
                 }
 
                 // Record UI tool completion as a silent system note without triggering another paid turn (ISSUE-1672).
-                this.appendRunMessage(useStore, {
+                appendRunMessage(useStore, {
                     id: uuidv4(),
                     role: 'system',
                     text: `[System Note] The user manually executed the tool '${toolName}' via the UI. Action complete.`,

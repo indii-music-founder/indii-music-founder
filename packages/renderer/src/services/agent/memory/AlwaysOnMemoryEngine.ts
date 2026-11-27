@@ -772,6 +772,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             return await this.getAllMemories(options.limit || 10, {
                 projectId: options.projectId,
                 sessionId: options.sessionId,
+                excludeRoomScoped: !options.sessionId,
                 category: options.categories?.[0] // Simplified for now
             });
         } catch (error) {

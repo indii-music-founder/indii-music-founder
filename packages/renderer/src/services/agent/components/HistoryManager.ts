@@ -91,14 +91,14 @@ export class HistoryManager {
         return (await this.getCompiledHistory()).view;
     }
 
-    async getCompiledHistory(signal?: AbortSignal): Promise<{ view: string; historicalSummary: string; historyWarning?: string }> {
+    async getCompiledHistory(signal?: AbortSignal, room?: { id: string; messages: AgentMessage[] }): Promise<{ view: string; historicalSummary: string; historyWarning?: string }> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         signal?.throwIfAborted();
         const userId = state.userProfile?.uid;
         const notices: string[] = [];
 
-        const history = this.cleanHistory(state.agentHistory || []);
+        const history = this.cleanHistory(room?.messages ?? state.agentHistory ?? []);
 
         // Recent saved memories are optional context. The engine's retrieve()
         // currently ignores its query, so do not present these as semantic matches.
@@ -106,7 +106,7 @@ export class HistoryManager {
         let memoriesUnavailable = false;
         if (userId && state.isKnowledgeBaseEnabled && history.length > 0) {
             const recall = await readOptionalContext('recent saved memories',
-                () => alwaysOnMemoryEngine.retrieve({ limit: 3 }), 1_000, signal);
+                () => alwaysOnMemoryEngine.retrieve({ limit: 3, ...(room ? { sessionId: room.id } : {}) }), 1_000, signal);
             const recent = recall.value || [];
             if (recall.unavailable) {
                 Logger.warn('HistoryManager', 'Recent saved memories unavailable:', recall.unavailable);
@@ -135,7 +135,7 @@ export class HistoryManager {
         // send, so a long session never finished (or cached) it and each send
         // started over. It now keeps running in the background, saving progress
         // after each turn; a send that can't wait uses whatever part is done.
-        const sessionId = state.activeSessionId || null;
+        const sessionId = room?.id ?? state.activeSessionId ?? null;
         const result = await readOptionalContext('older conversation summary',
             () => this.summarizeOlder(sessionId, olderTurns),
             5_000, signal);

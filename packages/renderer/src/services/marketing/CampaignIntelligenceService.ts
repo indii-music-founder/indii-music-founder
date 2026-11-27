@@ -70,8 +70,8 @@ const UTM_SOURCE_MAP: Record<LaunchSocialPost['platform'], string> = {
 };
 
 const PLATFORM_PREFERRED_SHAPES: Record<LaunchSocialPost['platform'], Array<ScoredAdVariantRecord['shape']>> = {
-    Instagram: ['9:16', '4:5', '1:1'],
-    InstagramStory: ['9:16', '4:5'],
+    Instagram: ['9:16'],
+    InstagramStory: ['9:16'],
     TikTok: ['9:16'],
     YouTubeShorts: ['9:16', '16:9'],
     X: ['1:1', '4:5', '16:9'],
@@ -232,7 +232,7 @@ ${hookSummary ? `- Audio Hooks:\n${hookSummary}` : ''}
 
 TASK:
 Generate coordinated launch posts across Instagram, InstagramStory, TikTok, YouTubeShorts, X, and XHeader.
-Keep X copy punchy (under 240 chars so attribution links fit cleanly). Include relevant hashtags for Reels/TikTok/Shorts/X.
+Keep X copy punchy (under 240 chars so attribution links fit cleanly). For Instagram Reels, supply 5–8 specific, unique hashtags in the hashtags field and keep hashtags out of the caption. Include relevant hashtags for TikTok/Shorts/X.
 `;
 
         const schema = {
@@ -317,8 +317,13 @@ Keep X copy punchy (under 240 chars so attribution links fit cleanly). Include r
         approvedVariants: ScoredAdVariantRecord[],
     ): ScoredAdVariantRecord | undefined {
         const preferredShapes = PLATFORM_PREFERRED_SHAPES[platform];
+        const isInstagramVideo = platform === 'Instagram' || platform === 'InstagramStory';
+        const publishableCuts = isInstagramVideo
+            ? approvedVariants.filter(variant => variant.renderUrl?.startsWith('https://')
+                && (platform === 'Instagram' ? variant.durationSeconds < 15 : variant.durationSeconds <= 15))
+            : approvedVariants;
         for (const shape of preferredShapes) {
-            const candidates = approvedVariants
+            const candidates = publishableCuts
                 .filter((v) => v.shape === shape)
                 .sort((a, b) => b.overallScore - a.overallScore);
             if (candidates.length > 0) {

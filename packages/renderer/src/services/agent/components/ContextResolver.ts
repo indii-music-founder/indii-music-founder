@@ -1,6 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { AgentMessage } from '@/core/store';
-// useStore removed
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
 import { AgentContext, ProjectHandle, DistributorInfo } from '@/services/agent/types';
@@ -8,7 +5,7 @@ import { OrganizationService } from '@/services/OrganizationService';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export class ContextResolver {
-    async resolveContext(): Promise<AgentContext> {
+    async resolveContext(meetingRoomId?: string | null): Promise<AgentContext> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const {
@@ -22,12 +19,16 @@ export class ContextResolver {
             activeMeetingRoomId,
             sessions,
         } = state;
-        const activeMeetingRoom = currentModule === 'meeting-rooms' && activeMeetingRoomId
-            ? sessions?.[activeMeetingRoomId]
-            : undefined;
+        const roomId = meetingRoomId === undefined && currentModule === 'meeting-rooms'
+            ? activeMeetingRoomId
+            : meetingRoomId;
+        const activeMeetingRoom = roomId ? sessions?.[roomId] : undefined;
+        if (roomId && (activeMeetingRoom?.namespace !== 'meeting-room' || activeMeetingRoom.isArchived)) {
+            throw new Error('Meeting Room is no longer available.');
+        }
         const isMeetingRoomActive = Boolean(activeMeetingRoom && activeMeetingRoom.namespace === 'meeting-room');
         const effectiveProjectId = isMeetingRoomActive
-            ? (activeMeetingRoom?.projectId || currentProjectId)
+            ? activeMeetingRoom?.projectId
             : currentProjectId;
         const currentProject = projects?.find(p => p.id === effectiveProjectId);
         const brandKit = userProfile?.brandKit;
@@ -70,8 +71,8 @@ export class ContextResolver {
                 : undefined,
             userProfile,
             brandKit,
-            activeModule: currentModule,
-            chatHistory: conversationMode === 'boardroom' ? state.agentHistory || [] : state.agentHistory || [],
+            activeModule: isMeetingRoomActive ? 'meeting-rooms' : currentModule,
+            chatHistory: isMeetingRoomActive ? activeMeetingRoom?.messages ?? [] : state.agentHistory ?? [],
             conversationMode: isMeetingRoomActive
                 ? 'meeting-room'
                 : (conversationMode === 'orchestrated' ? undefined : conversationMode),

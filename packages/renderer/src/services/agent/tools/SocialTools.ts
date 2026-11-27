@@ -8,16 +8,17 @@ import { importWithRetry } from '@/utils/dynamicImport';
 import { z } from 'zod';
 import {
     ReleaseLaunchKitSchema,
+    validateInstagramPublishingPayload,
     type InstagramPublishingPayload,
     type LaunchSocialPost,
     type ScoredAdVariantRecord,
 } from '@indii/shared';
 
-const MAX_SAFE_SCHEDULE_TIMESTAMP_MS = 8_640_000_000_000_000 - 91 * 86_400_000;
+const MAX_SAFE_SCHEDULE_TIMESTAMP_MS = Date.UTC(9999, 11, 31) - 90 * 86_400_000;
 
 const ScheduleLaunchKitRolloutArgsSchema = z.object({
     launchKit: ReleaseLaunchKitSchema,
-    startTimestampMs: z.number().finite().nonnegative().max(MAX_SAFE_SCHEDULE_TIMESTAMP_MS).optional(),
+    startTimestampMs: z.number().int().nonnegative().max(MAX_SAFE_SCHEDULE_TIMESTAMP_MS).optional(),
     reelAudienceIntent: z.enum(['discovery', 'nurture']).optional(),
 }).passthrough();
 
@@ -324,148 +325,79 @@ Be specific and data-driven based on the post content above.`;
         interface DispatchCandidate {
             post: LaunchSocialPost;
             variant?: ScoredAdVariantRecord;
+            instagramPayload?: InstagramPublishingPayload;
         }
 
         const skippedPosts: SkippedLaunchPost[] = [];
         const dispatchable: DispatchCandidate[] = [];
-        const videoRequiredPlatforms = new Set<LaunchSocialPost['platform']>(['TikTok', 'YouTubeShorts', 'Instagram']);
-
         for (const post of kit.socialPosts) {
             const variant = post.attachedVariantId ? variantById.get(post.attachedVariantId) : undefined;
-            if (post.attachedVariantId) {
-                if (!variant || !variant.approved || !variant.brandQcApproved || variant.discardedForRegression) {
-                    skippedPosts.push({
-                        postId: post.id,
-                        platform: post.platform,
-                        attachedVariantId: post.attachedVariantId,
-                        reason: !variant
-                            ? 'Referenced variant not found in launch kit.'
-                            : 'Referenced variant failed approval, BrandVisionQC, or regression gate.',
-                    });
-                    continue;
-                }
+            const isInstagram = post.platform === 'Instagram' || post.platform === 'InstagramStory';
+            let reason: string | undefined;
+            let instagramPayload: InstagramPublishingPayload | undefined;
+            if (post.platform === 'TikTok' || post.platform === 'YouTubeShorts') {
+                reason = `${post.platform} publishing is unavailable. The draft remains in the launch kit for manual posting.`;
+            } else if (post.platform === 'XHeader') {
+                reason = 'X profile headers must be applied manually.';
+            } else if (post.attachedVariantId && (!variant || !variant.approved || !variant.brandQcApproved || variant.discardedForRegression)) {
+                reason = 'Referenced variant is missing or failed the approval, BrandVisionQC, or regression gate.';
+            } else if (isInstagram && (variant?.shape !== '9:16' || !variant.renderUrl?.startsWith('https://'))) {
+                reason = `${post.platform} requires an approved 9:16 cut with a publishable HTTPS render URL.`;
+            } else if (isInstagram && variant) {
+                instagramPayload = {
+                    surface: post.platform === 'InstagramStory' ? 'story' : 'reel',
+                    width: 1080,
+                    height: 1920,
+                    durationSeconds: variant.durationSeconds,
+                    ...(post.platform === 'Instagram' ? { reelAudienceIntent: reelAudienceIntent ?? 'discovery' } : {}),
+                    caption: post.copy,
+                    hashtags: post.hashtags,
+                };
+                const policy = validateInstagramPublishingPayload(instagramPayload);
+                if (!policy.valid) reason = policy.errors.join(' ');
             }
 
-            if (videoRequiredPlatforms.has(post.platform) && !variant?.renderUrl) {
-                skippedPosts.push({
-                    postId: post.id,
-                    platform: post.platform,
-                    attachedVariantId: post.attachedVariantId ?? '',
-                    reason: `${post.platform} post requires an approved variant with a valid renderUrl.`,
-                });
-                continue;
+            if (reason) {
+                skippedPosts.push({ postId: post.id, platform: post.platform, attachedVariantId: post.attachedVariantId ?? '', reason });
+            } else {
+                dispatchable.push({ post, variant, instagramPayload });
             }
-
-            dispatchable.push({ post, variant });
         }
 
         if (dispatchable.length === 0) {
             return toolError(
-                'No approved launch posts remain after fail-closed ad variant verification.',
+                'The launch kit has no posts eligible for automatic scheduling.',
                 'NO_APPROVED_POSTS',
                 { kitId: kit.kitId, skippedPosts },
             );
         }
 
-        const baseStartMs =
-            typeof startTimestampMs === 'number' && startTimestampMs > Date.now() + 60_000
-                ? startTimestampMs
-                : Date.now() + 5 * 60_000;
-
-        const needsAutoPoster = dispatchable.some(({ post, variant }) =>
-            Boolean(variant?.renderUrl) &&
-            (post.platform === 'TikTok' ||
-                post.platform === 'YouTubeShorts' ||
-                (post.platform === 'Instagram' && variant?.shape === '9:16')),
-        );
-        let autoPoster: Awaited<typeof import('@/services/marketing/SocialAutoPosterService')>['socialAutoPosterService'] | null = null;
-        if (needsAutoPoster) {
-            try {
-                autoPoster = (await importWithRetry(() => import('@/services/marketing/SocialAutoPosterService'))).socialAutoPosterService;
-            } catch (importErr: unknown) {
-                const msg = importErr instanceof Error ? importErr.message : String(importErr);
-                return toolError(`Failed to load SocialAutoPosterService: ${msg}`, 'LAUNCH_KIT_DISPATCH_FAILED');
-            }
+        const now = Date.now();
+        if (startTimestampMs !== undefined && startTimestampMs <= now + 60_000) {
+            return toolError('Choose a rollout start time more than one minute in the future.', 'INVALID_LAUNCH_KIT');
         }
-
-        const autopostPlatformMap = {
-            TikTok: 'tiktok',
-            YouTubeShorts: 'youtube_shorts',
-            Instagram: 'meta_reels',
-        } as const;
+        const baseStartMs = startTimestampMs ?? now + 5 * 60_000;
+        const { socialAutoPosterService } = await importWithRetry(() => import('@/services/marketing/SocialAutoPosterService'));
 
         const outcomes = await Promise.allSettled(
-            dispatchable.map(async ({ post, variant }) => {
-                const useAutoPoster =
-                    Boolean(autoPoster) &&
-                    Boolean(variant?.renderUrl) &&
-                    (post.platform === 'TikTok' ||
-                        post.platform === 'YouTubeShorts' ||
-                        (post.platform === 'Instagram' && variant?.shape === '9:16'));
-
-                if (useAutoPoster && autoPoster && variant?.renderUrl) {
-                    const targetPlatform = autopostPlatformMap[post.platform as keyof typeof autopostPlatformMap];
-                    const instagramPayload: InstagramPublishingPayload | undefined =
-                        post.platform === 'Instagram'
-                            ? {
-                                  surface: 'reel',
-                                  width: 1080,
-                                  height: 1920,
-                                  durationSeconds: variant.durationSeconds,
-                                  reelAudienceIntent,
-                                  caption: post.copy,
-                                  hashtags: post.hashtags,
-                              }
-                            : undefined;
-
-                    const jobId = await autoPoster.queuePost({
-                        id: `${kit.kitId}-${post.id}`,
-                        mediaUrl: variant.renderUrl,
-                        caption: post.copy,
-                        hashtags: post.hashtags,
-                        platform: targetPlatform,
-                        instagramPayload,
-                    });
-                    return {
-                        postId: post.id,
-                        platform: post.platform,
-                        route: 'autopost' as const,
-                        status: 'queued' as const,
-                        jobId,
-                    };
-                }
-
-                const schedulePlatform: 'Twitter' | 'Instagram' =
-                    post.platform === 'Instagram' || post.platform === 'InstagramStory'
-                        ? 'Instagram'
-                        : 'Twitter';
-                const scheduledTime = Math.min(
-                    MAX_SAFE_SCHEDULE_TIMESTAMP_MS + 90 * 86_400_000,
-                    baseStartMs + post.scheduledDayOffset * 86_400_000,
-                );
-                const postId = await SocialService.schedulePost({
-                    platform: schedulePlatform,
-                    copy: post.copy,
-                    day: post.scheduledDayOffset + 1,
+            dispatchable.map(async ({ post, variant, instagramPayload }) => {
+                const scheduledTime = baseStartMs + post.scheduledDayOffset * 86_400_000;
+                const jobId = await socialAutoPosterService.queuePost({
+                    id: JSON.stringify([kit.kitId, post.id]),
+                    mediaUrl: instagramPayload ? variant?.renderUrl : undefined,
+                    caption: post.copy,
+                    hashtags: post.hashtags,
+                    platform: instagramPayload ? 'meta_reels' : 'twitter',
+                    instagramPayload,
                     scheduledTime,
-                    ...(variant?.renderUrl
-                        ? {
-                              imageAsset: {
-                                  assetType: 'image' as const,
-                                  title: `${kit.title} (${post.platform})`,
-                                  imageUrl: variant.renderUrl,
-                                  caption: post.copy,
-                              },
-                          }
-                        : {}),
                 });
                 return {
                     postId: post.id,
                     platform: post.platform,
-                    route: 'schedule' as const,
-                    status: 'scheduled' as const,
-                    jobId: postId,
+                    status: 'queued' as const,
+                    jobId,
                     scheduledTime: new Date(scheduledTime).toISOString(),
+                    ...(post.platform === 'X' && variant ? { note: 'Queued text only. Attach the cut manually for a video post.' } : {}),
                 };
             }),
         );

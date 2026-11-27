@@ -198,7 +198,7 @@ describe('MarketingAssetGeneratorUI Audio-Synced Hook Reel mode', () => {
     });
 });
 
-describe('MarketingAssetGeneratorUI Multi-Shape Ad Matrix mode', () => {
+describe('MarketingAssetGeneratorUI Multi-Shape Ad Matrix mode (structural)', () => {
     it('lets artists choose ad shapes/durations, compiles & scores the matrix, and renders approved + held-back scorecards in Step 4', async () => {
         const { MultiShapeAdMatrixService } = await import('@/services/marketing/MultiShapeAdMatrixService');
         const makeVariant = (variantId: string, shape: '9:16' | '1:1' | '4:5' | '16:9', durationSeconds: 6 | 15 | 30, approved: boolean, jevImproved: boolean, overallScore: number, gapsFound: string) => ({
@@ -285,7 +285,7 @@ describe('MarketingAssetGeneratorUI Multi-Shape Ad Matrix mode', () => {
         // Switch to Multi-Shape Ad Matrix mode
         fireEvent.click(screen.getByRole('button', { name: /Multi-Shape Ad Matrix/i }));
 
-        // Add 30s duration alongside default 15s
+        // Add 30s duration alongside the default 6s and 15s
         const dur30Btn = screen.getByRole('button', { name: '30s' });
         fireEvent.click(dur30Btn);
         expect(dur30Btn).toHaveAttribute('aria-pressed', 'true');
@@ -313,8 +313,9 @@ describe('MarketingAssetGeneratorUI Multi-Shape Ad Matrix mode', () => {
                     ctaText: 'Listen Today',
                     verticalFootageUrl: 'https://cdn.example.com/hero-9x16.mp4',
                     shapes: ['9:16', '1:1', '4:5', '16:9'],
-                    durations: [15, 30],
+                    durations: [6, 15, 30],
                 }),
+                expect.objectContaining({ renderVariant: expect.any(Function) }),
             );
         });
 

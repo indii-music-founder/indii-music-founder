@@ -49,7 +49,7 @@ function makeLaunchKit(overrides: Partial<ReleaseLaunchKit> = {}): ReleaseLaunch
             {
                 variantId: 'var_9x16_ok',
                 shape: '9:16',
-                durationSeconds: 15,
+                durationSeconds: 6,
                 channelLabel: 'Vertical Reel',
                 renderUrl: 'https://cdn.example.com/reel-9x16.mp4',
                 overallScore: 9.4,
@@ -91,7 +91,7 @@ function makeLaunchKit(overrides: Partial<ReleaseLaunchKit> = {}): ReleaseLaunch
                 id: 'post-ig',
                 platform: 'Instagram',
                 copy: 'Reel out now',
-                hashtags: ['#indiemusic'],
+                hashtags: ['#indiemusic', '#detroitsynth', '#synthpop', '#electricrelease', '#newindie'],
                 attachedVariantId: 'var_9x16_ok',
                 scheduledDayOffset: 0,
                 status: 'approved',
@@ -137,7 +137,7 @@ function makeLaunchKit(overrides: Partial<ReleaseLaunchKit> = {}): ReleaseLaunch
     };
 }
 
-describe('SocialTools.schedule_launch_kit_rollout', () => {
+describe('SocialTools.schedule_launch_kit_rollout (structural)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         queuePost.mockResolvedValue('autopost-job-1');
@@ -183,49 +183,40 @@ describe('SocialTools.schedule_launch_kit_rollout', () => {
         expect(schedulePost).not.toHaveBeenCalled();
     });
 
-    it('routes approved vertical reels to queuePost, feed/story/X posts to schedulePost, and skips unapproved variants', async () => {
-        const baseKit = makeLaunchKit();
-        baseKit.socialPosts.push({
-            id: 'post-skipped-unapproved',
-            platform: 'TikTok',
-            copy: 'Do not ship this rejected cut',
-            hashtags: [],
+    it('queues supported posts on their requested days and leaves unsupported platforms manual', async () => {
+        const kit = makeLaunchKit();
+        const story = kit.socialPosts.find(post => post.platform === 'InstagramStory')!;
+        story.scheduledDayOffset = 3;
+        kit.socialPosts.push({
+            ...story,
+            id: 'unapproved-story',
             attachedVariantId: 'var_9x16_rejected',
-            scheduledDayOffset: 2,
-            status: 'draft',
         });
-
         const startTimestampMs = Date.now() + 3_600_000;
-        const result = await scheduleLaunchKit({
-            launchKit: baseKit,
-            startTimestampMs,
-            reelAudienceIntent: 'discovery',
-        });
+        const result = await scheduleLaunchKit({ launchKit: kit, startTimestampMs, reelAudienceIntent: 'discovery' });
 
         expect(result.success).toBe(true);
-        // Instagram, TikTok, YouTubeShorts go to socialAutoPosterService.queuePost
         expect(queuePost).toHaveBeenCalledTimes(3);
-        const igCall = queuePost.mock.calls.find((c) => c[0].platform === 'meta_reels')?.[0];
-        expect(igCall).toBeDefined();
-        expect(igCall.mediaUrl).toBe('https://cdn.example.com/reel-9x16.mp4');
-        expect(igCall.instagramPayload).toMatchObject({
-            surface: 'reel',
-            width: 1080,
-            height: 1920,
-            durationSeconds: 15,
-            reelAudienceIntent: 'discovery',
-        });
-
-        // X and InstagramStory go to SocialService.schedulePost with future timestamps
-        expect(schedulePost).toHaveBeenCalledTimes(2);
-        const xCall = schedulePost.mock.calls.find((c) => c[0].platform === 'Twitter')?.[0];
-        expect(xCall?.scheduledTime).toBe(startTimestampMs);
-
+        expect(queuePost).toHaveBeenCalledWith(expect.objectContaining({
+            platform: 'meta_reels',
+            mediaUrl: 'https://cdn.example.com/reel-9x16.mp4',
+            scheduledTime: startTimestampMs,
+            instagramPayload: expect.objectContaining({ surface: 'reel', reelAudienceIntent: 'discovery' }),
+        }));
+        expect(queuePost).toHaveBeenCalledWith(expect.objectContaining({
+            platform: 'meta_reels',
+            scheduledTime: startTimestampMs + 3 * 86_400_000,
+            instagramPayload: expect.objectContaining({ surface: 'story' }),
+        }));
+        expect(queuePost).toHaveBeenCalledWith(expect.objectContaining({
+            platform: 'twitter',
+            scheduledTime: startTimestampMs,
+        }));
+        expect(schedulePost).not.toHaveBeenCalled();
         expect(result.data.skippedPosts).toEqual([
-            expect.objectContaining({
-                postId: 'post-skipped-unapproved',
-                attachedVariantId: 'var_9x16_rejected',
-            }),
+            expect.objectContaining({ platform: 'TikTok' }),
+            expect.objectContaining({ platform: 'YouTubeShorts' }),
+            expect.objectContaining({ postId: 'unapproved-story' }),
         ]);
     });
 
@@ -254,8 +245,8 @@ describe('SocialTools.schedule_launch_kit_rollout', () => {
             ],
             socialPosts: [
                 {
-                    id: 'post-tiktok-no-url',
-                    platform: 'TikTok',
+                    id: 'post-instagram-no-url',
+                    platform: 'Instagram',
                     copy: 'Should be skipped instead of downgraded to Twitter',
                     hashtags: [],
                     attachedVariantId: 'var_no_url',
@@ -271,15 +262,15 @@ describe('SocialTools.schedule_launch_kit_rollout', () => {
     });
 
     it('surfaces partial dispatch failure without hiding already queued platforms', async () => {
-        queuePost
-            .mockResolvedValueOnce('job-ig')
-            .mockRejectedValueOnce(new Error('TikTok API offline'))
-            .mockResolvedValueOnce('job-shorts');
+        queuePost.mockImplementation(async post => {
+            if (post.instagramPayload?.surface === 'story') throw new Error('Story scheduling unavailable');
+            return 'queued-job';
+        });
 
         const result = await scheduleLaunchKit({ launchKit: makeLaunchKit() });
         expect(result.success).toBe(false);
         expect(result.metadata?.errorCode).toBe('LAUNCH_KIT_PARTIAL_FAILURE');
-        expect(result.error).toContain('TikTok');
+        expect(result.error).toContain('InstagramStory');
         expect(result.error).toContain('already queued');
     });
 });
