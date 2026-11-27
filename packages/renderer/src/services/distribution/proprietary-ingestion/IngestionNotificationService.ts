@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
-import { IngestionParser } from './IngestionParser';
-import { IngestionNotificationMapper } from './IngestionNotificationMapper';
-import type { IngestionNotificationMessage } from './types/ern';
+import { IngestionParser } from '@/services/distribution/proprietary-ingestion/IngestionParser';
+import { IngestionNotificationMapper } from '@/services/distribution/proprietary-ingestion/IngestionNotificationMapper';
+import type { IngestionNotificationMessage } from '@/services/distribution/proprietary-ingestion/types/ern';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';

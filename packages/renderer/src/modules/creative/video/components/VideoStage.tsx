@@ -4,7 +4,7 @@ import { Loader2, Sparkles, Video, X } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creative';
 import { logger } from '@/utils/logger';
-import { VideoJsPlayer, type VideoJsPlayerHandle } from './VideoJsPlayer';
+import { VideoJsPlayer, type VideoJsPlayerHandle } from '@/modules/creative/video/components/VideoJsPlayer';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { extractVideoFrameAt } from '@/utils/video';
 

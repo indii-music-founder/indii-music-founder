@@ -1,6 +1,6 @@
-import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '../../modules/marketing/types';
+import { FanRecord, EnrichedFanData, EnrichmentProvider, EnrichmentProgress } from '@/modules/marketing/types';
 import { httpsCallable } from 'firebase/functions';
-import { functionsWest1 } from '../firebase';
+import { functionsWest1 } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 /**

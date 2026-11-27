@@ -10,8 +10,8 @@
  * 4. video_get_render_status (read-only -> real RenderService receipt polling)
  */
 
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { calculateBeatSnappedTimeline } from '@indii/video-compiler';
 import type { IndiiVideoClip, IndiiVideoProject } from '@indii/shared';
 import { CostControlService } from '@/services/billing/CostControlService';

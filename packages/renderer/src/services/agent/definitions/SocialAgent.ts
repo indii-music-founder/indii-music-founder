@@ -1,11 +1,11 @@
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Schema } from '@/shared/types/ai.dto';
-import { SocialTools } from '../tools/SocialTools';
-import { UniversalTools } from '../tools/UniversalTools';
+import { SocialTools } from '@/services/agent/tools/SocialTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
 import systemPrompt from '@agents/social/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 

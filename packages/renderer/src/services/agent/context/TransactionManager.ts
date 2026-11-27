@@ -1,5 +1,5 @@
-import { StateManager } from './StateManager';
-import { AgentContext } from '../types';
+import { StateManager } from '@/services/agent/context/StateManager';
+import { AgentContext } from '@/services/agent/types';
 
 /**
  * Manages transactions for agent execution.

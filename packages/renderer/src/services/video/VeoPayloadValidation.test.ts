@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VideoGenerationService } from './VideoGenerationService';
+import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -52,7 +52,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
     functions: {},
     db: {},
@@ -69,7 +69,7 @@ vi.mock('@/core/store', () => ({
     useStore: mocks.useStore
 }));
 
-vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
   serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));

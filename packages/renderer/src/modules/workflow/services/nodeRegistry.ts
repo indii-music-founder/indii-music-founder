@@ -17,7 +17,7 @@ import {
     Layers,
     type LucideIcon
 } from 'lucide-react';
-import type { DataType } from '../types';
+import type { DataType } from '@/modules/workflow/types';
 
 export type { DataType };
 

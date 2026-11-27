@@ -26,7 +26,7 @@ vi.mock('@/services/firebase', () => ({
     functions: { project: 'test-project' },
 }));
 
-import { masterAudioService } from './MasterAudioService';
+import { masterAudioService } from '@/services/audio/MasterAudioService';
 
 describe('MasterAudioService', () => {
     function pcmWav({ rate = 48_000, bits = 24, channels = 2 } = {}): Uint8Array {

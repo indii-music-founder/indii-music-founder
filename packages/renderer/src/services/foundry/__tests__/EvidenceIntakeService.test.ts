@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EvidenceIntakeService } from '../EvidenceIntakeService';
+import { EvidenceIntakeService } from '@/services/foundry/EvidenceIntakeService';
 
 describe('EvidenceIntakeService sensitivity classification (ISSUE-1443)', () => {
     it('classifies non-USD royalty statements as sensitive_financial', async () => {

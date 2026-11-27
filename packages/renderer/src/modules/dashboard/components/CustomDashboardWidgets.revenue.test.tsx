@@ -57,7 +57,7 @@ vi.mock('@/services/dashboard/AnalyticsService', () => ({
     },
 }));
 
-import { WIDGET_RENDERERS } from './CustomDashboardWidgets';
+import { WIDGET_RENDERERS } from '@/modules/dashboard/components/CustomDashboardWidgets';
 
 describe('Aggregate Revenue production owner boundary', () => {
     beforeEach(() => {

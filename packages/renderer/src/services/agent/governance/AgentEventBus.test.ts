@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { events, type AgentActionEvent } from '@/core/events';
-import { AgentEventBus } from './AgentEventBus';
+import { AgentEventBus } from '@/services/agent/governance/AgentEventBus';
 
 describe('AgentEventBus', () => {
     it('preserves structured tool fields alongside the legacy action text', () => {

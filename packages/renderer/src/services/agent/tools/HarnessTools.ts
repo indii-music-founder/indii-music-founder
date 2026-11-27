@@ -12,8 +12,8 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { HarnessDomain, HarnessRun, HarnessInputRef, BoardroomHarnessDecision } from '@indii/shared';
 import { boardroomMetaHarnessService } from '@/services/business-harness/BoardroomMetaHarnessService';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 export const HarnessTools: Record<string, AnyToolFunction> = {
   list_harness_catalog: wrapTool('list_harness_catalog', async () => {

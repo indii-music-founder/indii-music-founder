@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import { createMemoryAgentSlice, type MemoryAgentSlice } from './memoryAgentSlice';
+import { createMemoryAgentSlice, type MemoryAgentSlice } from '@/core/store/slices/memoryAgentSlice';
 import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { auth } from '@/services/firebase';
 

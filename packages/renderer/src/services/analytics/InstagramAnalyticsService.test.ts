@@ -29,7 +29,7 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-import { InstagramAnalyticsService } from './InstagramAnalyticsService';
+import { InstagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
 
 describe('InstagramAnalyticsService', () => {
     let service: InstagramAnalyticsService;

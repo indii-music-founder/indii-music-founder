@@ -9,11 +9,11 @@ vi.mock('@/components/layout/AdaptiveWorkspaceContext', () => ({
     useOptionalAdaptiveWorkspace: () => mockWorkspaceLayout,
 }));
 
-vi.mock('./DailyItem', () => ({
+vi.mock('@/modules/creative/video/components/DailyItem', () => ({
     DailyItem: ({ video }: { video: { id: string } }) => <div>{video.id}</div>,
 }));
 
-import { DailiesStrip } from './DailiesStrip';
+import { DailiesStrip } from '@/modules/creative/video/components/DailiesStrip';
 
 describe('DailiesStrip responsive placement', () => {
     it('uses compact prompt-safe placement in a focused workspace', () => {

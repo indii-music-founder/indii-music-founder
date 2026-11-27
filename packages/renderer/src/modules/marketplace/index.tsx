@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ShoppingCart, Store, X, Trash2 } from 'lucide-react';
-import MarketplaceStorefront from './components/MarketplaceStorefront';
+import MarketplaceStorefront from '@/modules/marketplace/components/MarketplaceStorefront';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {

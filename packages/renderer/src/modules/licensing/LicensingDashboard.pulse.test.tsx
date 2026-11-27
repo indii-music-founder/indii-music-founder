@@ -1,6 +1,6 @@
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import LicensingDashboard from './LicensingDashboard';
+import LicensingDashboard from '@/modules/licensing/LicensingDashboard';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { License } from '@/services/licensing/types';
 

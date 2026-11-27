@@ -23,12 +23,12 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Plus
 } from 'lucide-react';
-import { useSocial } from '../hooks/useSocial';
-import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
+import { useSocial } from '@/modules/social/hooks/useSocial';
+import { areFeedItemPropsEqual, FeedItemProps } from '@/modules/social/components/SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
-import ProductPickerModal from './ProductPickerModal';
-import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
+import ProductPickerModal from '@/modules/social/components/ProductPickerModal';
+import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SocialFeedProps {

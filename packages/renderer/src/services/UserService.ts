@@ -1,5 +1,5 @@
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '@/services/firebase';
 import { UserProfile } from '@/types/User';
 import { BrandKit } from '@/modules/workflow/types';
 import { SocialStats } from '@/services/social/types';

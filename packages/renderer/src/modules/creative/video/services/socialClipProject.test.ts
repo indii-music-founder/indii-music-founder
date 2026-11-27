@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IndiiVideoProject } from '@indii/shared';
-import { createSocialClipProject } from './socialClipProject';
-import { validateMusicVideoDuration } from '../../creativeJourney';
+import { createSocialClipProject } from '@/modules/creative/video/services/socialClipProject';
+import { validateMusicVideoDuration } from '@/modules/creative/creativeJourney';
 const source = (): IndiiVideoProject => ({ id: 'source', name: 'Announcement', fps: 30, width: 1920, height: 1080, durationInFrames: 900,
     tracks: [{ id: 'v', name: 'Phone', type: 'video' }, { id: 't', name: 'Title', type: 'text' }],
     clips: [

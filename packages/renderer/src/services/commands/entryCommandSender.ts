@@ -1,4 +1,4 @@
-import { getEntryCommand } from './EntryCommandRegistry';
+import { getEntryCommand } from '@/services/commands/EntryCommandRegistry';
 
 /**
  * Slash-command replies are stored with the command id as their sender

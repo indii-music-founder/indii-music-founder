@@ -19,11 +19,11 @@
  * subset of platforms the user has connected.
  */
 
-import { spotifyService } from './SpotifyService';
-import { youTubeAnalyticsService } from './YouTubeAnalyticsService';
-import { tikTokAnalyticsService } from './TikTokAnalyticsService';
-import { instagramAnalyticsService } from './InstagramAnalyticsService';
-import { appleMusicService } from './AppleMusicService';
+import { spotifyService } from '@/services/analytics/SpotifyService';
+import { youTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';
+import { tikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsService';
+import { instagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
+import { appleMusicService } from '@/services/analytics/AppleMusicService';
 import { logger } from '@/utils/logger';
 import {
     getReleaseArtist,
@@ -37,7 +37,7 @@ import type {
     TrackAnalytics,
     PlatformData,
     PopularityScores,
-} from './types';
+} from '@/services/analytics/types';
 
 // ── Connection status ─────────────────────────────────────────────────────────
 

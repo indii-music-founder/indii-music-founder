@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SubscriptionTier } from './SubscriptionTier';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 
 export const SubscriptionTierSchema = z.nativeEnum(SubscriptionTier);
 

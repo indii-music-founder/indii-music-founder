@@ -2,7 +2,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
-import App from '../core/App';
+import App from '@/core/App';
 
 // Mock matchMedia for JSDOM
 Object.defineProperty(window, 'matchMedia', {
@@ -20,7 +20,7 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock the heavy parts of App
-vi.mock('../core/store', () => {
+vi.mock('@/core/store', () => {
     const mockState = {
         user: { uid: 'test-uid' },
         authLoading: false,
@@ -90,22 +90,22 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({ ConfirmDialog: () => null }));
 vi.mock('@/components/ui/PrintSpecDialog', () => ({ PrintSpecDialog: () => null }));
 
 // Mock Dashboard to use useNavigate and verify it runs
-vi.mock('../modules/dashboard/Dashboard', () => ({
+vi.mock('@/modules/dashboard/Dashboard', () => ({
     default: () => <div>Dashboard Loaded</div>
 }));
 
 // Mock ErrorBoundary to just render children so errors bubble up
-vi.mock('../core/components/ErrorBoundary', () => ({
+vi.mock('@/core/components/ErrorBoundary', () => ({
 
     ErrorBoundary: ({ children }: any) => <>{children}</>
 }));
 
 // Mock other components
-vi.mock('../core/components/Sidebar', () => ({ default: () => <div>Sidebar</div> }));
-vi.mock('../core/components/RightPanel', () => ({ default: () => <div>RightPanel</div> }));
+vi.mock('@/core/components/Sidebar', () => ({ default: () => <div>Sidebar</div> }));
+vi.mock('@/core/components/RightPanel', () => ({ default: () => <div>RightPanel</div> }));
 
 // Silence background async services causing fetch overlap
-vi.mock('../core/logger/Logger', () => ({
+vi.mock('@/core/logger/Logger', () => ({
     Logger: {
         info: vi.fn(),
         warn: vi.fn(),
@@ -113,7 +113,7 @@ vi.mock('../core/logger/Logger', () => ({
         debug: vi.fn(),
     }
 }));
-vi.mock('../services/StorageService', () => ({
+vi.mock('@/services/StorageService', () => ({
     StorageService: {
         initialize: vi.fn()
     }

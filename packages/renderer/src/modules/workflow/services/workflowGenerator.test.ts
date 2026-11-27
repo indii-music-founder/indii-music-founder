@@ -5,9 +5,9 @@ import {
     auditionWorkflowVariants,
     encapsulateSubgraph,
     expandSubgraph
-} from './workflowGenerator';
-import type { SavedWorkflow, CustomNode } from '../types';
-import { Status } from '../types';
+} from '@/modules/workflow/services/workflowGenerator';
+import type { SavedWorkflow, CustomNode } from '@/modules/workflow/types';
+import { Status } from '@/modules/workflow/types';
 
 const { generate } = vi.hoisted(() => ({ generate: vi.fn() }));
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({

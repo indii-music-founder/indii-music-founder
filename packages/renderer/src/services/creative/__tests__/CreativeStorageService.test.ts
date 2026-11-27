@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreativeStorageService } from '../CreativeStorageService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { ref as storageRef, uploadBytes, uploadString } from 'firebase/storage';
 
 vi.mock('@/services/firebase', () => ({

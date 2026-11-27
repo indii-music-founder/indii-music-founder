@@ -1,9 +1,9 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { MapsTools } from './MapsTools';
+import { MapsTools } from '@/services/agent/tools/MapsTools';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { auth, functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { setlistDraftService } from '@/services/touring/SetlistDraftService';

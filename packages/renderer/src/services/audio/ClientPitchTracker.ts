@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface MidiNote {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { runPrintStage } from '../runPrintStage';
+import { runPrintStage } from '@/services/upscale/runPrintStage';
 
 // Genuine promises, timers and abort signals exercise local lifecycle logic.
 // No image/GPU/service/auth fixture; these checks do not certify a print master.

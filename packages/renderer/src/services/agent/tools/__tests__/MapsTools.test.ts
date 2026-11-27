@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MapsTools } from '../MapsTools';
+import { MapsTools } from '@/services/agent/tools/MapsTools';
 
 const mocks = vi.hoisted(() => ({
     currentUser: null as { uid: string } | null,

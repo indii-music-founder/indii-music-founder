@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CanvasActionRail } from '../CanvasActionRail';
+import { CanvasActionRail } from '@/modules/creative/components/CanvasActionRail';
 
 const mockItem = {
     id: 'test-item-1',

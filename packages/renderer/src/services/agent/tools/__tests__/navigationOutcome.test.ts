@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { navigateToModule } from '../navigationOutcome';
+import { navigateToModule } from '@/services/agent/tools/navigationOutcome';
 
 const makeStore = (apply: (state: { currentModule: string }, module: string) => Promise<void>) => {
     const state = { currentModule: 'dashboard', setModule: async (module: string) => apply(state, module) };

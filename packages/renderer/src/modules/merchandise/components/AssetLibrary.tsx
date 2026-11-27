@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { MerchCard } from './MerchCard';
+import { MerchCard } from '@/modules/merchandise/components/MerchCard';
 import { Upload, Search, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { Button } from '@/components/ui/button';

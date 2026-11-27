@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AgentService } from '../AgentService';
+import { AgentService } from '@/services/agent/AgentService';
 
 describe('AgentService.isTrivialInput', () => {
     describe('trivial inputs (should return true)', () => {

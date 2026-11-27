@@ -23,7 +23,7 @@ import {
 import { motion } from 'motion/react';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { logger } from '@/utils/logger';
-import { getValidatedSequenceDurations } from './autonomousLabSequence';
+import { getValidatedSequenceDurations } from '@/modules/creative/components/autonomousLabSequence';
 
 type SequenceItem = {
     id: string;

@@ -11,7 +11,7 @@ import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
-import { SequenceTimeline, SequenceBlock } from './SequenceTimeline';
+import { SequenceTimeline, SequenceBlock } from '@/modules/creative/components/SequenceTimeline';
 
 interface IntelligencePromptBuilderProps {
     onAddTag: (tag: string) => void;

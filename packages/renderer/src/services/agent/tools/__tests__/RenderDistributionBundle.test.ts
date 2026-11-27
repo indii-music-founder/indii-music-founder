@@ -38,7 +38,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-import { MediaTools } from '../MediaTools';
+import { MediaTools } from '@/services/agent/tools/MediaTools';
 
 describe('render_distribution_bundle tool (Workstream I / Tool 9)', () => {
     beforeEach(() => {

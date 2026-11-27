@@ -1,7 +1,7 @@
 
 
-import * as DistributionTypes from './distribution';
-import * as SchedulerTypes from '../services/scheduler/types';
+import * as DistributionTypes from '@/types/distribution';
+import * as SchedulerTypes from '@/services/scheduler/types';
 
 export interface AuthTokenData {
     idToken: string;
@@ -396,12 +396,12 @@ export interface ElectronAPI {
     // Blender 3D Engine integration
     blender?: {
         cancelRender: (requestId: string) => Promise<boolean>;
-        getStatus: () => Promise<import('../services/blender/types').BlenderStatus>;
-        listTemplates: () => Promise<import('../services/blender/types').BlenderTemplateInfo[]>;
-        renderMusicVideo: (req: import('../services/blender/types').BlenderRenderRequest) => Promise<{ success: boolean; outputPath: string; error?: string }>;
+        getStatus: () => Promise<import('@/services/blender/types').BlenderStatus>;
+        listTemplates: () => Promise<import('@/services/blender/types').BlenderTemplateInfo[]>;
+        renderMusicVideo: (req: import('@/services/blender/types').BlenderRenderRequest) => Promise<{ success: boolean; outputPath: string; error?: string }>;
         pairSession: (token: string) => Promise<boolean>;
         sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
-        onProgress: (callback: (progress: import('../services/blender/types').BlenderRenderProgress) => void) => () => void;
+        onProgress: (callback: (progress: import('@/services/blender/types').BlenderRenderProgress) => void) => () => void;
     };
     // Rights Registration Screen Control & Browser Copilot (ISSUE-1511)
     rightsCopilot?: {

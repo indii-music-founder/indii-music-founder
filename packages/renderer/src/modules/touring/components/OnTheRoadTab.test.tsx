@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { OnTheRoadTab } from './OnTheRoadTab';
-import type { Itinerary } from '../types';
+import { OnTheRoadTab } from '@/modules/touring/components/OnTheRoadTab';
+import type { Itinerary } from '@/modules/touring/types';
 
 const mocks = vi.hoisted(() => ({
     storeState: {
@@ -31,7 +31,7 @@ vi.mock('@/utils/logger', () => ({ logger: mocks.logger }));
 vi.mock('@/services/finance/FinanceService', () => ({
     financeService: { addExpense: mocks.addExpense },
 }));
-vi.mock('./TourMap', () => ({
+vi.mock('@/modules/touring/components/TourMap', () => ({
     TourMap: (props: Record<string, unknown>) => {
         mocks.tourMapProps = props;
         return <div data-testid="tour-map" />;

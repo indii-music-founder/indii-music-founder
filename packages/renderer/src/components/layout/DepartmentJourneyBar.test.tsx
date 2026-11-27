@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DepartmentJourneyBar } from './DepartmentJourneyBar';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 const { mockJudgeDepartmentJourneyIntent } = vi.hoisted(() => ({
     mockJudgeDepartmentJourneyIntent: vi.fn().mockResolvedValue({

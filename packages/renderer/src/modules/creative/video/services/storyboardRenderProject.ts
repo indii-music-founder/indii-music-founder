@@ -2,8 +2,8 @@ import type {
     CanonicalMasterRenderReference,
     VideoClip,
     VideoProject,
-} from '../store/videoEditorStore';
-import type { StoryboardProject } from '../schemas/storyboard';
+} from '@/modules/creative/video/store/videoEditorStore';
+import type { StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
 
 export class StoryboardRenderContractError extends Error {
     readonly code = 'STORYBOARD_PRIVATE_RENDER_INVALID';

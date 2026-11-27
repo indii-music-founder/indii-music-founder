@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { smartContractService } from './SmartContractService';
+import { smartContractService } from '@/services/web3/SmartContractService';
 
 // Mock Firebase Firestore
 const mockAddDoc = vi.fn();

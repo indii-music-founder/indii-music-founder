@@ -853,6 +853,12 @@ Key routing rules:
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
 
+## Refactor Phase 1 Guardrails
+
+- **Path Aliases (`packages/renderer/src`):** Use `@/` and `@shared/` instead of relative `./` or `../` imports (enforced via ESLint `no-restricted-imports`; codemod at `scripts/codemods/relative-to-alias.mjs`).
+- **File-Size Budget Ratchet:** Source files under `packages/*/src/**/*.{ts,tsx}` are capped at 1,000 lines (`npm run check:file-size`, allowlist in `scripts/file-size-budget.allowlist.json`). Never grow an allowlisted file; split it instead.
+- **Service vs. UI Layering:** Do not import `firebase/firestore|storage|functions|auth|database` directly in renderer `.tsx` components (flagged by ESLint `no-restricted-imports`; see `docs/refactor/ROADMAP.md`).
+
 <!-- entire-agent:begin -->
 Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
 @.entire/agent-guide.md

@@ -41,7 +41,7 @@ vi.mock('firebase/storage', () => ({
     deleteObject: vi.fn(async () => undefined),
 }));
 
-import { FontLibrary } from '../FontLibrary';
+import { FontLibrary } from '@/services/typography/FontLibrary';
 
 // Build a real, parseable TTF from opentype.js so registerFont's parse() works.
 function buildFontBuffer(): ArrayBuffer {

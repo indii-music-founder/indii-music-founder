@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { WhiskService } from './WhiskService';
+import { WhiskService } from '@/services/WhiskService';
 import { WhiskState } from '@/core/store/slices/creative';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';

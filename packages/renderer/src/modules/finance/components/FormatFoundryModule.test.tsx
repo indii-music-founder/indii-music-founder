@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { FormatFoundryModule } from './FormatFoundryModule';
+import { FormatFoundryModule } from '@/modules/finance/components/FormatFoundryModule';
 
 const mocks = vi.hoisted(() => ({
   grantSession: vi.fn().mockResolvedValue({ success: true }),

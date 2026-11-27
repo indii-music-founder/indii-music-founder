@@ -14,7 +14,7 @@ import {
   InstrumentResult,
   ValidationResult,
   CostEstimate
-} from './InstrumentTypes';
+} from '@/services/agent/instruments/InstrumentTypes';
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { logger } from '@/utils/logger';

@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LabelDealRecoupment } from './LabelDealRecoupment';
+import { LabelDealRecoupment } from '@/modules/finance/components/LabelDealRecoupment';
 
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({

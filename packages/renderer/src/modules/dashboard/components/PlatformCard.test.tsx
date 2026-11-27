@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PlatformCard } from './PlatformCard';
+import { PlatformCard } from '@/modules/dashboard/components/PlatformCard';
 import { useStore } from '@/core/store';
 
 vi.mock('@/hooks/useIsFounderTier', () => ({

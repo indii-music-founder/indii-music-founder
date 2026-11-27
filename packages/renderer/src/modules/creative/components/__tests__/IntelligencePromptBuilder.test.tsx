@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import IntelligencePromptBuilder from '../IntelligencePromptBuilder';
+import IntelligencePromptBuilder from '@/modules/creative/components/IntelligencePromptBuilder';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';

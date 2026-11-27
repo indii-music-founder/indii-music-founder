@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Mic, MicOff, Send, Loader2, Sparkles, X, Paperclip } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';

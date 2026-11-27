@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StoryboardProject } from '../schemas/storyboard';
-import type { VideoProject } from '../store/videoEditorStore';
+import type { StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
+import type { VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 import {
     compileStoryboardRenderProject,
     StoryboardRenderContractError,
-} from './storyboardRenderProject';
+} from '@/modules/creative/video/services/storyboardRenderProject';
 
 const HASH = 'a'.repeat(64);
 const canonicalMaster = {

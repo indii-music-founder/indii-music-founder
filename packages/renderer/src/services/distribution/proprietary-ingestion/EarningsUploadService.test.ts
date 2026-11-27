@@ -18,7 +18,7 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@sentry/react', () => ({ captureException: vi.fn() }));
 
-import { dsrUploadService } from './EarningsUploadService';
+import { dsrUploadService } from '@/services/distribution/proprietary-ingestion/EarningsUploadService';
 
 function makeFile(): File {
     return {

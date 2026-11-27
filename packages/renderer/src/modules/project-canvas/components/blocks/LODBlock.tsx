@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import type { ProjectCanvasBlock, ProjectCanvasBlockType } from '../../types';
+import type { ProjectCanvasBlock, ProjectCanvasBlockType } from '@/modules/project-canvas/types';
 
 interface LODBlockProps {
     block: ProjectCanvasBlock;

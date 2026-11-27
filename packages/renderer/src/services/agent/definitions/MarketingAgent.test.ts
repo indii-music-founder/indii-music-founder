@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MarketingAgent } from './MarketingAgent';
+import { MarketingAgent } from '@/services/agent/definitions/MarketingAgent';
 
 // Mock raw prompt import
 vi.mock('@agents/marketing/prompt.md?raw', () => ({
@@ -7,7 +7,7 @@ vi.mock('@agents/marketing/prompt.md?raw', () => ({
 }));
 
 // Mock MarketingTools
-vi.mock('../tools/MarketingTools', () => ({
+vi.mock('@/services/agent/tools/MarketingTools', () => ({
     MarketingTools: {
         create_campaign_brief: vi.fn(),
         analyze_audience: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('../tools/MarketingTools', () => ({
 }));
 
 // Mock UniversalTools
-vi.mock('../tools/UniversalTools', () => ({
+vi.mock('@/services/agent/tools/UniversalTools', () => ({
     UniversalTools: {
         web_extract: vi.fn(),
         indii_image_gen: vi.fn(),
@@ -39,7 +39,7 @@ vi.mock('../tools/UniversalTools', () => ({
 }));
 
 // Mock AutonomousTools
-vi.mock('../tools/AutonomousTools', () => ({
+vi.mock('@/services/agent/tools/AutonomousTools', () => ({
     AutonomousTools: {
         create_artifact_drop: vi.fn(),
     }

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { PRINT_MEDIA_PRESETS, getPrintPreset } from '@indii/shared';
-import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
-import { ToolPoolAssembler } from '../governance/ToolPoolAssembler';
-import type { FunctionDeclaration } from '../types';
-import creativeSource from './CreativeAgent.ts?raw';
+import { PRINT_TOOL_DECLARATIONS } from '@/services/agent/definitions/PrintToolDeclarations';
+import { ToolPoolAssembler } from '@/services/agent/governance/ToolPoolAssembler';
+import type { FunctionDeclaration } from '@/services/agent/types';
+import creativeSource from '@/services/agent/definitions/CreativeAgent.ts?raw';
 
 describe('print tool schema exposure (structural checks)', () => {
     it('advertises only catalog presets and the actual distributor target', () => {

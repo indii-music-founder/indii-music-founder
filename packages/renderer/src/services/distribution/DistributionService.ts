@@ -1,4 +1,4 @@
-import { DDEXReleaseSchema } from './DistributionSchemas';
+import { DDEXReleaseSchema } from '@/services/distribution/DistributionSchemas';
 import { auth, functions, storage } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import {
@@ -7,9 +7,9 @@ import {
     IngestionReleaseDocument,
     ReleaseDistributionStatus
 } from '@/types/firestore';
-import { isrcService } from './ISRCService';
-import { upcService } from './UPCService';
-import { taxService } from './TaxService';
+import { isrcService } from '@/services/distribution/ISRCService';
+import { upcService } from '@/services/distribution/UPCService';
+import { taxService } from '@/services/distribution/TaxService';
 import { Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { ref, uploadString } from 'firebase/storage';

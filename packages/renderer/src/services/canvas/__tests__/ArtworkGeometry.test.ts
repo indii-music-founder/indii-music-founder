@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { artworkTransform, getViewportProxy, artworkAlphaBounds, artworkEnlargement, centeredArtworkPosition, alignedArtworkPosition, artworkExportDimensions } from '../ArtworkGeometry';
-import { createDocFromImage, type RasterLayer } from '../CanvasDoc';
+import { artworkTransform, getViewportProxy, artworkAlphaBounds, artworkEnlargement, centeredArtworkPosition, alignedArtworkPosition, artworkExportDimensions } from '@/services/canvas/ArtworkGeometry';
+import { createDocFromImage, type RasterLayer } from '@/services/canvas/CanvasDoc';
 
 describe('cover geometry and legacy origins', () => {
     it('bounds export dimensions before an output surface can be allocated', () => {

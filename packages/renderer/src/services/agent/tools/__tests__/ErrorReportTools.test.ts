@@ -24,7 +24,7 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-import { ErrorReportTools } from '../ErrorReportTools';
+import { ErrorReportTools } from '@/services/agent/tools/ErrorReportTools';
 import { setDoc } from 'firebase/firestore';
 
 describe('ErrorReportTools.report_error (ISSUE-1446)', () => {

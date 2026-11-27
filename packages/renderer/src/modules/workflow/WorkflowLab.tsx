@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import WorkflowEditor from './components/WorkflowEditor';
-import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
-import WorkflowTemplateModal from './components/WorkflowTemplateModal';
-import WorkflowLoadModal from './components/WorkflowLoadModal';
-import WorkflowNodeInspector from './components/WorkflowNodeInspector';
-import { useStore } from '../../core/store';
+import WorkflowEditor from '@/modules/workflow/components/WorkflowEditor';
+import WorkflowGeneratorModal from '@/modules/workflow/components/WorkflowGeneratorModal';
+import WorkflowTemplateModal from '@/modules/workflow/components/WorkflowTemplateModal';
+import WorkflowLoadModal from '@/modules/workflow/components/WorkflowLoadModal';
+import WorkflowNodeInspector from '@/modules/workflow/components/WorkflowNodeInspector';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { ModuleId } from '@/core/constants';
 import {
@@ -12,14 +12,14 @@ import {
     Cpu, Zap, Clock, Music, Image, Mail, Filter, Webhook,
     HelpCircle, BookOpen, MessageSquare, Settings, Layers, MessageSquareDiff
 } from 'lucide-react';
-import { WorkflowEngine } from './services/WorkflowEngine';
-import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
+import { WorkflowEngine } from '@/modules/workflow/services/WorkflowEngine';
+import { WORKFLOW_TEMPLATES } from '@/modules/workflow/services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
-import { Status, SavedWorkflow } from './types';
-import { getUserWorkflows } from './services/workflowPersistence';
+import { Status, SavedWorkflow } from '@/modules/workflow/types';
+import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
 import { WORKFLOW_REGISTRY, type WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
-import { SystemProtocolsWidget, SavedWorkflowsWidget } from './components/WorkflowSidebarWidgets';
-import { protocolToReactFlow } from './utils/maestroAdapter';
+import { SystemProtocolsWidget, SavedWorkflowsWidget } from '@/modules/workflow/components/WorkflowSidebarWidgets';
+import { protocolToReactFlow } from '@/modules/workflow/utils/maestroAdapter';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { useMobile } from '@/hooks/useMobile';
@@ -28,7 +28,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { FreeMiniCampaignModal } from '@/modules/creative/components/FreeMiniCampaignModal';
-import { instantiateQuickWorkflow } from './services/quickWorkflowTemplates';
+import { instantiateQuickWorkflow } from '@/modules/workflow/services/quickWorkflowTemplates';
 
 /* ================================================================== */
 /*  Workflow Lab — Three-Panel Layout                                   */
@@ -204,7 +204,7 @@ export default function WorkflowLab() {
         if (!instruction || nodes.length === 0) return;
         setIsAiEditing(true);
         try {
-            const { modifyWorkflowWithAI } = await import('./services/workflowGenerator');
+            const { modifyWorkflowWithAI } = await import('@/modules/workflow/services/workflowGenerator');
             const current: SavedWorkflow = {
                 id: currentWorkflowId || 'canvas',
                 name: workflowName,
@@ -238,7 +238,7 @@ export default function WorkflowLab() {
         }
         setIsEncapsulating(true);
         try {
-            const { encapsulateSubgraph } = await import('./services/workflowGenerator');
+            const { encapsulateSubgraph } = await import('@/modules/workflow/services/workflowGenerator');
             const current: SavedWorkflow = {
                 id: currentWorkflowId || 'canvas',
                 name: workflowName,
@@ -361,7 +361,7 @@ export default function WorkflowLab() {
         setIsGenerating(true);
         try {
             // Dynamic import to avoid circular deps
-            const { generateWorkflowFromPrompt } = await import('./services/workflowGenerator');
+            const { generateWorkflowFromPrompt } = await import('@/modules/workflow/services/workflowGenerator');
             const workflow = await generateWorkflowFromPrompt(targetPrompt);
 
             setNodes(workflow.nodes);
@@ -591,7 +591,7 @@ export default function WorkflowLab() {
                                     return;
                                 }
                                 try {
-                                    const { generateADKManifest } = await import('./utils/adkExport');
+                                    const { generateADKManifest } = await import('@/modules/workflow/utils/adkExport');
                                     const adkManifest = generateADKManifest(workflowName, 'Exported from Workflow Lab', nodes, edges);
                                     const blob = new Blob([JSON.stringify(adkManifest, null, 2)], { type: 'application/json' });
                                     const url = URL.createObjectURL(blob);

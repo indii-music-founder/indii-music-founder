@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createCallable } from 'react-call';
-import { Modal } from './Modal';
+import { Modal } from '@/components/ui/Modal';
 import { WalletInfo } from '@/services/web3/WalletConnectService';
 import { Link2, AlertCircle } from 'lucide-react';
 import { logger } from '@/utils/logger';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import AgentChat from './AgentChat';
+import AgentChat from '@/modules/mobile-remote/components/AgentChat';
 
 beforeAll(() => {
     if (typeof Element !== 'undefined' && typeof Element.prototype.scrollIntoView !== 'function') {

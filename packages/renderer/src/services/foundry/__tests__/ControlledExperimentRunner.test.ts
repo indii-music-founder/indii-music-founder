@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ControlledExperimentRunner } from '../ControlledExperimentRunner';
+import { ControlledExperimentRunner } from '@/services/foundry/ControlledExperimentRunner';
 import { ExperimentDefinition } from '@indii/shared';
 
 describe('ControlledExperimentRunner', () => {

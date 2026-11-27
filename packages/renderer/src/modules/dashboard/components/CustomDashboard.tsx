@@ -14,7 +14,7 @@ import {
 /*  Item 159 — Customizable Dashboard                                  */
 /* ================================================================== */
 
-import { WidgetType, Widget, WIDGET_DEFINITIONS, STORAGE_KEY, loadWidgets, WIDGET_RENDERERS } from "./CustomDashboardWidgets";
+import { WidgetType, Widget, WIDGET_DEFINITIONS, STORAGE_KEY, loadWidgets, WIDGET_RENDERERS } from "@/modules/dashboard/components/CustomDashboardWidgets";
 import { useTranslation } from 'react-i18next';
 import { DynamicModuleContainer } from '@/components/layout/DynamicModuleContainer';
 import { useStore } from '@/core/store';

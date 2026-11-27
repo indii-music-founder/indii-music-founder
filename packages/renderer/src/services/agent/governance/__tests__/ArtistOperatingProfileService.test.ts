@@ -18,7 +18,7 @@ let currentUid: string | null = 'artist-1';
 vi.mock('@/services/firebase', () => ({ db: {}, auth: { get currentUser() { return currentUid ? { uid: currentUid } : null; } } }));
 vi.mock('@/utils/authGuards', () => ({ getRealAuthenticatedUserId: (u: { uid: string } | null) => u?.uid ?? null }));
 
-import { artistOperatingProfileService } from '../ArtistOperatingProfileService';
+import { artistOperatingProfileService } from '@/services/agent/governance/ArtistOperatingProfileService';
 
 describe('ArtistOperatingProfileService', () => {
     beforeEach(() => {

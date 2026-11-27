@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FormatForensicsEngine } from '../FormatForensicsEngine';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 
 describe('FormatForensicsEngine', () => {
   it('should detect DistroKid TSV format, delimiter, and column semantics', () => {

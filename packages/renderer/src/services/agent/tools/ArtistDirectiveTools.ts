@@ -9,14 +9,14 @@
  *   on user conversations, mastering feedback, or legal constraints.
  */
 
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { artistDirectiveService } from '../skills/ArtistDirectiveService';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import { artistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 import {
     DIRECTIVE_SECTION_KEYS,
     compileDirectiveToMarkdown,
     type DirectiveSectionKey,
 } from '@indii/shared';
-import { AnyToolFunction } from '../types';
+import { AnyToolFunction } from '@/services/agent/types';
 
 export const read_artist_directive = wrapTool(
     'read_artist_directive',

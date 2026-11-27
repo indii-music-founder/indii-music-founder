@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ThreeDCard, ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '../components/ui/ThreeDCard';
-import { ThreeDButton } from '../components/ui/ThreeDButton';
+import { ThreeDCard, ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
+import { ThreeDButton } from '@/components/ui/ThreeDButton';
 
 describe('3D Components', () => {
     it('renders ThreeDCard without crashing', () => {

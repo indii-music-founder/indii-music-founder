@@ -1,6 +1,6 @@
 import React from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { AdaptiveWorkspace } from './AdaptiveWorkspace';
+import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
 export interface ThreePanelDashboardProps {
     /** The name of the module for the error boundary (e.g. "Finance") */

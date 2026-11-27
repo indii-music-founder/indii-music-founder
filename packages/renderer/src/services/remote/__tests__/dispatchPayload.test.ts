@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { serializeDispatchPayload } from '../dispatchPayload';
+import { serializeDispatchPayload } from '@/services/remote/dispatchPayload';
 
 describe('dispatch payload persistence contract (pure logic)', () => {
     it('omits unused media fields from an image import', () => {

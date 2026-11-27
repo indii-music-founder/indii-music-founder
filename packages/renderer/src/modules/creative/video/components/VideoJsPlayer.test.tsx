@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoJsPlayer, type VideoJsPlayerHandle } from './VideoJsPlayer';
+import { VideoJsPlayer, type VideoJsPlayerHandle } from '@/modules/creative/video/components/VideoJsPlayer';
 
 const mocks = vi.hoisted(() => {
     const dispose = vi.fn();

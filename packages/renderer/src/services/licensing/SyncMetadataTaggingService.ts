@@ -1,8 +1,8 @@
-import { db } from '../firebase';
+import { db } from '@/services/firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
-import { SyncMood } from './LicensingService';
+import { SyncMood } from '@/services/licensing/LicensingService';
 import { judgeSyncMoods } from '@/config/typesafeJudgments';
 import { IngestionMapper } from '@/services/distribution/proprietary-ingestion/IngestionMapper';
 

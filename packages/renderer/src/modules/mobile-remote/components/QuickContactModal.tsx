@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { useToast } from '@/core/context/ToastContext';
-import { triggerHaptic } from '../haptics';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
 import type { FieldContactRole } from '@/types/contacts';
 import { StorageService } from '@/services/StorageService';
 import { auth } from '@/services/firebase';

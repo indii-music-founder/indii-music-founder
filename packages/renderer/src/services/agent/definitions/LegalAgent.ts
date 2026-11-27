@@ -1,6 +1,6 @@
-import { AgentConfig } from "../types";
-import { UniversalTools } from '../tools/UniversalTools';
-import { LegalTools } from '../tools/LegalTools';
+import { AgentConfig } from "@/services/agent/types";
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
+import { LegalTools } from '@/services/agent/tools/LegalTools';
 import systemPrompt from '@agents/legal/prompt.md?raw';
 
 
@@ -302,10 +302,10 @@ export const LegalAgent: AgentConfig = {
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
-import { McpTools } from '../tools/McpTools';
-import { REGISTER_SPLIT_SHEET_DECLARATION, DRAFT_CWR_REGISTRATION_DECLARATION, AUDIT_SAMPLE_CLEARANCE_DECLARATION } from '../tools/McpToolDeclarations';
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
+import { McpTools } from '@/services/agent/tools/McpTools';
+import { REGISTER_SPLIT_SHEET_DECLARATION, DRAFT_CWR_REGISTRATION_DECLARATION, AUDIT_SAMPLE_CLEARANCE_DECLARATION } from '@/services/agent/tools/McpToolDeclarations';
 
 
 // Freeze the schema to prevent cross-test contamination

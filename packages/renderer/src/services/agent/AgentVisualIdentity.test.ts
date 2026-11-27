@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { listHeadIds, listWorkerIds } from './departments';
+import { listHeadIds, listWorkerIds } from '@/services/agent/departments';
 import {
     getAgentColorContrast,
     resolveAgentVisualIdentity,
-} from './AgentVisualIdentity';
+} from '@/services/agent/AgentVisualIdentity';
 
 const OPAQUE_HEX = /^#[0-9A-F]{6}$/;
 

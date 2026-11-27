@@ -1,12 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ExpenseTracker } from './ExpenseTracker';
+import { ExpenseTracker } from '@/modules/finance/components/ExpenseTracker';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { useFinance } from '../hooks/useFinance';
+import { useFinance } from '@/modules/finance/hooks/useFinance';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
 // Mock dependencies
-vi.mock('../hooks/useFinance');
+vi.mock('@/modules/finance/hooks/useFinance');
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 // Mock the firebase import that is causing issues

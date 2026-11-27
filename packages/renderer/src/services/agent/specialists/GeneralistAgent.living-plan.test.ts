@@ -1,5 +1,5 @@
 
-import { GeneralistAgent } from './GeneralistAgent';
+import { GeneralistAgent } from '@/services/agent/specialists/GeneralistAgent';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock dependencies
@@ -29,7 +29,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../tools', () => ({
+vi.mock('@/services/agent/tools', () => ({
     TOOL_REGISTRY: {
         propose_plan: vi.fn(async () => ({ success: true, message: 'Plan proposed' }))
     }

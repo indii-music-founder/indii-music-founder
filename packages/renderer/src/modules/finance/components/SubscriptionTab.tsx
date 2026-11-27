@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { CreditCard, Rocket, Shield, CheckCircle2, AlertCircle, ExternalLink, Zap, Package, RefreshCw } from 'lucide-react';
-import { useSubscription } from '../hooks/useSubscription';
+import { useSubscription } from '@/modules/finance/hooks/useSubscription';
 import { SubscriptionTier, getTierConfig, getTierOrder } from '@/services/subscription/SubscriptionTier';
 import { Progress } from '@/components/ui/progress';
 

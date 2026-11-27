@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { IngredientDropZone, type Ingredient } from '../IngredientDropZone';
+import { IngredientDropZone, type Ingredient } from '@/modules/creative/components/IngredientDropZone';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 

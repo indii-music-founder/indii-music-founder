@@ -22,7 +22,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
-import type { CanvasSnapshot } from '../../types';
+import type { CanvasSnapshot } from '@/modules/project-canvas/types';
 
 interface CanvasSnapshotModalProps {
     isOpen: boolean;
@@ -82,9 +82,9 @@ export const CanvasSnapshotModal: React.FC<CanvasSnapshotModalProps> = ({
     const handleRestoreSnapshot = (snap: CanvasSnapshot) => {
         // Restore layout to store
         useStore.setState({
-            canvasBlocks: snap.blocks as unknown as import('../../types').ProjectCanvasBlock[],
-            canvasEdges: snap.edges as unknown as import('../../types').ProjectCanvasEdge[],
-            canvasViewport: snap.viewport as unknown as import('../../types').CanvasViewport,
+            canvasBlocks: snap.blocks as unknown as import('@/modules/project-canvas/types').ProjectCanvasBlock[],
+            canvasEdges: snap.edges as unknown as import('@/modules/project-canvas/types').ProjectCanvasEdge[],
+            canvasViewport: snap.viewport as unknown as import('@/modules/project-canvas/types').CanvasViewport,
             isCanvasDirty: true,
         });
 

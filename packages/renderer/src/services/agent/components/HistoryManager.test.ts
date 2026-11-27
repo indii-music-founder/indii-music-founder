@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '@/core/store';
-import { SummaryService } from '../utils/SummaryService';
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
-import { HistoryManager } from './HistoryManager';
+import { SummaryService } from '@/services/agent/utils/SummaryService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { HistoryManager } from '@/services/agent/components/HistoryManager';
 
 vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn() } }));
-vi.mock('../utils/SummaryService', () => ({ SummaryService: { summarize: vi.fn() } }));
-vi.mock('../memory/AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/utils/SummaryService', () => ({ SummaryService: { summarize: vi.fn() } }));
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: { retrieve: vi.fn().mockResolvedValue([]) },
 }));
 

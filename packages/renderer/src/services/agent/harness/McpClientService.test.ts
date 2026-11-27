@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '@/utils/logger';
-import { mcpClientService } from './McpClientService';
+import { mcpClientService } from '@/services/agent/harness/McpClientService';
 
 describe('McpClientService diagnostics', () => {
     afterEach(() => {

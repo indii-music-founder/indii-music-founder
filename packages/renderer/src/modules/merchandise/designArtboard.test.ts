@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readDesignArtboard } from './designArtboard';
+import { readDesignArtboard } from '@/modules/merchandise/designArtboard';
 
 describe('saved merchandise artboards', () => {
     it('preserves the dimensions of legacy designs without metadata', () => {

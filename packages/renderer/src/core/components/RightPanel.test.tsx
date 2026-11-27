@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import RightPanel from './RightPanel';
-import { useStore } from '../store';
+import RightPanel from '@/core/components/RightPanel';
+import { useStore } from '@/core/store';
 
 Element.prototype.scrollTo = vi.fn();
 
-vi.mock('../store', () => {
+vi.mock('@/core/store', () => {
     const mockUseStore = vi.fn();
     (mockUseStore as any).setState = vi.fn();
     return { useStore: mockUseStore };
 });
 
 // Mock sub-components
-vi.mock('./right-panel/AssetsPanel', () => ({
+vi.mock('@/core/components/right-panel/AssetsPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="assets-panel">
             Assets Panel Content
@@ -22,7 +22,7 @@ vi.mock('./right-panel/AssetsPanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/StudioControlsPanel', () => ({
+vi.mock('@/core/components/right-panel/StudioControlsPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="studio-controls-panel">
             Studio Controls Content
@@ -40,7 +40,7 @@ vi.mock('./right-panel/VideoPanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/WorkflowPanel', () => ({
+vi.mock('@/core/components/right-panel/WorkflowPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="workflow-panel">
             Workflow Panel Content
@@ -49,7 +49,7 @@ vi.mock('./right-panel/WorkflowPanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/KnowledgePanel', () => ({
+vi.mock('@/core/components/right-panel/KnowledgePanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="knowledge-panel">
             Knowledge Panel Content
@@ -58,7 +58,7 @@ vi.mock('./right-panel/KnowledgePanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/ArtifactsPanel', () => ({
+vi.mock('@/core/components/right-panel/ArtifactsPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="artifacts-panel">
             Artifacts Panel Content
@@ -67,7 +67,7 @@ vi.mock('./right-panel/ArtifactsPanel', () => ({
     ),
 }));
 
-vi.mock('./right-panel/ToolApprovalsPanel', () => ({
+vi.mock('@/core/components/right-panel/ToolApprovalsPanel', () => ({
     default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="tool-approvals-panel">
             Approvals Panel Content
@@ -85,10 +85,10 @@ vi.mock('./agent/AgentChat', () => ({
     ),
 }));
 
-vi.mock('./agent/BatchingStatus', () => ({
+vi.mock('@/core/components/agent/BatchingStatus', () => ({
     BatchingStatus: () => <div data-testid="batching-status" />,
 }));
-vi.mock('./ConversationHistoryList', () => ({
+vi.mock('@/core/components/ConversationHistoryList', () => ({
     ConversationHistoryList: () => <div data-testid="conversation-history" />,
 }));
 vi.mock('@/core/components/chat/ChatMessage', () => ({
@@ -97,7 +97,7 @@ vi.mock('@/core/components/chat/ChatMessage', () => ({
 vi.mock('@/modules/dashboard/components/AssetSpotlight', () => ({
     default: () => <div data-testid="asset-spotlight" />,
 }));
-vi.mock('./command-bar/PromptArea', () => ({
+vi.mock('@/core/components/command-bar/PromptArea', () => ({
     PromptArea: () => <div data-testid="prompt-area" />,
 }));
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { firebaseAI } from '../FirebaseIntelligenceService';
-import { RateLimiter } from '../RateLimiter';
-import { aiCache } from '../IntelligenceResponseCache';
+import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
+import { aiCache } from '@/services/intelligence/IntelligenceResponseCache';
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB for JSDOM
 
 // Hoist mock
@@ -49,7 +49,7 @@ vi.mock('firebase/remote-config', () => ({
 }));
 
 // Mock TokenUsageService to avoid quota errors
-vi.mock('../billing/TokenUsageService', () => ({
+vi.mock('@/services/intelligence/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         trackUsage: vi.fn().mockResolvedValue(true),

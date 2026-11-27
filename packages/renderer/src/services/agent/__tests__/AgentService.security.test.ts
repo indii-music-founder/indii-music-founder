@@ -16,10 +16,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from '../BaseAgent';
-import type { AgentConfig, ToolFunctionResult, ValidAgentId } from '../types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import type { AgentConfig, ToolFunctionResult, ValidAgentId } from '@/services/agent/types';
 import { MembershipService } from '@/services/MembershipService';
-import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
+import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from '@/services/agent/__tests__/AgentStressTest.harness';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
@@ -127,7 +127,7 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
     },
 }));
 
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),
@@ -137,7 +137,7 @@ vi.mock('../observability/TraceService', () => ({
     },
 }));
 
-vi.mock('../fine-tuned-models', () => ({
+vi.mock('@/services/agent/fine-tuned-models', () => ({
     getFineTunedModel: vi.fn().mockReturnValue('projects/148015878263/locations/us-central1/endpoints/8440177260006211584'),
 }));
 
@@ -414,9 +414,9 @@ describe('BaseAgent Runtime Tool Authorization', () => {
     it('definition-based agents export authorizedTools as non-empty arrays', async () => {
         // Sample 3 representative production agents to confirm Task 1 was applied correctly.
         // Full coverage is verified by grep in CI.
-        const { FinanceAgent } = await importWithRetry(() => import('../definitions/FinanceAgent'));
-        const { MarketingAgent } = await importWithRetry(() => import('../definitions/MarketingAgent'));
-        const { DevOpsAgent } = await importWithRetry(() => import('../definitions/DevOpsAgent'));
+        const { FinanceAgent } = await importWithRetry(() => import('@/services/agent/definitions/FinanceAgent'));
+        const { MarketingAgent } = await importWithRetry(() => import('@/services/agent/definitions/MarketingAgent'));
+        const { DevOpsAgent } = await importWithRetry(() => import('@/services/agent/definitions/DevOpsAgent'));
 
         expect(Array.isArray(FinanceAgent.authorizedTools)).toBe(true);
         expect((FinanceAgent.authorizedTools?.length ?? 0)).toBeGreaterThan(0);

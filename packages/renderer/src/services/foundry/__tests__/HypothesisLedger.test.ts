@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { HypothesisLedger } from '../HypothesisLedger';
-import { FormatForensicsEngine } from '../FormatForensicsEngine';
+import { HypothesisLedger } from '@/services/foundry/HypothesisLedger';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 
 describe('HypothesisLedger', () => {
   it('should generate proven and tentative hypotheses from forensics report', () => {

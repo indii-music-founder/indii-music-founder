@@ -16,13 +16,13 @@ import { logger } from '@/utils/logger';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import App from './core/App';
-import { ErrorBoundary } from './core/components/ErrorBoundary';
+import App from '@/core/App';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
 import { renderStartupFallback } from '@/startupFallback';
 import { INDII_BRAND_TITLE } from '@shared/brand';
 import '@/core/i18n'; // Initialize i18n before any component renders
-import './index.css';
+import '@/index.css';
 
 /** Remove the static boot splash once the app has committed its first frame. */
 function dismissBootSplash(): void {

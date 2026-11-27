@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import GlobalSettings from './GlobalSettings';
+import GlobalSettings from '@/modules/dashboard/components/GlobalSettings';
 
 vi.mock('@/modules/settings/SettingsPanel', () => ({
     default: () => <div data-testid="settings-panel" />,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { logger } from '@/utils/logger';
@@ -82,7 +82,7 @@ export const LicensingTools = {
 
     generate_beat_lease_contract: wrapTool('generate_beat_lease_contract', async (args: { beatTitle: string; producerName: string; buyerName: string; leaseType: 'Exclusive' | 'Non-Exclusive'; price: number }) => {
         // Item 134: Delegate to LegalTools.draft_contract for real contract generation
-        const { LegalTools } = await importWithRetry(() => import('./LegalTools'));
+        const { LegalTools } = await importWithRetry(() => import('@/services/agent/tools/LegalTools'));
 
         const terms = [
             `Beat Title: ${args.beatTitle}`,

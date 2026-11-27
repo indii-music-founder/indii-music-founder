@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
-import { buildAgentSessionState, AgentSessionSlice } from './agentSessionSlice';
+import { buildAgentSessionState, AgentSessionSlice } from '@/core/store/slices/agent/agentSessionSlice';
 
 /**
  * Regression: agent runs can outlive a session switch. updateAgentMessage

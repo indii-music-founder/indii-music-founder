@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({

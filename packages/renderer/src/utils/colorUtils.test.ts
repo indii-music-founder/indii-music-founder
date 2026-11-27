@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseColor } from './colorUtils';
+import { parseColor } from '@/utils/colorUtils';
 
 describe('parseColor', () => {
     it('parses a clean 6-digit hex code as-is', () => {

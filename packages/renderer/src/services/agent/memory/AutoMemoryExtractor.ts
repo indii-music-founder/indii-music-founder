@@ -1,7 +1,7 @@
-import { alwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface AutoMemoryConfig {

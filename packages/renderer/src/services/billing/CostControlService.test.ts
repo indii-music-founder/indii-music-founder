@@ -54,7 +54,7 @@ vi.mock('@/utils/logger', () => ({
 
 vi.unmock('@/services/billing/CostControlService');
 
-import { CostControlService } from './CostControlService';
+import { CostControlService } from '@/services/billing/CostControlService';
 
 describe('CostControlService', () => {
   beforeEach(() => {

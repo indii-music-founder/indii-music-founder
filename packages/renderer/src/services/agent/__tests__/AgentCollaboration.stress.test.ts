@@ -16,8 +16,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateHubAndSpoke, HUB_AGENT_ID, VALID_AGENT_IDS } from '../types';
-import { SPOKE_AGENT_IDS } from './AgentStressTest.harness';
+import { validateHubAndSpoke, HUB_AGENT_ID, VALID_AGENT_IDS } from '@/services/agent/types';
+import { SPOKE_AGENT_IDS } from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Test Suite

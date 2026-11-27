@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runWithAgentDeadline } from '../AgentRunDeadline';
+import { runWithAgentDeadline } from '@/services/agent/governance/AgentRunDeadline';
 
 describe('runWithAgentDeadline', () => {
     afterEach(() => vi.useRealTimers());

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createDistributionSlice } from './distributionSlice';
+import { createDistributionSlice } from '@/core/store/slices/distributionSlice';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { DistributorId } from '@/services/distribution/types/distributor';
 

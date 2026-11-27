@@ -87,9 +87,9 @@ vi.mock('@/utils/logger', () => ({
 
 // ── Imports Under Test ───────────────────────────────────────────
 
-import GhostCapture from './GhostCapture';
-import { CaptureButtons } from './components/CaptureButtons';
-import { CapturePreview } from './components/CapturePreview';
+import GhostCapture from '@/modules/capture/GhostCapture';
+import { CaptureButtons } from '@/modules/capture/components/CaptureButtons';
+import { CapturePreview } from '@/modules/capture/components/CapturePreview';
 
 // ── Tests ────────────────────────────────────────────────────────
 

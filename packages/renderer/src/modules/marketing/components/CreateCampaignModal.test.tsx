@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import CreateCampaignModal from './CreateCampaignModal';
+import CreateCampaignModal from '@/modules/marketing/components/CreateCampaignModal';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { useToast } from '@/core/context/ToastContext';
 

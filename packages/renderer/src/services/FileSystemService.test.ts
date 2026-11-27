@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fileSystemService, FileNode } from './FileSystemService';
-import { trashService } from './trash/TrashService';
+import { fileSystemService, FileNode } from '@/services/FileSystemService';
+import { trashService } from '@/services/trash/TrashService';
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => {
@@ -43,7 +43,7 @@ vi.mock('firebase/firestore', () => {
 });
 
 // Mock dependencies
-vi.mock('./firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     db: {},
     auth: { currentUser: { uid: 'u1' } },
@@ -99,7 +99,7 @@ describe('FileSystemService Performance', () => {
     });
 
     it('returns empty array when no authenticated user is present without throwing', async () => {
-        const { auth } = await import('./firebase');
+        const { auth } = await import('@/services/firebase');
         const originalUser = auth.currentUser;
         (auth as any).currentUser = null;
 

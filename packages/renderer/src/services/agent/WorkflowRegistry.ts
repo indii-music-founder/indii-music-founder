@@ -1,5 +1,5 @@
-import type { WorkflowStep, WorkflowEdge } from './types';
-import { validateWorkflowGraph } from './WorkflowGraphUtils';
+import type { WorkflowStep, WorkflowEdge } from '@/services/agent/types';
+import { validateWorkflowGraph } from '@/services/agent/WorkflowGraphUtils';
 import { logger } from '@/utils/logger';
 
 

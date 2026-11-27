@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ThreeDButton } from './ThreeDButton'
+import { ThreeDButton } from '@/components/ui/ThreeDButton'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 

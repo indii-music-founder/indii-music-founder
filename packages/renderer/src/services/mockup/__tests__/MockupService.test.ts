@@ -12,7 +12,7 @@ import {
     MOCKUP_ASPECTS,
     ARTWORK_FIDELITY_CLAUSE,
     type MockupKind
-} from '../MockupService';
+} from '@/services/mockup/MockupService';
 
 const KINDS: MockupKind[] = ['vinyl-12', 'cd-jewel', 'cassette', 'tee', 'hoodie', 'poster', 'story-card'];
 

@@ -20,7 +20,7 @@ describe('Environment Configuration', () => {
         process.env.VITE_FIREBASE_APP_ID = 'test-app-id';
 
         // Re-import the module to trigger evaluation
-        const { firebaseConfig } = await import('./env');
+        const { firebaseConfig } = await import('@/config/env');
 
         // This assertion will fail BEFORE the fix, proving the vulnerability/bug
         // because currently it is hardcoded.

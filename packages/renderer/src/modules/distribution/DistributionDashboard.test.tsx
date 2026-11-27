@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import DistributionDashboard from './DistributionDashboard';
+import DistributionDashboard from '@/modules/distribution/DistributionDashboard';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-vi.mock('./hooks/useDistributionDashboard', () => ({
+vi.mock('@/modules/distribution/hooks/useDistributionDashboard', () => ({
     useDistributionDashboard: () => ({
         releases: [
             {
@@ -54,28 +54,28 @@ vi.mock('@/core/components/ModuleErrorBoundary', () => ({
     ModuleErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('./components/DistributorConnectionsPanel', () => ({
+vi.mock('@/modules/distribution/components/DistributorConnectionsPanel', () => ({
     DistributorConnectionsPanel: () => <div data-testid="distributor-connections-panel">Connections</div>,
 }));
-vi.mock('./components/BankPanel', () => ({
+vi.mock('@/modules/distribution/components/BankPanel', () => ({
     BankPanel: () => <div data-testid="bank-panel">Bank Panel</div>,
 }));
-vi.mock('./components/AuthorityPanel', () => ({
+vi.mock('@/modules/distribution/components/AuthorityPanel', () => ({
     AuthorityPanel: () => <div data-testid="authority-panel">Authority Panel</div>,
 }));
-vi.mock('./components/QCPanel', () => ({
+vi.mock('@/modules/distribution/components/QCPanel', () => ({
     QCPanel: () => <div data-testid="qc-panel">QC Panel</div>,
 }));
-vi.mock('./components/KeysPanel', () => ({
+vi.mock('@/modules/distribution/components/KeysPanel', () => ({
     KeysPanel: () => <div data-testid="keys-panel">Keys Panel</div>,
 }));
-vi.mock('./components/TransferPanel', () => ({
+vi.mock('@/modules/distribution/components/TransferPanel', () => ({
     TransferPanel: () => <div data-testid="transfer-panel">Transfer Panel</div>,
 }));
-vi.mock('./components/QCVisualizer', () => ({
+vi.mock('@/modules/distribution/components/QCVisualizer', () => ({
     QCVisualizer: () => <div data-testid="qc-visualizer">QC Visualizer</div>,
 }));
-vi.mock('./components/ReleasesContent', () => ({
+vi.mock('@/modules/distribution/components/ReleasesContent', () => ({
     ReleasesContent: ({ releases, loading, error }: any) => (
         <div data-testid="releases-content">
             {loading && <span>Loading releases...</span>}
@@ -86,27 +86,27 @@ vi.mock('./components/ReleasesContent', () => ({
         </div>
     ),
 }));
-vi.mock('./components/DistributorQuickView', () => ({
+vi.mock('@/modules/distribution/components/DistributorQuickView', () => ({
     DistributorQuickView: () => <div data-testid="distributor-quick-view">Quick View</div>,
 }));
-vi.mock('./components/DeliveryHealthPanel', () => ({
+vi.mock('@/modules/distribution/components/DeliveryHealthPanel', () => ({
     DeliveryHealthPanel: ({ releases }: any) => (
         <div data-testid="delivery-health-panel">Health ({releases?.length} releases)</div>
     ),
 }));
-vi.mock('./components/QuickLinksPanel', () => ({
+vi.mock('@/modules/distribution/components/QuickLinksPanel', () => ({
     QuickLinksPanel: () => <div data-testid="quick-links-panel">Quick Links</div>,
 }));
-vi.mock('./components/QCQuickPanel', () => ({
+vi.mock('@/modules/distribution/components/QCQuickPanel', () => ({
     QCQuickPanel: () => <div data-testid="qc-quick-panel">QC Quick</div>,
 }));
-vi.mock('./components/KeysStatusPanel', () => ({
+vi.mock('@/modules/distribution/components/KeysStatusPanel', () => ({
     KeysStatusPanel: () => <div data-testid="keys-status-panel">Keys Status</div>,
 }));
-vi.mock('./components/AuthorityInfoPanel', () => ({
+vi.mock('@/modules/distribution/components/AuthorityInfoPanel', () => ({
     AuthorityInfoPanel: () => <div data-testid="authority-info-panel">Authority Info</div>,
 }));
-vi.mock('./components/RegistrationChecklistPanel', () => ({
+vi.mock('@/modules/distribution/components/RegistrationChecklistPanel', () => ({
     RegistrationChecklistPanel: () => <div data-testid="registration-checklist-panel">Registration Checklist</div>,
 }));
 

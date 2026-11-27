@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { TuneCoreStatementAdapter } from '../adapters/TuneCoreStatementAdapter';
+import { TuneCoreStatementAdapter } from '@/services/foundry/adapters/TuneCoreStatementAdapter';
 import { TuneCoreStatementAdapter as SharedTuneCoreAdapter } from '@indii/shared';
-import { LayeredValidator } from '../LayeredValidator';
-import { canBookStatement } from '../statementBooking';
+import { LayeredValidator } from '@/services/foundry/LayeredValidator';
+import { canBookStatement } from '@/services/foundry/statementBooking';
 
 const header = 'Sales Period,Posted Date,Store Name,Country Of Sale,Artist,Release Title,Song Title,ISRC,UPC,Quantity,Total Earned';
 const row = (quantity: string, earned = '12.34') =>

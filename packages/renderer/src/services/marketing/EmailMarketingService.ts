@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { MarketingProviderUnavailableError } from './providerErrors';
+import { MarketingProviderUnavailableError } from '@/services/marketing/providerErrors';
 
 export type EmailProvider = 'mailchimp' | 'klaviyo';
 

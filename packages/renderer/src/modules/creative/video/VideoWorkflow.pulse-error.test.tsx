@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import VideoWorkflow from './VideoWorkflow';
-import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '../../../services/video/VideoGenerationService';
+import VideoWorkflow from '@/modules/creative/video/VideoWorkflow';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useStore } from '@/core/store';
@@ -70,7 +70,7 @@ const editorStoreState = {
     viewMode: 'director',
 };
 
-vi.mock('./store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const fn = vi.fn(() => ({
         serverTimestamp: vi.fn(),
         ...editorStoreState,

@@ -5,7 +5,7 @@ import {
     sanitizeModelKey,
     MODEL_PRICING,
     PRICING_LAST_VERIFIED
-} from './ModelPricing';
+} from '@/services/intelligence/billing/ModelPricing';
 
 vi.mock('@/utils/logger', () => ({
     logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() }

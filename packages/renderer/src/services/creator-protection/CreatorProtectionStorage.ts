@@ -1,7 +1,7 @@
 import { addDoc, collection, doc, getDoc, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { EvidencePacket, IdentityProtectionProfile, ReplicaIncident, TakedownCase } from './types';
+import type { EvidencePacket, IdentityProtectionProfile, ReplicaIncident, TakedownCase } from '@/services/creator-protection/types';
 
 export async function saveIdentityProtectionProfile(profile: IdentityProtectionProfile): Promise<string> {
   const ref = await addDoc(collection(db, 'users', profile.userId, 'identityProtectionProfiles'), {

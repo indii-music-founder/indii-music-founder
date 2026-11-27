@@ -48,7 +48,7 @@ import {
     PERSONA_POSTURE_FADER_MAP,
 } from '@/config/typesafeJudgments';
 import { useToast } from '@/core/context/ToastContext';
-import { SectionHeader } from './SettingsShared';
+import { SectionHeader } from '@/modules/settings/settings-panel/SettingsShared';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { logger } from '@/utils/logger';
 

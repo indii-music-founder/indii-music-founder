@@ -7,7 +7,7 @@ import {
     StoryboardProjectSchema,
     type StoryboardProject,
     type StoryboardSlot,
-} from '../schemas/storyboard';
+} from '@/modules/creative/video/schemas/storyboard';
 
 export interface StoryboardBatchRenderSummary {
     renderedSlotIds: string[];

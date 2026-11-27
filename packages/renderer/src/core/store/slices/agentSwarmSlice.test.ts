@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoreApi } from 'zustand';
 
-import { createAgentSwarmSlice, type AgentSwarmSlice } from './agentSwarmSlice';
+import { createAgentSwarmSlice, type AgentSwarmSlice } from '@/core/store/slices/agentSwarmSlice';
 
 /**
  * The behaviour worth pinning here is the halt switch. It governs real ad

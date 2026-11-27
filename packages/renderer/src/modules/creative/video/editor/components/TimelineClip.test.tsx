@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { TimelineClip, TimelineClipProps } from './TimelineClip';
-import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
+import { TimelineClip, TimelineClipProps } from '@/modules/creative/video/editor/components/TimelineClip';
+import { VideoClip, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: Object.assign(vi.fn(), {
         getState: vi.fn(),
     }),

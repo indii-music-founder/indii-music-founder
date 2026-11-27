@@ -4,7 +4,7 @@ import {
     ImageAssetSchema,
     ScheduledPostSchema,
     CreatePostRequestSchema
-} from './schemas';
+} from '@/modules/social/schemas';
 
 describe('Social Schemas', () => {
     describe('CampaignStatusSchema', () => {

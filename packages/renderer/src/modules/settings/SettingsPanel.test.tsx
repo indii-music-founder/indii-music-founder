@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import SettingsPanel from './SettingsPanel';
+import SettingsPanel from '@/modules/settings/SettingsPanel';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 const settingsStoreState = {
@@ -46,11 +46,11 @@ vi.mock('@/core/store', () => ({
     useStore: () => settingsStoreState,
 }));
 
-vi.mock('./settings-panel/RemoteSection', () => ({
+vi.mock('@/modules/settings/settings-panel/RemoteSection', () => ({
     default: () => <div>Remote pairing controls</div>,
 }));
 
-vi.mock('./settings-panel/WalletSection', () => ({
+vi.mock('@/modules/settings/settings-panel/WalletSection', () => ({
     default: () => <div data-testid="wallet-section">Credit Wallet & Micro-Transactions</div>,
 }));
 
@@ -96,16 +96,16 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-vi.mock('./components/FounderBadge', () => ({
+vi.mock('@/modules/settings/components/FounderBadge', () => ({
     default: () => <div data-testid="founder-badge" />,
 }));
 
-vi.mock('./components/AuditLogDashboard', () => ({
+vi.mock('@/modules/settings/components/AuditLogDashboard', () => ({
     default: () => <div data-testid="audit-log-dashboard" />,
     AuditLogDashboard: () => <div data-testid="audit-log-dashboard" />,
 }));
 
-vi.mock('./components/DownloadHub', () => ({
+vi.mock('@/modules/settings/components/DownloadHub', () => ({
     default: () => <div data-testid="download-hub" />,
     DownloadHub: () => <div data-testid="download-hub" />,
 }));

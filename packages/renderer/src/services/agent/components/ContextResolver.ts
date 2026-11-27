@@ -3,7 +3,7 @@ import type { AgentMessage } from '@/core/store';
 // useStore removed
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
-import { AgentContext, ProjectHandle, DistributorInfo } from '../types';
+import { AgentContext, ProjectHandle, DistributorInfo } from '@/services/agent/types';
 import { OrganizationService } from '@/services/OrganizationService';
 import { importWithRetry } from '@/utils/dynamicImport';
 

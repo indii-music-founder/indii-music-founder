@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { syncLicensingClearanceService } from '../SyncLicensingClearanceService';
+import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
 import { setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 

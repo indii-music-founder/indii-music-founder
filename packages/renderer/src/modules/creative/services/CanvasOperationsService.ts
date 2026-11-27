@@ -1,4 +1,4 @@
-import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from './canvasStateDimensions';
+import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from '@/modules/creative/services/canvasStateDimensions';
 import * as fabric from 'fabric';
 
 declare module 'fabric' {
@@ -12,10 +12,10 @@ declare module 'fabric' {
     }
 }
 import { exportMultiplierFor, hexToRgba, nativeExportRegion, scaleImageToCanvas } from '@/lib/canvasUtils';
-import { STUDIO_COLORS, CreativeColor } from '../constants';
+import { STUDIO_COLORS, CreativeColor } from '@/modules/creative/constants';
 import { logger } from '@/utils/logger';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { annotationColor } from './annotationColor';
+import { annotationColor } from '@/modules/creative/services/annotationColor';
 import { imageDataUrlToBlob } from '@/lib/imageDataUrl';
 
 export interface MaskData {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { SyncBriefMatcher } from './SyncBriefMatcher';
+import { SyncBriefMatcher } from '@/modules/licensing/components/SyncBriefMatcher';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
 

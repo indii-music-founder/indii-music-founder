@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { INITIAL_METADATA } from '@/services/metadata/types';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
-import { SongIntakeReviewService } from './SongIntakeReviewService';
+import { SongIntakeReviewService } from '@/services/ingestion/SongIntakeReviewService';
 
 vi.mock('@/services/metadata/TrackLibraryService', () => ({
     trackLibrary: { saveTrack: vi.fn() },

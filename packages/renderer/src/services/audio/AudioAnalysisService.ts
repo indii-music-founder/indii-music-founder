@@ -3,8 +3,8 @@ import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { logger } from '@/utils/logger';
 
-import { DSPComplianceValidator } from './DSPComplianceValidator';
-import type { DeepAudioFeatures, TechnicalAudit } from './types';
+import { DSPComplianceValidator } from '@/services/audio/DSPComplianceValidator';
+import type { DeepAudioFeatures, TechnicalAudit } from '@/services/audio/types';
 import type { AudioAnalysisResult } from '@/types/electron';
 import type { Provenance } from '@shared/schemas/musicEntity';
 

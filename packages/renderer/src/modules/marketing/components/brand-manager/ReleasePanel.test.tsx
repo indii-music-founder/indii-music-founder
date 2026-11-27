@@ -7,7 +7,7 @@ vi.mock('motion/react', () => ({
     motion: new Proxy({}, { get: () => (props: Record<string, unknown>) => <div>{props.children as never}</div> }),
 }));
 
-import ReleasePanel from './ReleasePanel';
+import ReleasePanel from '@/modules/marketing/components/brand-manager/ReleasePanel';
 
 const release = {
     title: 'Night Drive', type: 'Single', artists: 'Detroit Artist', genre: 'Hip Hop', mood: 'Dark',

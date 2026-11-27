@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const inventoryState = vi.hoisted(() => ({ inventory: [] as unknown[], loading: false }));
 
-vi.mock('../hooks/useInventory', () => ({
+vi.mock('@/modules/merchandise/hooks/useInventory', () => ({
     useInventory: () => inventoryState,
 }));
 
@@ -18,7 +18,7 @@ vi.mock('recharts', () => ({
     CartesianGrid: () => null,
 }));
 
-import { InventoryTracker } from './InventoryTracker';
+import { InventoryTracker } from '@/modules/merchandise/components/InventoryTracker';
 
 describe('InventoryTracker (ISSUE-939)', () => {
     beforeEach(() => {

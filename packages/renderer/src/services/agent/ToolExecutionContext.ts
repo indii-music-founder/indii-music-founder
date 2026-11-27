@@ -11,7 +11,7 @@
  * - Better debugging and change tracking
  */
 
-import type { AgentExecutionContext } from './context/AgentExecutionContext';
+import type { AgentExecutionContext } from '@/services/agent/context/AgentExecutionContext';
 import type { StoreState } from '@/core/store';
 
 /**

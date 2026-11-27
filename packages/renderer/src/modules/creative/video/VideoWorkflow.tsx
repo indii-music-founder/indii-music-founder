@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useStore, HistoryItem } from '@/core/store';
 import { projectBucketMatches } from '@/core/constants';
 import { useShallow } from 'zustand/react/shallow';
-import { useVideoEditorStore } from './store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
 import { httpsCallable } from 'firebase/functions';
@@ -15,13 +15,13 @@ import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMed
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { Clapperboard, Scissors, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Send, Settings, Box } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
-import { StoryboardTimeline } from './components/StoryboardTimeline';
-import { SessionIngestionPanel } from './components/SessionIngestionPanel';
-import { BlenderVideoPanel } from './components/BlenderVideoPanel';
+import { StoryboardTimeline } from '@/modules/creative/video/components/StoryboardTimeline';
+import { SessionIngestionPanel } from '@/modules/creative/video/components/SessionIngestionPanel';
+import { BlenderVideoPanel } from '@/modules/creative/video/components/BlenderVideoPanel';
 
-import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInput';
-import { DailiesStrip } from './components/DailiesStrip';
-import { VideoStage } from './components/VideoStage';
+import { IntelligencePromptInput } from '@/modules/creative/components/veo/IntelligencePromptInput';
+import { DailiesStrip } from '@/modules/creative/video/components/DailiesStrip';
+import { VideoStage } from '@/modules/creative/video/components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { resolveStorageUri } from '@/services/storage/storageUri';
@@ -88,7 +88,7 @@ function extractVideoAnchorUris(source: {
 }
 
 // Lazy load the heavy Editor
-const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
+const VideoEditor = React.lazy(() => import('@/modules/creative/video/editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const processJobUpdate = async (

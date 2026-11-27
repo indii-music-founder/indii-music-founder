@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { LayersPanel } from '../LayersPanel';
+import { LayersPanel } from '@/modules/merchandise/components/LayersPanel';
 
 // Mock Lucide icons to avoid rendering issues and keep DOM clean
 vi.mock('lucide-react', async (importOriginal) => ({

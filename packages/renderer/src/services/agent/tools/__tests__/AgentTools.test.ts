@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrandTools } from '../BrandTools';
-import { MarketingTools } from '../MarketingTools';
-import { RoadTools } from '../RoadTools';
+import { BrandTools } from '@/services/agent/tools/BrandTools';
+import { MarketingTools } from '@/services/agent/tools/MarketingTools';
+import { RoadTools } from '@/services/agent/tools/RoadTools';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 

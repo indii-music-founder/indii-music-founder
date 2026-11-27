@@ -5,11 +5,11 @@
  * Specializes in analyzing tracks via Audio DNA extraction and preparing distribution-ready metadata.
  */
 
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-import { MusicTools } from '../tools/MusicTools';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+import { MusicTools } from '@/services/agent/tools/MusicTools';
 import systemPrompt from '@agents/music/prompt.md?raw';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 

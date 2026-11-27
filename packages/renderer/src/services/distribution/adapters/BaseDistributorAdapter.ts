@@ -10,7 +10,7 @@ import type {
   ReleaseAssets,
   ExtendedGoldenMetadata,
   DateRange
-} from '../types/distributor';
+} from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 
 export abstract class BaseDistributorAdapter implements DistributorAdapter {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isrcService } from '../ISRCService';
+import { isrcService } from '@/services/distribution/ISRCService';
 import { getDocs, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 

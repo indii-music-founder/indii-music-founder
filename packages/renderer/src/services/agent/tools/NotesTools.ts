@@ -1,4 +1,4 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 

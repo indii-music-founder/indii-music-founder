@@ -10,7 +10,7 @@
  * receipts in the renderer store.
  */
 
-import { renderService, RenderConfig } from './RenderService';
+import { renderService, RenderConfig } from '@/services/video/RenderService';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MasterAudioClock } from './MasterAudioClock';
+import { MasterAudioClock } from '@/services/video/nle/MasterAudioClock';
 
 describe('MasterAudioClock - Hardware Audio Clock Sync', () => {
   it('computes current timeline PTS from audio context elapsed time', () => {

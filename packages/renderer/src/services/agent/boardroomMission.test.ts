@@ -5,7 +5,7 @@ vi.mock('@/core/store', () => ({
     useStore: { getState: () => state, setState: (patch: Record<string, unknown>) => Object.assign(state, patch) },
 }));
 
-import { stopBoardroomMission } from './boardroomMission';
+import { stopBoardroomMission } from '@/services/agent/boardroomMission';
 
 describe('stopBoardroomMission (spec W4/D2)', () => {
     beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RoadAgent } from './RoadAgent';
+import { RoadAgent } from '@/services/agent/definitions/RoadAgent';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 const callableMocks = vi.hoisted(() => ({

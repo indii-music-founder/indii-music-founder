@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { businessMileageRate } from './mileageRate';
+import { businessMileageRate } from '@/modules/mobile-remote/components/mileageRate';
 
 describe('businessMileageRate', () => {
     it('uses the two published 2026 IRS periods and fails closed in a future year', () => {

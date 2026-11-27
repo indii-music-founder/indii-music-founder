@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeExternalHttpUrl } from './safeExternalUrl';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 describe('normalizeExternalHttpUrl', () => {
     it('allows canonical HTTP and HTTPS links', () => {

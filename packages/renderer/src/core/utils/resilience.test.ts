@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { retryWithBackoff, withTimeout, CircuitBreaker, CancellationToken } from './resilience';
+import { retryWithBackoff, withTimeout, CircuitBreaker, CancellationToken } from '@/core/utils/resilience';
 
 describe('resilience primitives', () => {
     beforeEach(() => {

@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { revenueService } from '@/services/RevenueService';
-import { MerchProduct } from '../types';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { logger } from '@/utils/logger';
 
 export interface MerchStats {

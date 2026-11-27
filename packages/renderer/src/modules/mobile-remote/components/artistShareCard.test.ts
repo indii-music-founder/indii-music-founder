@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildArtistShareCard } from './artistShareCard';
+import { buildArtistShareCard } from '@/modules/mobile-remote/components/artistShareCard';
 
 describe('buildArtistShareCard', () => {
     it('keeps private email out until the artist opts in', () => {

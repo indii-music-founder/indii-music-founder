@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Layers, ZoomIn, Music, FileText, GitBranch, Cpu, Folder } from 'lucide-react';
-import type { CanvasClusterSummary } from '../../types';
+import type { CanvasClusterSummary } from '@/modules/project-canvas/types';
 
 export interface ClusterBlockProps {
     summary: CanvasClusterSummary;

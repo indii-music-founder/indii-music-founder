@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { IntelligenceResponseCache } from './IntelligenceResponseCache';
+import { IntelligenceResponseCache } from '@/services/intelligence/context/IntelligenceResponseCache';
 import { GenerateContentResponse, GenerateContentOptions } from '@/shared/types/ai.dto';
 describe('IntelligenceResponseCache', () => {
     let cache: IntelligenceResponseCache;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OperationalApprovalGateBanner } from './OperationalApprovalGateBanner';
+import { OperationalApprovalGateBanner } from '@/modules/dashboard/components/OperationalApprovalGateBanner';
 
 const mocks = vi.hoisted(() => ({
     onPendingApprovals: vi.fn(),

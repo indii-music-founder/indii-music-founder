@@ -14,8 +14,8 @@ import {
     type ExecutorCoreDeps,
     type RemoteCommand,
     type StudioExecutionAdapter,
-} from '../studioExecutorContracts';
-import { StudioExecutorCore } from '../StudioExecutorCore';
+} from '@/services/remote/studioExecutorContracts';
+import { StudioExecutorCore } from '@/services/remote/StudioExecutorCore';
 
 // ─── Fakes ──────────────────────────────────────────────────────────────────
 

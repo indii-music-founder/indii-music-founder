@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
+import { awaitCompletedPlpVideoVariant } from '@/modules/creative/plpVideoVariant';
 
 describe('awaitCompletedPlpVideoVariant', () => {
     it('does not return the queued empty URL and waits for playable output', async () => {

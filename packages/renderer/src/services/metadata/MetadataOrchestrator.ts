@@ -1,7 +1,7 @@
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { IdentifierService } from '@/services/identity/IdentifierService';
-import { trackLibrary } from './TrackLibraryService';
-import { ExtendedGoldenMetadata, INITIAL_METADATA } from './types';
+import { trackLibrary } from '@/services/metadata/TrackLibraryService';
+import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { Logger } from '@/core/logger/Logger';
 
 /**

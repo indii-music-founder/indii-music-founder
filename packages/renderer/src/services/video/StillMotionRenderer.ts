@@ -15,8 +15,8 @@
  */
 
 import type { IndiiVideoProject } from '@indii/shared';
-import { renderVideoProjectLocally, type LocalVideoRenderOptions, type LocalVideoRenderDependencies } from './LocalVideoProjectRenderer';
-import { MOTION_PRESETS, type CameraMove } from './MotionPresets';
+import { renderVideoProjectLocally, type LocalVideoRenderOptions, type LocalVideoRenderDependencies } from '@/services/video/LocalVideoProjectRenderer';
+import { MOTION_PRESETS, type CameraMove } from '@/services/video/MotionPresets';
 
 export const STILL_MOTION_RESOLUTIONS = {
     '9:16': { width: 1080, height: 1920 },

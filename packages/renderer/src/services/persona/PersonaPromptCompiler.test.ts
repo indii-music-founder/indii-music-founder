@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PERSONA_FADER_DEFAULT, type PersonaFaderValues } from '@indii/shared';
-import { compilePersonaPrompt, PersonaPromptCompilerError } from './PersonaPromptCompiler';
+import { compilePersonaPrompt, PersonaPromptCompilerError } from '@/services/persona/PersonaPromptCompiler';
 
 describe('PersonaPromptCompiler', () => {
     it('compiles the population default without throwing', () => {

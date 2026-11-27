@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ImageGeneration } from "../ImageGenerationService";
+import { ImageGeneration } from "@/services/image/ImageGenerationService";
 
 import { httpsCallable } from "firebase/functions";
 import { CostControlService } from '@/services/billing/CostControlService';

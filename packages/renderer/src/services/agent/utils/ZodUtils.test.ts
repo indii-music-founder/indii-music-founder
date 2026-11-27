@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createTool, zodToToolParameters } from './ZodUtils';
+import { createTool, zodToToolParameters } from '@/services/agent/utils/ZodUtils';
 
 describe('ZodUtils', () => {
     describe('zodToToolParameters', () => {

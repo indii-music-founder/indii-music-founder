@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ImageRenderer } from '../ToolOutputRenderer';
+import { ImageRenderer } from '@/core/components/chat/ToolOutputRenderer';
 
 /**
  * RTL (React Testing Library) tests for the chat image bubble button — Phase 1.6
@@ -17,7 +17,7 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('../annotator/ImageAnnotator', () => ({
+vi.mock('@/core/components/chat/annotator/ImageAnnotator', () => ({
     ImageAnnotator: () => <div data-testid="image-annotator" />
 }));
 

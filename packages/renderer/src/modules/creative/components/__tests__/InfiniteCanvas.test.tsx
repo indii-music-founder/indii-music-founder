@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
-import InfiniteCanvas from '../InfiniteCanvas';
+import InfiniteCanvas from '@/modules/creative/components/InfiniteCanvas';
 import React, { act } from 'react';
 
 // Mock the store

@@ -1,7 +1,7 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
-import { getFineTunedModel } from '../fine-tuned-models';
+import { wrapTool, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 
 // ============================================================================
 // ScreenwriterTools Implementation

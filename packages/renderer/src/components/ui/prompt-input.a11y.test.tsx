@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { PromptInput, PromptInputTextarea, PromptInputAction, PromptInputActions } from './prompt-input'
+import { PromptInput, PromptInputTextarea, PromptInputAction, PromptInputActions } from '@/components/ui/prompt-input'
 import { describe, it, expect } from 'vitest'
 import { axe } from 'vitest-axe'
 import * as matchers from 'vitest-axe/matchers'

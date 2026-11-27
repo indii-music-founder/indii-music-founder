@@ -10,7 +10,7 @@ import {
     genMotionEnabled,
     GEN_MOTION_FLAG,
     type CameraMoveKind
-} from '../MotionPresets';
+} from '@/services/video/MotionPresets';
 
 const KINDS: CameraMoveKind[] = [
     'dolly-in', 'dolly-out', 'pan-left',

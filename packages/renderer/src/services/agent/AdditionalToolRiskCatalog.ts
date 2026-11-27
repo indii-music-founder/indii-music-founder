@@ -1,4 +1,4 @@
-import type { ToolRiskMetadata } from './types';
+import type { ToolRiskMetadata } from '@/services/agent/types';
 
 /** Risk review for callable tools outside the original core registry. */
 const READ_TOOLS = [

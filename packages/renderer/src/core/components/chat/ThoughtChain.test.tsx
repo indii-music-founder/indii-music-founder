@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ThoughtChain } from './ThoughtChain';
+import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
 
 vi.mock('motion/react', () => ({
     motion: {

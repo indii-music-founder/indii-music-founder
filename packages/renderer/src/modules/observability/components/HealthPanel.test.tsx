@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { HealthPanel } from './HealthPanel';
+import { HealthPanel } from '@/modules/observability/components/HealthPanel';
 
 vi.mock('@/services/firebase', () => ({ db: {} }));
 vi.mock('firebase/firestore', () => ({

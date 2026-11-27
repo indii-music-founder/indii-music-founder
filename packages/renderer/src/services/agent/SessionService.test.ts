@@ -48,7 +48,7 @@ const { mockSet, mockUpdate, mockDelete, mockList } = vi.hoisted(() => ({
     mockList: vi.fn().mockResolvedValue([])
 }));
 
-vi.mock('../FirestoreService', () => {
+vi.mock('@/services/FirestoreService', () => {
     return {
     serverTimestamp: vi.fn(),
         FirestoreService: class {
@@ -63,13 +63,13 @@ vi.mock('../FirestoreService', () => {
 });
 
 // 3. Mock Auth & Org Services
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'test-user-id' } },
     db: {}
 }));
 
-vi.mock('../OrganizationService', () => ({
+vi.mock('@/services/OrganizationService', () => ({
   serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: () => 'test-org-id'
@@ -80,7 +80,7 @@ vi.mock('@/utils/e2eMode', () => ({
     isFirebaseE2EMockEnabled: vi.fn(() => false),
 }));
 
-vi.mock('./SessionAttachmentStorage', () => ({
+vi.mock('@/services/agent/SessionAttachmentStorage', () => ({
     storeSessionAttachments: firestoreMocks.storeAttachments,
     restoreSessionAttachments: firestoreMocks.restoreAttachments,
     loadSessionAttachment: firestoreMocks.loadAttachment,
@@ -89,7 +89,7 @@ vi.mock('./SessionAttachmentStorage', () => ({
 // 4. Import System Under Test
 import { getDocs, getDocsFromServer, writeBatch } from 'firebase/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
-import { sessionService } from './SessionService';
+import { sessionService } from '@/services/agent/SessionService';
 import { ConversationSession } from '@/core/store/slices/agent';
 
 describe('SessionService Persistence (Dual Write)', () => {

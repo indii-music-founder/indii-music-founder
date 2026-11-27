@@ -24,8 +24,8 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
-import { EntityResolver } from '../../resolvers/EntityResolver';
-import type { ProjectCanvasBlock, ResolvedProjectEntityData, ProjectEntityType } from '../../types';
+import { EntityResolver } from '@/modules/project-canvas/resolvers/EntityResolver';
+import type { ProjectCanvasBlock, ResolvedProjectEntityData, ProjectEntityType } from '@/modules/project-canvas/types';
 import { logger } from '@/utils/logger';
 
 interface ProjectEntityBlockProps {

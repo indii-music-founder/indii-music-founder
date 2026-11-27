@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGalleryManifestEntries, latestGeneratedItem } from './galleryAssets';
+import { buildGalleryManifestEntries, latestGeneratedItem } from '@/services/agent/galleryAssets';
 
 // Newest first, exactly as creativeHistorySlice stores it.
 const history = Array.from({ length: 25 }, (_, i) => ({ id: `asset-${24 - i}`, type: 'image', prompt: `prompt ${24 - i}` }));

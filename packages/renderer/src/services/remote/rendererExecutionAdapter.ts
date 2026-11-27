@@ -21,13 +21,13 @@ import type { HistoryItem } from '@/core/types/history';
 import { auth } from '@/services/firebase';
 import { loadVideoProject } from '@/modules/creative/video/services/VideoProjectPersistenceService';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
-import { persistRemoteNote } from './persistRemoteNote';
+import { persistRemoteNote } from '@/services/remote/persistRemoteNote';
 import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 import {
     MAX_REMOTE_AGENT_RESPONSES,
     type RelayRespond,
     type StudioExecutionAdapter,
-} from './studioExecutorContracts';
+} from '@/services/remote/studioExecutorContracts';
 
 // ---------------------------------------------------------------------------
 // Pure helpers (re-exported by useRemoteCommandListener for compatibility)
@@ -701,7 +701,7 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
             }
 
             case 'editor_import': {
-                const { openRemoteMedia } = await import('./openRemoteMedia');
+                const { openRemoteMedia } = await import('@/services/remote/openRemoteMedia');
                 const result = await openRemoteMedia(task.payload, task.id);
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed', undefined, result);
                 return;

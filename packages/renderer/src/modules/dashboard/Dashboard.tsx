@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import AgentWorkspace from './components/AgentWorkspace';
-import { CustomDashboard } from './components/CustomDashboard';
+import AgentWorkspace from '@/modules/dashboard/components/AgentWorkspace';
+import { CustomDashboard } from '@/modules/dashboard/components/CustomDashboard';
 import { Gem, ArrowRight, X } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useMobile } from '@/hooks/useMobile';
 import { useStore } from '@/core/store';
-import { PlatformCard } from './components/PlatformCard';
+import { PlatformCard } from '@/modules/dashboard/components/PlatformCard';
 import { useTranslation } from 'react-i18next';
 import { useIsFounderTier } from '@/hooks/useIsFounderTier';
 import { scrollModuleScrollerToTopAfterPaint } from '@/utils/scrollModuleScroller';

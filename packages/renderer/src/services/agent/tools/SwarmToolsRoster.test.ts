@@ -20,7 +20,7 @@ describe('seat_all_department_heads', () => {
             stateChanged: true,
             idempotent: false,
         });
-        const { seat_all_department_heads } = await import('./SwarmTools');
+        const { seat_all_department_heads } = await import('@/services/agent/tools/SwarmTools');
 
         const result = await seat_all_department_heads({});
 
@@ -42,7 +42,7 @@ describe('seat_all_department_heads', () => {
             stateChanged: false,
             idempotent: true,
         });
-        const { seat_all_department_heads } = await import('./SwarmTools');
+        const { seat_all_department_heads } = await import('@/services/agent/tools/SwarmTools');
 
         const result = await seat_all_department_heads({});
 
@@ -57,7 +57,7 @@ describe('seat_all_department_heads', () => {
     });
 
     it('rejects caller-supplied targets without touching the store', async () => {
-        const { seat_all_department_heads } = await import('./SwarmTools');
+        const { seat_all_department_heads } = await import('@/services/agent/tools/SwarmTools');
 
         const result = await seat_all_department_heads(
             { agentIds: ['finance'] } as unknown as Record<string, never>

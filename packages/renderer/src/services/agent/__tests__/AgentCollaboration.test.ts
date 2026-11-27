@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from '../BaseAgent';
-import { AutonomousIntelligence } from '../../intelligence/AutonomousIntelligence';
-import { agentService } from '../AgentService';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { agentService } from '@/services/agent/AgentService';
 
-vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
@@ -11,7 +11,7 @@ vi.mock('../../intelligence/AutonomousIntelligence', () => ({
 }));
 
 // Mock AgentService
-vi.mock('../AgentService', () => ({
+vi.mock('@/services/agent/AgentService', () => ({
     agentService: {
         runAgent: vi.fn()
     }

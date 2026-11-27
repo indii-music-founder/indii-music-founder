@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import EncounterFeedView from './EncounterFeedView';
+import EncounterFeedView from '@/modules/mobile-remote/components/EncounterFeedView';
 
 const fixtureState: { items: unknown[]; emit?: (items: unknown[]) => void } = { items: [] };
 const { mockCreateEncounter, mockUploadFile, toastMocks } = vi.hoisted(() => ({

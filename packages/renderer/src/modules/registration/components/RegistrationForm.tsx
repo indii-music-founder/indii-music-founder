@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '../types';
+import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '@/modules/registration/types';
 import { compileHarness } from '@/services/business-harness';
 import type { HarnessRun } from '@indii/shared';
 import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
-import { computePassportHash, validateApprovalFreshness } from '../services/PassportHashService';
-import { persistOrgRecord } from '../services/RegistrationPersistence';
+import { computePassportHash, validateApprovalFreshness } from '@/modules/registration/services/PassportHashService';
+import { persistOrgRecord } from '@/modules/registration/services/RegistrationPersistence';
 
 interface RegistrationFormProps {
   adapter: OrgAdapter;

@@ -1,13 +1,13 @@
-import { AgentConfig } from "../types";
-import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { AgentConfig } from "@/services/agent/types";
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
 
 import systemPrompt from '@agents/road/prompt.md?raw';
-import { RoadTools } from '../tools/RoadTools';
-import { ProjectTools } from '../tools/ProjectTools';
-import { KnowledgeTools } from '../tools/KnowledgeTools';
-import { SocialTools } from '../tools/SocialTools';
-import { UniversalTools } from '../tools/UniversalTools';
-import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { RoadTools } from '@/services/agent/tools/RoadTools';
+import { ProjectTools } from '@/services/agent/tools/ProjectTools';
+import { KnowledgeTools } from '@/services/agent/tools/KnowledgeTools';
+import { SocialTools } from '@/services/agent/tools/SocialTools';
+import { UniversalTools } from '@/services/agent/tools/UniversalTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '@/services/agent/tools/DomainTools';
 
 
 

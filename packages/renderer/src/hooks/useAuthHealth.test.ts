@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useAuthHealth } from './useAuthHealth';
+import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { events } from '@/core/events';
 
 vi.mock('@/services/firebase', () => ({

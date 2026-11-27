@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore, StoreApi } from 'zustand';
-import { buildAgentOrchestrationState, AgentOrchestrationSlice } from '../agent/agentOrchestrationSlice';
+import { buildAgentOrchestrationState, AgentOrchestrationSlice } from '@/core/store/slices/agent/agentOrchestrationSlice';
 import { onSnapshot, doc } from 'firebase/firestore';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth } from '@/services/firebase';

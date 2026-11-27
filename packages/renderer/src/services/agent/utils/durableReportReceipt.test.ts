@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDurableReportReceipt } from './durableReportReceipt';
+import { getDurableReportReceipt } from '@/services/agent/utils/durableReportReceipt';
 
 // Pure control-flow classification, not proof of a live filing or service path.
 describe('durable reporting batch receipt (structural only)', () => {

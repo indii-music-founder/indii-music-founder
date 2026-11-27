@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import PreSaveCampaignBuilder from './PreSaveCampaignBuilder';
+import PreSaveCampaignBuilder from '@/modules/marketing/components/PreSaveCampaignBuilder';
 
 const mocks = vi.hoisted(() => ({
     createCampaign: vi.fn(),

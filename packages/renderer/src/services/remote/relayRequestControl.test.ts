@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PresencePublishGate, SingleFlight } from './relayRequestControl';
-import { HEARTBEAT_INTERVAL_MS } from './studioExecutorContracts';
+import { PresencePublishGate, SingleFlight } from '@/services/remote/relayRequestControl';
+import { HEARTBEAT_INTERVAL_MS } from '@/services/remote/studioExecutorContracts';
 
 describe('relay request volume control', () => {
     it('keeps routine presence below the 120s freshness window at 60 calls/hour', () => {

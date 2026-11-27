@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { clearProfileSubscriptionForAccountBoundary, createProfileSlice, ProfileSlice } from './profileSlice';
+import { clearProfileSubscriptionForAccountBoundary, createProfileSlice, ProfileSlice } from '@/core/store/slices/profileSlice';
 import { createStore } from 'zustand';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { UserProfile } from '@/modules/workflow/types';

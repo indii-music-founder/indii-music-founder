@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TimelineTimecode } from './TimelineTimecode';
-import { formatTimecode } from '../utils/timelineUtils';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { TimelineTimecode } from '@/modules/creative/video/editor/components/TimelineTimecode';
+import { formatTimecode } from '@/modules/creative/video/editor/utils/timelineUtils';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 
-vi.mock('../../store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: vi.fn(),
 }));
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TokenUsageService } from './TokenUsageService';
+import { TokenUsageService } from '@/services/intelligence/billing/TokenUsageService';
 import * as firestore from 'firebase/firestore';
 import { auth } from '@/services/firebase';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';

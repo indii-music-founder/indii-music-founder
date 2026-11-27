@@ -7,10 +7,10 @@
  */
 
 import { auth } from '@/services/firebase';
-import type { IntelligenceContext } from '../IntelligenceContext';
+import type { IntelligenceContext } from '@/services/intelligence/IntelligenceContext';
 import type { Content } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { TokenUsageService } from '../billing/TokenUsageService';
+import { TokenUsageService } from '@/services/intelligence/billing/TokenUsageService';
 
 const EMBEDDING_BACKEND_MESSAGE = 'Embeddings require a secured backend embedding function; browser-side Firebase AI embeddings are disabled.';
 

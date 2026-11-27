@@ -1,4 +1,4 @@
-import type { HarnessApprovalGate } from './types';
+import type { HarnessApprovalGate } from '@/services/business-harness/types';
 
 export type IrreversibleAction =
   | 'deliver to DSP'

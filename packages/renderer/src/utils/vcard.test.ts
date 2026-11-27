@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateVCard } from './vcard';
+import { generateVCard } from '@/utils/vcard';
 import type { FieldContact } from '@/types/contacts';
 import { Timestamp } from 'firebase/firestore';
 

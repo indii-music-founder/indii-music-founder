@@ -1,8 +1,8 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { TourBookTab } from './TourBookTab';
-import type { Itinerary } from '../types';
+import { TourBookTab } from '@/modules/touring/components/TourBookTab';
+import type { Itinerary } from '@/modules/touring/types';
 
 const { mockSend, mockSuccess, mockError } = vi.hoisted(() => ({
     mockSend: vi.fn(),
@@ -32,9 +32,9 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('./DaySheetModal', () => ({ DaySheetModal: () => null }));
-vi.mock('./TechnicalRiderGenerator', () => ({ TechnicalRiderGenerator: () => null }));
-vi.mock('./VisaChecklist', () => ({ VisaChecklist: () => null }));
+vi.mock('@/modules/touring/components/DaySheetModal', () => ({ DaySheetModal: () => null }));
+vi.mock('@/modules/touring/components/TechnicalRiderGenerator', () => ({ TechnicalRiderGenerator: () => null }));
+vi.mock('@/modules/touring/components/VisaChecklist', () => ({ VisaChecklist: () => null }));
 
 function makeItinerary(email?: string): Itinerary {
     return {

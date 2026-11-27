@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useVideoEditorStore, VideoProject } from './videoEditorStore';
+import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 
 vi.unmock('@/modules/creative/video/store/videoEditorStore');
 vi.unmock('@/services/MembershipService');

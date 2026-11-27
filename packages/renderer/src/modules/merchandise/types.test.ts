@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     MockupGenerationSchema,
     VideoGenerationSchema
-} from './types';
+} from '@/modules/merchandise/types';
 
 describe('Merchandise Schemas', () => {
     describe('MockupGenerationSchema', () => {

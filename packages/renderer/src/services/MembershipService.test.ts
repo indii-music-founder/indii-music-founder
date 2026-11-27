@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 vi.unmock('@/services/MembershipService');
-import { MembershipService, TIER_LIMITS, MembershipTier } from './MembershipService';
+import { MembershipService, TIER_LIMITS, MembershipTier } from '@/services/MembershipService';
 
 describe('MembershipService', () => {
     describe('getLimits', () => {

@@ -1,4 +1,4 @@
-import { type SystemIdentity } from './proprietary-ingestion/types/common';
+import { type SystemIdentity } from '@/services/distribution/proprietary-ingestion/types/common';
 
 /**
  * DeliveryProfile

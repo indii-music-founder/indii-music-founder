@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
     devModulesEnabled: vi.fn(),
 }));
 
-vi.mock('./services/KnowledgeBaseService', () => ({
+vi.mock('@/modules/knowledge/services/KnowledgeBaseService', () => ({
     knowledgeBaseService: { getDocuments: mocks.getDocuments },
 }));
 
@@ -40,7 +40,7 @@ vi.mock('@/modules/memory/MemoryDashboard', () => ({
     default: () => <div data-testid="memory-dashboard-stub">Memory Dashboard</div>,
 }));
 
-import KnowledgeBase from './KnowledgeBase';
+import KnowledgeBase from '@/modules/knowledge/KnowledgeBase';
 
 describe('KnowledgeBase tab consolidation', () => {
     beforeEach(() => {

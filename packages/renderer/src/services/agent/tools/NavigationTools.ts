@@ -1,13 +1,13 @@
 import type { BoardroomWorkspaceTab } from '@/core/store/slices/boardroomSlice';
 import type { AppSlice } from '@/core/store/slices/appSlice';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
-import type { AgentContext, AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
+import type { AgentContext, AnyToolFunction } from '@/services/agent/types';
 import type { OrgId } from '@/modules/registration/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { z } from 'zod';
 import { PREVIEW_MODULES } from '@/modules/boardroom/components/boardroomPreviewModules';
-import { executeWorkspaceAction, type BoardroomWorkspaceTargetKind } from '../boardroomWorkspaceActions';
+import { executeWorkspaceAction, type BoardroomWorkspaceTargetKind } from '@/services/agent/boardroomWorkspaceActions';
 
 async function navigateForAgent(module: AppSlice['currentModule'], context?: AgentContext) {
     const { useStore } = await importWithRetry(() => import('@/core/store'));

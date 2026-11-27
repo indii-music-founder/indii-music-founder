@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { ContractLoadError } from './ContractLoadError';
+import { ContractLoadError } from '@/modules/legal/components/ContractLoadError';
 
 // Presentation check only: no authenticated or persisted contract path is simulated.
 describe('ContractLoadError', () => {

@@ -4,7 +4,7 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn((field: string, op: string, value: string) => ({ field, op, value })),
 }));
 
-import { releaseWorkspaceFilter, resolveReleaseWorkspace } from './releaseWorkspace';
+import { releaseWorkspaceFilter, resolveReleaseWorkspace } from '@/services/distribution/releaseWorkspace';
 
 describe('resolveReleaseWorkspace (ISSUE-1696)', () => {
     it('treats the placeholder, the personal id, the uid and no selection as the personal workspace', () => {

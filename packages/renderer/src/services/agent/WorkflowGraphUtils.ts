@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from './WorkflowRegistry';
+import type { WorkflowDefinition } from '@/services/agent/WorkflowRegistry';
 import { logger } from '@/utils/logger';
 
 /**

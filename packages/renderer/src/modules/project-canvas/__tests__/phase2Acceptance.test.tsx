@@ -20,13 +20,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { useStore } from '@/core/store';
-import { NoteBlock } from '../components/blocks/NoteBlock';
-import { WorkflowBlock } from '../components/blocks/WorkflowBlock';
-import { WorkflowRunBlock } from '../components/blocks/WorkflowRunBlock';
-import { AgentOutputBlock } from '../components/blocks/AgentOutputBlock';
+import { NoteBlock } from '@/modules/project-canvas/components/blocks/NoteBlock';
+import { WorkflowBlock } from '@/modules/project-canvas/components/blocks/WorkflowBlock';
+import { WorkflowRunBlock } from '@/modules/project-canvas/components/blocks/WorkflowRunBlock';
+import { AgentOutputBlock } from '@/modules/project-canvas/components/blocks/AgentOutputBlock';
 import { CanvasTools } from '@/services/agent/tools/CanvasTools';
 import { ProjectCanvasTools } from '@/services/agent/tools/ProjectCanvasTools';
-import type { ProjectCanvasBlock } from '../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 // Mock Workflow Persistence
 vi.mock('@/modules/workflow/services/workflowPersistence', () => ({

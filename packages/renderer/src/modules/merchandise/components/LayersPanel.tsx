@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { MerchCard } from './MerchCard';
+import { MerchCard } from '@/modules/merchandise/components/MerchCard';
 import { Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square } from 'lucide-react';
-import type { CanvasObject } from './DesignCanvas';
+import type { CanvasObject } from '@/modules/merchandise/components/DesignCanvas';
 import type {
     FabricObjectWithMeta,
     FabricTextObject,
     LayerPropertyValue,
-} from '../types/fabric-extensions';
+} from '@/modules/merchandise/types/fabric-extensions';
 
 import { debounce } from '@/lib/debounce';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PromptArea } from './PromptArea';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({

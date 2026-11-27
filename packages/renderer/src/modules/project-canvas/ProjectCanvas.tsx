@@ -15,32 +15,32 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { useProjectCanvas } from './hooks/useProjectCanvas';
-import { AssetBlock } from './components/blocks/AssetBlock';
-import { TextBlock } from './components/blocks/TextBlock';
-import { FrameBlock } from './components/blocks/FrameBlock';
-import { NoteBlock } from './components/blocks/NoteBlock';
-import { WorkflowBlock } from './components/blocks/WorkflowBlock';
-import { WorkflowRunBlock } from './components/blocks/WorkflowRunBlock';
-import { AgentOutputBlock } from './components/blocks/AgentOutputBlock';
-import { DocumentBlock } from './components/blocks/DocumentBlock';
-import { ProjectEntityBlock } from './components/blocks/ProjectEntityBlock';
-import { LODBlock } from './components/blocks/LODBlock';
-import { ClusterBlock } from './components/blocks/ClusterBlock';
-import { AddEntityModal } from './components/modals/AddEntityModal';
-import { PromoteToWorkflowModal } from './components/modals/PromoteToWorkflowModal';
-import { VersionComparisonModal } from './components/modals/VersionComparisonModal';
-import { LifecycleTemplateModal } from './components/modals/LifecycleTemplateModal';
-import { CanvasSnapshotModal } from './components/modals/CanvasSnapshotModal';
-import { CanvasCommentModal } from './components/comments/CanvasCommentModal';
-import { CanvasEdgeLayer } from './components/edges/CanvasEdgeLayer';
-import { CanvasPresenceLayer } from './components/presence/CanvasPresenceLayer';
-import { useCanvasVirtualization } from './hooks/useCanvasVirtualization';
-import { useCanvasPresence } from './hooks/useCanvasPresence';
-import { CanvasHUD } from './components/CanvasHUD';
-import { CanvasToolbar } from './components/CanvasToolbar';
+import { useProjectCanvas } from '@/modules/project-canvas/hooks/useProjectCanvas';
+import { AssetBlock } from '@/modules/project-canvas/components/blocks/AssetBlock';
+import { TextBlock } from '@/modules/project-canvas/components/blocks/TextBlock';
+import { FrameBlock } from '@/modules/project-canvas/components/blocks/FrameBlock';
+import { NoteBlock } from '@/modules/project-canvas/components/blocks/NoteBlock';
+import { WorkflowBlock } from '@/modules/project-canvas/components/blocks/WorkflowBlock';
+import { WorkflowRunBlock } from '@/modules/project-canvas/components/blocks/WorkflowRunBlock';
+import { AgentOutputBlock } from '@/modules/project-canvas/components/blocks/AgentOutputBlock';
+import { DocumentBlock } from '@/modules/project-canvas/components/blocks/DocumentBlock';
+import { ProjectEntityBlock } from '@/modules/project-canvas/components/blocks/ProjectEntityBlock';
+import { LODBlock } from '@/modules/project-canvas/components/blocks/LODBlock';
+import { ClusterBlock } from '@/modules/project-canvas/components/blocks/ClusterBlock';
+import { AddEntityModal } from '@/modules/project-canvas/components/modals/AddEntityModal';
+import { PromoteToWorkflowModal } from '@/modules/project-canvas/components/modals/PromoteToWorkflowModal';
+import { VersionComparisonModal } from '@/modules/project-canvas/components/modals/VersionComparisonModal';
+import { LifecycleTemplateModal } from '@/modules/project-canvas/components/modals/LifecycleTemplateModal';
+import { CanvasSnapshotModal } from '@/modules/project-canvas/components/modals/CanvasSnapshotModal';
+import { CanvasCommentModal } from '@/modules/project-canvas/components/comments/CanvasCommentModal';
+import { CanvasEdgeLayer } from '@/modules/project-canvas/components/edges/CanvasEdgeLayer';
+import { CanvasPresenceLayer } from '@/modules/project-canvas/components/presence/CanvasPresenceLayer';
+import { useCanvasVirtualization } from '@/modules/project-canvas/hooks/useCanvasVirtualization';
+import { useCanvasPresence } from '@/modules/project-canvas/hooks/useCanvasPresence';
+import { CanvasHUD } from '@/modules/project-canvas/components/CanvasHUD';
+import { CanvasToolbar } from '@/modules/project-canvas/components/CanvasToolbar';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import type { ProjectCanvasBlock } from './types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 import { logger } from '@/utils/logger';
 import { LayoutGrid, FolderTree } from 'lucide-react';
 import { useStore } from '@/core/store';
@@ -106,7 +106,7 @@ export default function ProjectCanvas() {
     const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
     const [isCompareOpen, setIsCompareOpen] = useState(false);
     const [commentTargetBlock, setCommentTargetBlock] = useState<ProjectCanvasBlock | null>(null);
-    const [comments, setComments] = useState<import('./types').CanvasComment[]>([]);
+    const [comments, setComments] = useState<import('@/modules/project-canvas/types').CanvasComment[]>([]);
 
     const selectedAssetBlocks = blocks.filter(
         (b) => selectedBlockIds.includes(b.id) && b.type === 'asset'
@@ -158,7 +158,7 @@ export default function ProjectCanvas() {
         virtualizationThreshold: 500,
     });
 
-    const handleZoomToCluster = useCallback((summary: import('./types').CanvasClusterSummary) => {
+    const handleZoomToCluster = useCallback((summary: import('@/modules/project-canvas/types').CanvasClusterSummary) => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         const clusterW = Math.max(300, summary.bounds.maxX - summary.bounds.minX + 200);
@@ -798,7 +798,7 @@ export default function ProjectCanvas() {
                     targetTitle={commentTargetBlock.snapshot?.title || commentTargetBlock.id}
                     comments={comments}
                     onAddComment={(targetId, content) => {
-                        const newComment: import('./types').CanvasComment = {
+                        const newComment: import('@/modules/project-canvas/types').CanvasComment = {
                             id: `comment_${Date.now()}`,
                             canvasId: currentCanvas?.id || 'default_canvas',
                             projectId: currentProjectId || 'default_proj',

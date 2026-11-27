@@ -27,7 +27,7 @@ import { useStore } from '@/core/store';
 import { loadWorkflow } from '@/modules/workflow/services/workflowPersistence';
 import { secureRandomHex } from '@/utils/crypto-random';
 import { logger } from '@/utils/logger';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 import type { SavedWorkflow } from '@/modules/workflow/types';
 
 interface WorkflowBlockProps {

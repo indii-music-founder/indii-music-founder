@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertMcpTransportDestination, resolveMcpEndpoint } from './mcpEndpoint';
+import { assertMcpTransportDestination, resolveMcpEndpoint } from '@/services/agent/harness/mcpEndpoint';
 
 // Pure URL policy only; no tokens, account state, transports or service mocks.
 describe('MCP endpoint and transport destination policy', () => {

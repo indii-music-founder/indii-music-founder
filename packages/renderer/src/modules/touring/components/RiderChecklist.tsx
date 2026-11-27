@@ -4,8 +4,8 @@ import { Wine, Coffee, Apple, Droplet, Check, Plus, Trash2, Loader2, ListTodo } 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from 'motion/react';
-import { useRider } from '../hooks/useRider';
-import { RiderItem } from '../types';
+import { useRider } from '@/modules/touring/hooks/useRider';
+import { RiderItem } from '@/modules/touring/types';
 
 export const RiderChecklist: React.FC = () => {
     const { t } = useTranslation();

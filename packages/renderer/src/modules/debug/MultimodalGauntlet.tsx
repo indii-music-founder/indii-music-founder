@@ -8,8 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Play } from 'lucide-react';
 import { logger } from '@/utils/logger';
-import { GauntletStep } from './components/GauntletStep';
-import { GauntletPreview } from './components/GauntletPreview';
+import { GauntletStep } from '@/modules/debug/components/GauntletStep';
+import { GauntletPreview } from '@/modules/debug/components/GauntletPreview';
 
 /**
  * MultimodalGauntlet — Debug tool for proving consistent Autonomous generation.

@@ -6,7 +6,7 @@ import {
     secureUUIDv4,
     secureShuffleArray,
     secureRandomPick
-} from './crypto-random';
+} from '@/utils/crypto-random';
 
 describe('crypto-random utils', () => {
 

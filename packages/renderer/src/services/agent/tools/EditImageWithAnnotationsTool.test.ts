@@ -8,7 +8,7 @@ vi.mock('@/services/image/EditingService', () => ({
     Editing: { editImage: mocks.editImage }
 }));
 
-import { EditImageWithAnnotationsTool } from './EditImageWithAnnotationsTool';
+import { EditImageWithAnnotationsTool } from '@/services/agent/tools/EditImageWithAnnotationsTool';
 
 const annotationArgs = {
     imageId: 'source-1',

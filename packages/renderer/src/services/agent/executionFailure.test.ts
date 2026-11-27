@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { delegatedAgentResult, delegatedAgentText, delegatedTransportResponse, unauthorizedToolFailure } from './executionFailure';
+import { delegatedAgentResult, delegatedAgentText, delegatedTransportResponse, unauthorizedToolFailure } from '@/services/agent/executionFailure';
 
 // Pure outcome contracts: no model, provider, authenticated user or service mocks.
 describe('terminal tool authorization and delegation outcomes', () => {

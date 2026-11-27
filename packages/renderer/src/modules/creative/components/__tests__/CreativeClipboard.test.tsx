@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import CreativeClipboard from '../CreativeClipboard';
+import CreativeClipboard from '@/modules/creative/components/CreativeClipboard';
 
 const mockUseStore = vi.fn();
 vi.mock('@/core/store', () => ({

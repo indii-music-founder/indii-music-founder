@@ -1,13 +1,13 @@
-import { delegatedTransportResponse } from '../executionFailure';
+import { delegatedTransportResponse } from '@/services/agent/executionFailure';
 import { MessageEnvelope, e2eEncryptionService } from '@/services/security/E2EEncryptionService';
-import { CARD_REGISTRY } from './CardRegistry';
-import { AgentCardSchema } from './AgentCard.schema';
-import { VALID_AGENT_IDS, validateHubAndSpoke } from '../types';
-import { RouterCallContext } from './transport/A2ATransport';
+import { CARD_REGISTRY } from '@/services/agent/a2a/CardRegistry';
+import { AgentCardSchema } from '@/services/agent/a2a/AgentCard.schema';
+import { VALID_AGENT_IDS, validateHubAndSpoke } from '@/services/agent/types';
+import { RouterCallContext } from '@/services/agent/a2a/transport/A2ATransport';
 import { logger } from '@/utils/logger';
-import { MY_AGENT_ID } from './A2AConfig';
+import { MY_AGENT_ID } from '@/services/agent/a2a/A2AConfig';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { waitForHandoffDecision, describeHandoffFailure } from './handoffApproval';
+import { waitForHandoffDecision, describeHandoffFailure } from '@/services/agent/a2a/handoffApproval';
 
 /**
  * Thrown when the router cannot produce an encrypted response (e.g. the sender's

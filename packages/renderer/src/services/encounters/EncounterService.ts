@@ -16,7 +16,7 @@ import { StorageService } from '@/services/StorageService';
 import type { FieldEncounter, CreateEncounterInput, EncounterAsset } from '@/types/encounter';
 import { logger } from '@/utils/logger';
 import type { FieldContactRole } from '@/types/contacts';
-import { manualContactRecord, type ManualContactFields } from './manualContact';
+import { manualContactRecord, type ManualContactFields } from '@/services/encounters/manualContact';
 
 export class EncounterService {
     /** Save both sides of the manual capture atomically, without scheduling AI analysis. */

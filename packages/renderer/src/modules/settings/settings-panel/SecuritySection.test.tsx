@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import SecuritySection from './SecuritySection';
+import SecuritySection from '@/modules/settings/settings-panel/SecuritySection';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 
 const {

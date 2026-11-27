@@ -20,7 +20,7 @@ vi.mock('firebase/firestore', () => ({
     Timestamp: { fromDate: mocks.fromDate },
 }));
 
-import { LimitedDropService } from './LimitedDropService';
+import { LimitedDropService } from '@/services/commerce/LimitedDropService';
 
 describe('LimitedDropService', () => {
     const futureDate = new Date(Date.now() + 86_400_000);

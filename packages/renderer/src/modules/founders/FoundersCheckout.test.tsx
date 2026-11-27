@@ -38,7 +38,7 @@ vi.mock('@/services/payment/PaymentService', () => ({
     createOneTimePayment: vi.fn().mockRejectedValue(new Error('Stripe offline mock fallback'))
 }));
 
-import FoundersCheckout from './FoundersCheckout';
+import FoundersCheckout from '@/modules/founders/FoundersCheckout';
 
 describe('FoundersCheckout', () => {
     beforeEach(() => {

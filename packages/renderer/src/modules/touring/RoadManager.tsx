@@ -7,23 +7,23 @@ import { useStore } from '@/core/store';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { PlanningTab } from './components/PlanningTab';
-import { OnTheRoadTab } from './components/OnTheRoadTab';
-import { TourBookTab } from './components/TourBookTab';
-import { useTouring } from './hooks/useTouring';
-import { Itinerary, ItineraryStop, NearbyPlace, ScheduleReview, EmergencyContact } from './types';
+import { PlanningTab } from '@/modules/touring/components/PlanningTab';
+import { OnTheRoadTab } from '@/modules/touring/components/OnTheRoadTab';
+import { TourBookTab } from '@/modules/touring/components/TourBookTab';
+import { useTouring } from '@/modules/touring/hooks/useTouring';
+import { Itinerary, ItineraryStop, NearbyPlace, ScheduleReview, EmergencyContact } from '@/modules/touring/types';
 
-import { RoadMode } from './components/RoadMode';
+import { RoadMode } from '@/modules/touring/components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
-import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
+import { RoadManagerSidebar, TouringTab } from '@/modules/touring/components/RoadManagerSidebar';
 import { Phone, Calendar, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
-import { TourRouteOptimizer } from './components/TourRouteOptimizer';
-import { SetlistAnalytics } from './components/SetlistAnalytics';
+import { TourRouteOptimizer } from '@/modules/touring/components/TourRouteOptimizer';
+import { SetlistAnalytics } from '@/modules/touring/components/SetlistAnalytics';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { resolveTouringTab } from '@/modules/handoffViews';
-import { createTouringStopId } from './itinerary';
+import { createTouringStopId } from '@/modules/touring/itinerary';
 
 interface EmergencyContactsPanelProps {
     contacts: EmergencyContact[];

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
-import { TOOL_RISK_REGISTRY } from '../ToolRiskRegistry';
-import { TOOL_REGISTRY } from '../tools';
+import { SUPERPOWER_TOOLS } from '@/services/agent/definitions/SuperpowerTools';
+import { TOOL_RISK_REGISTRY } from '@/services/agent/ToolRiskRegistry';
+import { TOOL_REGISTRY } from '@/services/agent/tools';
 
 describe('Agent Trash Security & Tool Policy Compliance', () => {
     const FORBIDDEN_PURGE_PATTERNS = [

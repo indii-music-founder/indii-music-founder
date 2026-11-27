@@ -1,4 +1,4 @@
-import type { BusinessActivityEvent, HarnessCostLine } from './types';
+import type { BusinessActivityEvent, HarnessCostLine } from '@/services/business-harness/types';
 
 export interface ActivitySessionDraft {
   userId: string;

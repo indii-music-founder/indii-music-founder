@@ -1,7 +1,7 @@
 import { VideoSessionSchema, type VideoSession } from '@indii/shared';
 import { getToken } from 'firebase/app-check';
 import { httpsCallable } from 'firebase/functions';
-import { functions, getAppCheck } from '../firebase';
+import { functions, getAppCheck } from '@/services/firebase';
 
 const MAX_SESSION_BYTES = 20 * 1024 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([

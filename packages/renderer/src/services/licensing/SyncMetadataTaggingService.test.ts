@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { syncMetadataTaggingService } from './SyncMetadataTaggingService';
+import { syncMetadataTaggingService } from '@/services/licensing/SyncMetadataTaggingService';
 
 describe('SyncMetadataTaggingService', () => {
     describe('mapToSyncMoods', () => {

@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import App from '../App';
-import { useStore } from '../store';
+import Sidebar from '@/core/components/Sidebar';
+import App from '@/core/App';
+import { useStore } from '@/core/store';
 
 // Mock matchMedia for JSDOM
 Object.defineProperty(window, 'matchMedia', {
@@ -21,13 +21,13 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock the store
-vi.mock('../store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: vi.fn(),
     resetStoreForAccountBoundary: vi.fn(),
 }));
 
 // Mock ToastContext
-vi.mock('../context/ToastContext', () => ({
+vi.mock('@/core/context/ToastContext', () => ({
     ToastProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     useToast: () => ({
         success: vi.fn(),
@@ -56,9 +56,9 @@ vi.mock('@/modules/auth/SelectOrg', () => ({ default: () => <div data-testid="se
 
 // Mock other components used in App
 vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window">Agent Window</div> }));
-vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
-vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
-vi.mock('./sidebar/ProjectList', () => ({ ProjectList: () => <div data-testid="project-list">Project List</div> }));
+vi.mock('@/core/components/RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
+vi.mock('@/core/components/ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
+vi.mock('@/core/components/sidebar/ProjectList', () => ({ ProjectList: () => <div data-testid="project-list">Project List</div> }));
 vi.mock('@/modules/finance/hooks/useSubscription', () => ({
     useSubscription: vi.fn(() => ({
         subscription: { tier: 'pro', status: 'active' },

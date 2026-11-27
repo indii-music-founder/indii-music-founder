@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boardroomConversationIsReadOnly, parseBoardroomIntentDecision } from './boardroomIntentPolicy';
+import { boardroomConversationIsReadOnly, parseBoardroomIntentDecision } from '@/config/boardroomIntentPolicy';
 
 // Pure routing policy; no fabricated classifier, account, provider or customer session.
 describe('Conductor conversation continuity and execution authority', () => {

@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PublicistTools } from '../PublicistTools';
+import { PublicistTools } from '@/services/agent/tools/PublicistTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { addDoc } from 'firebase/firestore';
 // Mock Firebase AI

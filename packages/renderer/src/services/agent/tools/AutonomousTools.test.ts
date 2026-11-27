@@ -19,7 +19,7 @@ vi.mock('@/utils/dynamicImport', () => ({
     })),
 }));
 
-import { AutonomousTools } from './AutonomousTools';
+import { AutonomousTools } from '@/services/agent/tools/AutonomousTools';
 
 describe('AutonomousTools.create_artifact_drop', () => {
     beforeEach(() => {

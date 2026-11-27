@@ -13,7 +13,7 @@
  */
 
 import { collection, query, where, limit, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 const LEGACY_ORG_ID = 'org-default';

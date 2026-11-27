@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { stopBoardroomMission } from '@/services/agent/boardroomMission';
-import { BOARDROOM_PORTAL_URLS } from '../utils/boardroomUrls';
+import { BOARDROOM_PORTAL_URLS } from '@/modules/boardroom/utils/boardroomUrls';
 
 export function BoardroomAgentFeedView() {
     const toast = useToast();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TaxFormUploadPage } from './TaxFormUploadPage';
+import { TaxFormUploadPage } from '@/modules/finance/pages/TaxFormUploadPage';
 
 vi.mock('@/core/config/EndpointService', () => ({
     endpointService: { getFunctionUrl: vi.fn(() => 'https://us-central1-test.cloudfunctions.net/submitTaxForm') },

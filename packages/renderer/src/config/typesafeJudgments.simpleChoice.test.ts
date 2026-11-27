@@ -14,7 +14,7 @@ import {
     invokeTypesafeJudge,
     BOARDROOM_JUDGMENT_TIMEOUT_MS,
     __resetJudgmentCooldownForTests,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 // Boundary/abstention checks, not semantic accuracy or production acceptance.

@@ -1,7 +1,7 @@
 import type { CompletedRenderReceipt, IndiiVideoProject } from '@indii/shared';
 
 import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
-import { queueCloudRender, waitForCloudRender, type CloudRenderDependencies } from './CloudVideoRenderService';
+import { queueCloudRender, waitForCloudRender, type CloudRenderDependencies } from '@/services/video/CloudVideoRenderService';
 
 interface DesktopVideoApi {
     getDefaultPath?(filename?: string): Promise<string>;

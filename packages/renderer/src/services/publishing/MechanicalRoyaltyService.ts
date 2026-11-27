@@ -24,7 +24,7 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import { db, auth, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { estimateMechanicalFee } from './mechanicalEstimate';
+import { estimateMechanicalFee } from '@/services/publishing/mechanicalEstimate';
 import {
     type MechanicalLicenseDocument,
     type MechanicalLicenseStatus,

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AgentOrchestrator } from '../components/AgentOrchestrator';
+import { AgentOrchestrator } from '@/services/agent/components/AgentOrchestrator';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
-import { agentRegistry } from '../registry';
-import { TraceService } from '../observability/TraceService';
-import type { AgentContext } from '../types';
+import { agentRegistry } from '@/services/agent/registry';
+import { TraceService } from '@/services/agent/observability/TraceService';
+import type { AgentContext } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import * as typesafeJudgments from '@/config/typesafeJudgments';
 
@@ -14,13 +14,13 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     }
 }));
 
-vi.mock('../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAll: vi.fn()
     }
 }));
 
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn(),
         addStep: vi.fn(),

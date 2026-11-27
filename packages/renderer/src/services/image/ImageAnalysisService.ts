@@ -3,7 +3,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
 import { CloudStorageService } from '@/services/CloudStorageService';
-import { segmentationContour, detectionBox } from './segmentationGeometry';
+import { segmentationContour, detectionBox } from '@/services/image/segmentationGeometry';
 import type { Part, Schema } from '@/shared/types/ai.dto';
 
 export interface Box2D {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ProjectCanvasPersistence, type CanvasFullState } from '../services/ProjectCanvasPersistence';
-import type { ProjectCanvasBlock, ProjectCanvasDocument } from '../types';
+import { ProjectCanvasPersistence, type CanvasFullState } from '@/modules/project-canvas/services/ProjectCanvasPersistence';
+import type { ProjectCanvasBlock, ProjectCanvasDocument } from '@/modules/project-canvas/types';
 
 // Mock firebase
 vi.mock('@/services/firebase', () => ({

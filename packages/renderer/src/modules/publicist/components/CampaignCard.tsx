@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Disc, Calendar, Send } from 'lucide-react';
-import { Campaign } from '../types';
+import { Campaign } from '@/modules/publicist/types';
 
 interface CampaignCardProps {
     campaign: Campaign;

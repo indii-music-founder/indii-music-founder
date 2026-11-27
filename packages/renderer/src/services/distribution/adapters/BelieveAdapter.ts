@@ -7,8 +7,8 @@
  * Item 216: Added Believe distributor adapter.
  */
 
-import { BaseDistributorAdapter } from './BaseDistributorAdapter';
-import { earningsService } from '../EarningsService';
+import { BaseDistributorAdapter } from '@/services/distribution/adapters/BaseDistributorAdapter';
+import { earningsService } from '@/services/distribution/EarningsService';
 import {
     DistributorId,
     DistributorRequirements,

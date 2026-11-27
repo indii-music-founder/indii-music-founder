@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AutonomousIntelligence as AI } from '../../intelligence/AutonomousIntelligence';
+import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 
 // Mock the entire Intelligence service
-vi.mock('../../intelligence/AutonomousIntelligence', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
-import { GeneralistAgent } from '../specialists/GeneralistAgent';
+import { GeneralistAgent } from '@/services/agent/specialists/GeneralistAgent';
 import { useStore } from '@/core/store';
 import { MembershipService } from '@/services/MembershipService';
 
@@ -39,13 +39,13 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock dependencies
-vi.mock('../AgentService', () => ({
+vi.mock('@/services/agent/AgentService', () => ({
     agentService: {
         runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
     }
 }));
 
-vi.mock('../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAsync: vi.fn(),
         get: vi.fn()
@@ -66,7 +66,7 @@ class TestAgent extends GeneralistAgent {
     }
 }
 
-import { ModelArmor } from '../governance/ModelArmor';
+import { ModelArmor } from '@/services/agent/governance/ModelArmor';
 
 describe('Agent Streaming', () => {
     let agent: TestAgent;

@@ -1,6 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { normalizeReleaseRecord, useReleases } from './useReleases';
+import { normalizeReleaseRecord, useReleases } from '@/modules/publishing/hooks/useReleases';
 import { onSnapshot, where } from 'firebase/firestore';
 import type { ReleaseWorkspace } from '@/services/distribution/releaseWorkspace';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cosineSimilarity, geometryFitSimilarity, loadHuman, FACE_LANDMARKER_MODEL_PATH, HUMAN_MODEL_PATH } from '../FacePipeline';
+import { cosineSimilarity, geometryFitSimilarity, loadHuman, FACE_LANDMARKER_MODEL_PATH, HUMAN_MODEL_PATH } from '@/services/identity/FacePipeline';
 
 describe('FacePipeline geometry similarity (A1.6 degraded)', () => {
     // 6 normalized face landmarks; indices 0/1 are the eye pair used for the

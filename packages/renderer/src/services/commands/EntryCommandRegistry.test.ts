@@ -6,7 +6,7 @@ import {
   getRequiredMissingFields,
   saveCustomEntryCommand,
   resolveEntryCommand,
-} from './EntryCommandRegistry';
+} from '@/services/commands/EntryCommandRegistry';
 import { WORKFLOW_REGISTRY } from '@/services/agent/WorkflowRegistry';
 import { BUSINESS_HARNESS_CATALOG } from '@/services/business-harness/HarnessCatalog';
 

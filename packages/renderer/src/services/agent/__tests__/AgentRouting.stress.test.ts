@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentService } from '../AgentService';
+import { AgentService } from '@/services/agent/AgentService';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import {
@@ -19,7 +19,7 @@ import {
     createMockStoreState,
     createStreamResponse,
     type RoutingTestScenario,
-} from './AgentStressTest.harness';
+} from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Mocks
@@ -85,7 +85,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-vi.mock('../observability/TraceService', () => ({
+vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
         startTrace: vi.fn().mockResolvedValue('test-trace-id'),
         addStep: vi.fn().mockResolvedValue(undefined),
@@ -114,7 +114,7 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
 // Track captured routing decisions
 let capturedRoutingCalls: Array<{ targetAgentId: string; confidence: number; reasoning: string }> = [];
 
-vi.mock('../registry', () => {
+vi.mock('@/services/agent/registry', () => {
     const mockAgent = {
         id: 'generalist',
         name: 'indii Conductor',
@@ -140,7 +140,7 @@ vi.mock('../registry', () => {
     };
 });
 
-vi.mock('../tools', () => ({
+vi.mock('@/services/agent/tools', () => ({
     TOOL_REGISTRY: { generate_image: vi.fn() },
     BASE_TOOLS: 'Mock Tools',
 }));

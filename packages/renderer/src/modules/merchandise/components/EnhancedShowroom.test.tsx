@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import EnhancedShowroom from './EnhancedShowroom';
+import EnhancedShowroom from '@/modules/merchandise/components/EnhancedShowroom';
 import { Editing } from '@/services/image/EditingService';
 import { browserUpscale } from '@/services/upscale/BrowserUpscale';
 

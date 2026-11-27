@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { CanvasHeader } from '../CanvasHeader';
+import { CanvasHeader } from '@/modules/creative/components/CanvasHeader';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 

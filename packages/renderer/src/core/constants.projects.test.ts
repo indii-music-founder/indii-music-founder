@@ -4,7 +4,7 @@ import {
     LEGACY_DEFAULT_PROJECT_ID,
     isDefaultProject,
     projectBucketMatches,
-} from './constants';
+} from '@/core/constants';
 
 // ISSUE-772 / ISSUE-758: the codebase historically wrote two different
 // "no project" sentinels. These helpers make both eras one bucket.

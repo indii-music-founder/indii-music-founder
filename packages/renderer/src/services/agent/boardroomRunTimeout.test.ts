@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { canReplaceOnBoardroomTimeout, runSeatWithTimeout } from './boardroomRunTimeout';
+import { canReplaceOnBoardroomTimeout, runSeatWithTimeout } from '@/services/agent/boardroomRunTimeout';
 
 describe('canReplaceOnBoardroomTimeout (ISSUE-1656)', () => {
     it('never replaces a seat reply that already has real text', () => {

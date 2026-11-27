@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AgentPromptBuilder, buildExecutionContract, isFounderUserProfile } from '../AgentPromptBuilder';
-import type { AgentContext } from '../../types';
+import { AgentPromptBuilder, buildExecutionContract, isFounderUserProfile } from '@/services/agent/builders/AgentPromptBuilder';
+import type { AgentContext } from '@/services/agent/types';
 import { Timestamp } from 'firebase/firestore';
 
 // ============================================================================

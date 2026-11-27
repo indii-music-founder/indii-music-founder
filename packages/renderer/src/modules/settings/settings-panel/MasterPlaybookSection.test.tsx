@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import MasterPlaybookSection from './MasterPlaybookSection';
+import MasterPlaybookSection from '@/modules/settings/settings-panel/MasterPlaybookSection';
 import { DEFAULT_ARTIST_MASTER_DIRECTIVE } from '@indii/shared';
 
 const successMock = vi.fn();

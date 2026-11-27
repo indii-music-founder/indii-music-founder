@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { maskedTextCandidates, textContrastColor, textFitsMask, textMaskBounds } from './maskedTextEdit';
+import { maskedTextCandidates, textContrastColor, textFitsMask, textMaskBounds } from '@/services/image/maskedTextEdit';
 
 describe('literal text candidates (pure source extraction, not a model judgment)', () => {
     it('copies punctuation and apostrophes verbatim from quoted text', () => {

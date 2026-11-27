@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { waitForHandoffDecision, describeHandoffFailure, type HandoffApprovalState } from './handoffApproval';
+import { waitForHandoffDecision, describeHandoffFailure, type HandoffApprovalState } from '@/services/agent/a2a/handoffApproval';
 
 describe('waitForHandoffDecision', () => {
     afterEach(() => vi.useRealTimers());

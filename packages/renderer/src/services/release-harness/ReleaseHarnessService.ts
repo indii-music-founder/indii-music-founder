@@ -1,12 +1,12 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import type { ReleaseHarnessInput, ReleaseHarnessResult } from './types';
+import type { ReleaseHarnessInput, ReleaseHarnessResult } from '@/services/release-harness/types';
 import {
   analyzeMasterForHarness,
   buildArtistOperatingModel,
   buildDistributionReadiness,
   buildReleaseDna,
-} from './ReleaseHarnessAdapters';
-import { buildAgentBriefs, buildTimelineDraft, scoreStrategies } from './ReleaseHarnessScoring';
+} from '@/services/release-harness/ReleaseHarnessAdapters';
+import { buildAgentBriefs, buildTimelineDraft, scoreStrategies } from '@/services/release-harness/ReleaseHarnessScoring';
 
 export class ReleaseHarnessService {
   async compileReleaseHarness(input: ReleaseHarnessInput): Promise<ReleaseHarnessResult> {

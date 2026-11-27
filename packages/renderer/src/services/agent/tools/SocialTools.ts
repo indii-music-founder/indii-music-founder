@@ -1,9 +1,9 @@
 import { AutonomousIntelligence, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { SocialService } from '@/services/social/SocialService';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
-import { getFineTunedModel } from '../fine-tuned-models';
+import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { z } from 'zod';
 import {

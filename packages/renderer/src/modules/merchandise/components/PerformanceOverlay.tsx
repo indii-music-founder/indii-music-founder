@@ -1,6 +1,6 @@
 import React from 'react';
 import { Activity } from 'lucide-react';
-import { PerformanceMetrics } from '../hooks/usePerformanceMonitor';
+import { PerformanceMetrics } from '@/modules/merchandise/hooks/usePerformanceMonitor';
 
 export interface PerformanceOverlayProps {
     metrics: PerformanceMetrics;

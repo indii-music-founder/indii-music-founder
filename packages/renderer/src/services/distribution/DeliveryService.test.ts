@@ -11,7 +11,7 @@ vi.mock('@/services/security/CredentialService', () => ({
   }
 }));
 
-vi.mock('./transport/SFTPTransporter', () => ({
+vi.mock('@/services/distribution/transport/SFTPTransporter', () => ({
   SFTPTransporter: class {
     isConnected = vi.fn().mockResolvedValue(false);
     disconnect = vi.fn();

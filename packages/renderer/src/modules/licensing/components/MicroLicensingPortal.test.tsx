@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { buildContractHTML, MicroLicensingPortal, type LeaseForm } from './MicroLicensingPortal';
+import { buildContractHTML, MicroLicensingPortal, type LeaseForm } from '@/modules/licensing/components/MicroLicensingPortal';
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({ error: vi.fn() }),

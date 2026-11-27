@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { cosineSimilarity } from '../FacePipeline';
+import { cosineSimilarity } from '@/services/identity/FacePipeline';
 import {
     LikenessFusionService,
     IDENTITY_SIMILARITY_THRESHOLD,
     LIKENESS_IDENTITY_PROMPT_SUFFIX,
     type FusionAttempt
-} from '../LikenessFusionService';
+} from '@/services/identity/LikenessFusionService';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
 describe('cosineSimilarity (A1.2)', () => {

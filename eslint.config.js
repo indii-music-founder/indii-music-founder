@@ -440,5 +440,24 @@ export default tseslint.config(
                 },
             ],
         },
+    },
+    {
+        // Refactor P1-C guardrail: enforce @/ and @shared/ path aliases in renderer.
+        // Cross-package test importing firebase helper is narrowly exempted.
+        files: ['packages/renderer/src/**/*.{ts,tsx}'],
+        ignores: ['packages/renderer/src/services/intelligence/billing/estimateAgentStreamCost.test.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['./*', '../*'],
+                            message: 'Use @/ or @shared/ path aliases instead of relative imports (refactor P1-C).',
+                        },
+                    ],
+                },
+            ],
+        },
     }
 );

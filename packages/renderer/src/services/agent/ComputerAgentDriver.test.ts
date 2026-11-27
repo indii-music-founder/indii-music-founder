@@ -13,7 +13,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     getResponseText: (response: unknown) => (response as { text?: string })?.text ?? ''
 }));
 
-import { ComputerAgentDriver } from './ComputerAgentDriver';
+import { ComputerAgentDriver } from '@/services/agent/ComputerAgentDriver';
 
 function granted() {
     return {

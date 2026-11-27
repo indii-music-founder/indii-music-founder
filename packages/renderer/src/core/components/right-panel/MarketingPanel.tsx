@@ -5,7 +5,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { OrchestrationService } from '@/services/agent/OrchestrationService';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
-import { WorkflowExecutionHistory } from './WorkflowExecutionHistory';
+import { WorkflowExecutionHistory } from '@/core/components/right-panel/WorkflowExecutionHistory';
 
 interface MarketingPanelProps {
     toggleRightPanel: () => void;

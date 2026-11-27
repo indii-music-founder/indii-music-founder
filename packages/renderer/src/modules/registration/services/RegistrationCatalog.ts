@@ -1,7 +1,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 
 import { db } from '@/services/firebase';
-import type { CatalogTrack } from '../types';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 interface CatalogDocument extends Record<string, unknown> {
   deleted?: boolean;

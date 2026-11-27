@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TIMELINE_TEMPLATES } from './TimelinePhaseTemplates';
+import { TIMELINE_TEMPLATES } from '@/services/timeline/TimelinePhaseTemplates';
 
 describe('TimelinePhaseTemplates', () => {
     it('should include the indii_28_day_frontloaded template', () => {

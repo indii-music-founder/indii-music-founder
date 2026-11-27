@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPinOff } from 'lucide-react';
-import type { MapMarker } from '../types';
+import type { MapMarker } from '@/modules/touring/types';
 
 interface TourMapProps {
     locations?: string[];

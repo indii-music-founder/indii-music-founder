@@ -96,7 +96,7 @@ vi.mock('zustand/react/shallow', () => ({
   useShallow: (selector: any) => selector,
 }));
 
-import { PromptArea } from './PromptArea';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
 
 describe('PromptArea State Feedback', () => {
   beforeEach(() => {

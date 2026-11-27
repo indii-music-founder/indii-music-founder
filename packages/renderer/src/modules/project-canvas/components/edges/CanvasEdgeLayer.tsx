@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasRelationshipType } from '../../types';
+import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasRelationshipType } from '@/modules/project-canvas/types';
 
 interface CanvasEdgeLayerProps {
     edges: ProjectCanvasEdge[];

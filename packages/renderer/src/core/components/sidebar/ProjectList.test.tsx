@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ProjectList } from './ProjectList';
+import { ProjectList } from '@/core/components/sidebar/ProjectList';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 
 const { syncProject, setModule, setProjectStatus, updateProjectName, getState } = vi.hoisted(() => ({

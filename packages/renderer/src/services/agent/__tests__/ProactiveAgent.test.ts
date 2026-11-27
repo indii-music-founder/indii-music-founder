@@ -1,17 +1,17 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { proactiveService } from '../ProactiveService';
-import { agentService } from '../AgentService';
+import { proactiveService } from '@/services/agent/ProactiveService';
+import { agentService } from '@/services/agent/AgentService';
 import { events } from '@/core/events';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 // Mock dependencies
-vi.mock('../AgentService', () => ({
+vi.mock('@/services/agent/AgentService', () => ({
     serverTimestamp: vi.fn(),
     agentService: {
         runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
     }
 }));
 
-vi.mock('../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     serverTimestamp: vi.fn(),
     agentRegistry: {
         getAsync: vi.fn()

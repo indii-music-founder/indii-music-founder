@@ -7,7 +7,7 @@ vi.mock('firebase/storage', () => ({
     getDownloadURL: vi.fn(async (r: { __path: string }) => `https://firebasestorage.googleapis.com/${r.__path}`)
 }));
 
-import { parseGcsObjectPath, resolveStorageUrl } from '../resolveStorageUrl';
+import { parseGcsObjectPath, resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 describe('parseGcsObjectPath', () => {
     it('parses bucket + object path', () => {

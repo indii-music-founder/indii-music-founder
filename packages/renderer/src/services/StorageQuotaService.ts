@@ -11,7 +11,7 @@
  */
 
 import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db, auth } from '@/services/firebase';
 import { Logger } from '@/core/logger/Logger';
 
 const TAG = 'StorageQuotaService';

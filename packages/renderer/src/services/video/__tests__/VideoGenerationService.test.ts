@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoGeneration } from '../VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
@@ -16,7 +16,7 @@ vi.mock('@/services/image/ImageGenerationService', () => ({
 }));
 
 // Mock dependencies
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => {
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
         generateText: vi.fn().mockResolvedValue('Mock Intelligence response'),
         generateStructuredData: vi.fn().mockResolvedValue({ data: {} }),
@@ -398,7 +398,7 @@ describe('VideoGenerationService', () => {
         });
 
         it('should reject client-side MediaGenerator usage', async () => {
-            const { generateVideo } = await import('../../intelligence/generators/MediaGenerator');
+            const { generateVideo } = await import('@/services/intelligence/generators/MediaGenerator');
             
             await expect(generateVideo(null, {})).rejects.toThrow(/Client-side video generation is disabled/);
         });

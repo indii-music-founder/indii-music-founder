@@ -3,8 +3,8 @@ import {
     SubscriptionSchema,
     UsageStatsSchema,
     UsageRecordSchema
-} from './schemas';
-import { SubscriptionTier } from './SubscriptionTier';
+} from '@/services/subscription/schemas';
+import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 
 describe('Subscription Schemas', () => {
     describe('SubscriptionSchema', () => {

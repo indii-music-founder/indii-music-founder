@@ -2,7 +2,7 @@
 import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { Project } from '@/core/store/slices/appSlice';
-import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { SalesAnalyticsSchema, SalesAnalyticsData } from '@/services/dashboard/schema';
 import { logger } from '@/utils/logger';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
@@ -274,7 +274,7 @@ export class DashboardService {
             const { useStore } = await import('@/core/store');
             const { ProjectService } = await import('@/services/ProjectService');
             const { OrganizationService } = await import('@/services/OrganizationService');
-            const { projectToMetadata } = await import('./projectTypeUtils');
+            const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';
@@ -304,7 +304,7 @@ export class DashboardService {
             const { ProjectService } = await import('@/services/ProjectService');
             const { StorageService } = await import('@/services/StorageService');
             const { OrganizationService } = await import('@/services/OrganizationService');
-            const { projectToMetadata } = await import('./projectTypeUtils');
+            const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';

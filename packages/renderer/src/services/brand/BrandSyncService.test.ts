@@ -3,7 +3,7 @@ import {
     BrandSyncService,
     BRAND_COLORS_UPDATED_EVENT,
     type BrandColorItem,
-} from './BrandSyncService';
+} from '@/services/brand/BrandSyncService';
 import { artistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 import { DEFAULT_ARTIST_MASTER_DIRECTIVE } from '@indii/shared';
 

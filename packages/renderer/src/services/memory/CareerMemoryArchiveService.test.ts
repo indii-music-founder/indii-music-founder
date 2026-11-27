@@ -13,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getDocs } from 'firebase/firestore';
-import { CareerMemoryArchiveService, type CareerMemory } from './CareerMemoryArchiveService';
+import { CareerMemoryArchiveService, type CareerMemory } from '@/services/memory/CareerMemoryArchiveService';
 
 const mockGetDocs = vi.mocked(getDocs);
 

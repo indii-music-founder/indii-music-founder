@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyMaskedPixels, maskContextCrop } from './scopedEditPixels';
+import { applyMaskedPixels, maskContextCrop } from '@/services/image/scopedEditPixels';
 
 describe('selected-area edit pixels', () => {
     it('retains every unmarked byte, including transparency and previous edits', () => {

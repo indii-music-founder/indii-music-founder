@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const sendEmail = vi.hoisted(() => vi.fn());
 vi.mock('@/services/email', () => ({ EmailService: { sendEmail } }));
 
-import { EmailTools } from '../EmailTools';
+import { EmailTools } from '@/services/agent/tools/EmailTools';
 
 const sendArgs = { accountId: 'gmail-1', to: 'fan@example.com', subject: 'Hi', body: 'Hello' };
 const replyArgs = { ...sendArgs, threadId: 't1', inReplyTo: 'm1' };

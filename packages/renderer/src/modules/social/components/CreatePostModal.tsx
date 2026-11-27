@@ -2,15 +2,15 @@ import { useTranslation } from 'react-i18next';
 import React, { useState, useId } from 'react';
 import { X, Calendar, Image as ImageIcon, Wand2, Loader2, ChevronDown } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { ScheduledPost, CampaignStatus, ImageAsset } from '../types';
-import { SOCIAL_TOOLS } from '../tools';
-import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
-import { ScheduledPostSchema } from '../schemas';
+import { ScheduledPost, CampaignStatus, ImageAsset } from '@/modules/social/types';
+import { SOCIAL_TOOLS } from '@/modules/social/tools';
+import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
+import { ScheduledPostSchema } from '@/modules/social/schemas';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
-import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from '../instagramComposer';
+import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from '@/modules/social/instagramComposer';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { useStore } from '@/core/store';
-import type { ArtistPostContext } from '../tools';
+import type { ArtistPostContext } from '@/modules/social/tools';
 
 const PLATFORM_LIMITS = {
     Twitter: 280,

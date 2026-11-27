@@ -5,10 +5,10 @@
  * knowledge base. When in conflict with other memory layers, CORE Vault wins.
  */
 
-import { coreVaultService, type VaultCategory, type VaultFactSource, ALL_VAULT_CATEGORIES } from '../memory/CoreVaultService';
-import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { coreVaultService, type VaultCategory, type VaultFactSource, ALL_VAULT_CATEGORIES } from '@/services/agent/memory/CoreVaultService';
+import { wrapTool, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 

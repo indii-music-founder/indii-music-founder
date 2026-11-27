@@ -4,7 +4,7 @@
  * across all Road Manager tabs (Plan, Tour Book, On the Road, Insights).
  */
 
-import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
+import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '@/modules/touring/types';
 import { logger } from '@/utils/logger';
 
 interface GeoState {

@@ -41,7 +41,7 @@ vi.mock('@/config/typesafeJudgments', () => ({
     judgeBoardroomExecutiveIntent: mocks.judgeBoardroomExecutiveIntent,
 }));
 
-import { BoardroomJourney } from './BoardroomJourney';
+import { BoardroomJourney } from '@/modules/boardroom/components/BoardroomJourney';
 import { useStore } from '@/core/store';
 
 describe('BoardroomJourney', () => {

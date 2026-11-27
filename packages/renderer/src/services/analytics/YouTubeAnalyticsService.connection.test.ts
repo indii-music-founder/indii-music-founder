@@ -21,7 +21,7 @@ vi.mock('firebase/auth', () => ({
     signInWithPopup: vi.fn(),
 }));
 
-import { YouTubeAnalyticsService } from './YouTubeAnalyticsService';
+import { YouTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';
 
 describe('YouTubeAnalyticsService connection state', () => {
     beforeEach(() => {

@@ -1,7 +1,7 @@
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { VideoProject } from '../store/videoEditorStore';
+import type { VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 
 /**
  * ISSUE-1147: one persisted document per app-project ID, so refreshing or

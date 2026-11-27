@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnimatedNumber } from './animated-number';
+import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 
 const reducedMotion = vi.hoisted(() => vi.fn(() => false));
 vi.mock('motion/react', async (importOriginal) => ({

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import SocialDashboard from './SocialDashboard';
+import SocialDashboard from '@/modules/social/SocialDashboard';
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -22,7 +22,7 @@ vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
 }));
 
 // Mock useSocial to avoid direct store dependencies
-vi.mock('./hooks/useSocial', () => ({
+vi.mock('@/modules/social/hooks/useSocial', () => ({
     useSocial: vi.fn(() => ({
         stats: { followers: 124500, following: 100, posts: 50, drops: 12 },
         scheduledPosts: [],

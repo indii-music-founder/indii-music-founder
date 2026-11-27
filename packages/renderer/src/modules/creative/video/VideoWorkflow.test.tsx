@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import VideoWorkflow from './VideoWorkflow';
-import { extractVideoFrame } from '../../../utils/video';
+import VideoWorkflow from '@/modules/creative/video/VideoWorkflow';
+import { extractVideoFrame } from '@/utils/video';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
 import { CREATIVE_ASSET_MIME } from '@/services/creative/CreativeAssetDragService';
@@ -101,7 +101,7 @@ vi.mock('@/core/store', () => ({
     serverTimestamp: vi.fn()
 }));
 
-vi.mock('./store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: mockUseVideoEditorStore
 }));
 
@@ -118,7 +118,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock extractVideoFrame
-vi.mock('../../../utils/video', () => ({
+vi.mock('@/utils/video', () => ({
     serverTimestamp: vi.fn(),
     extractVideoFrame: vi.fn()
 }));
@@ -128,7 +128,7 @@ vi.mock('@/services/creative/CreativeMediaHandoffService', () => ({
 }));
 
 // Mock FrameSelectionModal
-vi.mock('./components/FrameSelectionModal', () => ({
+vi.mock('@/modules/creative/video/components/FrameSelectionModal', () => ({
     serverTimestamp: vi.fn(),
     default: ({ isOpen, onSelect, target }: any) => isOpen ? (
         <div data-testid="frame-modal">
@@ -140,7 +140,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
     ) : null
 }));
 
-vi.mock('./components/VideoStage', () => ({
+vi.mock('@/modules/creative/video/components/VideoStage', () => ({
     VideoStage: ({ activeVideo }: { activeVideo?: { id?: string } | null }) => (
         <div data-testid="video-stage">{activeVideo?.id || 'empty-stage'}</div>
     ),

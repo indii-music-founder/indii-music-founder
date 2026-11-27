@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import PublishingDashboard from './PublishingDashboard';
+import PublishingDashboard from '@/modules/publishing/PublishingDashboard';
 import { useStore } from '@/core/store';
 
 // Mock dependencies - Global
@@ -47,7 +47,7 @@ vi.mock('@/core/store', () => ({
     })
 }));
 
-vi.mock('./hooks/useReleases', () => ({
+vi.mock('@/modules/publishing/hooks/useReleases', () => ({
     useReleases: (...args: any[]) => mockUseReleases(...args)
 }));
 
@@ -58,7 +58,7 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     }
 }));
 
-vi.mock('./hooks/useReleaseList', () => ({
+vi.mock('@/modules/publishing/hooks/useReleaseList', () => ({
     useReleaseList: (...args: any[]) => mockUseReleaseList(...args)
 }));
 
@@ -70,7 +70,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     })
 }));
 
-vi.mock('./components/ReleaseWizard', () => ({
+vi.mock('@/modules/publishing/components/ReleaseWizard', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
         <div data-testid="release-wizard">
             <button onClick={onClose}>Close</button>
@@ -78,7 +78,7 @@ vi.mock('./components/ReleaseWizard', () => ({
     )
 }));
 
-vi.mock('./components/PublishingSkeleton', () => ({
+vi.mock('@/modules/publishing/components/PublishingSkeleton', () => ({
     PublishingSkeleton: () => <div data-testid="publishing-skeleton">Loading...</div>
 }));
 

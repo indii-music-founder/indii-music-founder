@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React, { useState } from 'react';
-import CreativeStudio from '../../CreativeStudio';
+import CreativeStudio from '@/modules/creative/CreativeStudio';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -33,7 +33,7 @@ vi.mock('motion/react', () => ({
 }));
 
 // Mock video editor store
-vi.mock('../store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockData = {
         viewMode: 'director',
         setViewMode: vi.fn(),
@@ -127,11 +127,11 @@ vi.mock('@/services/storage/safeStorageFetch', () => ({
 }));
 
 // Mock lazy-loaded components to speed up test
-vi.mock('../../video/editor/VideoEditor', () => ({
+vi.mock('@/modules/creative/video/editor/VideoEditor', () => ({
     VideoEditor: () => <div data-testid="video-editor" />
 }));
 
-vi.mock('../../components/CreativeGallery', () => ({
+vi.mock('@/modules/creative/components/CreativeGallery', () => ({
     default: () => (
         <div data-testid="creative-gallery">
             <button data-testid="set-first-frame-btn" onClick={() => {
@@ -146,7 +146,7 @@ vi.mock('../../components/CreativeGallery', () => ({
     )
 }));
 
-vi.mock('../../components/CreativeNavbar', () => ({
+vi.mock('@/modules/creative/components/CreativeNavbar', () => ({
     default: () => (
         <div data-testid="creative-navbar">
             <button data-testid="director-view-btn" onClick={() => mockSetViewMode('video_production')}>Director</button>

@@ -35,20 +35,20 @@ import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 
 // Sub-renderers
-import VisualScriptRenderer from '../VisualScriptRenderer';
-import ScreenplayRenderer from '../ScreenplayRenderer';
-import CallSheetRenderer from '../CallSheetRenderer';
-import ContractRenderer from '../ContractRenderer';
+import VisualScriptRenderer from '@/core/components/VisualScriptRenderer';
+import ScreenplayRenderer from '@/core/components/ScreenplayRenderer';
+import CallSheetRenderer from '@/core/components/CallSheetRenderer';
+import ContractRenderer from '@/core/components/ContractRenderer';
 
 // Chat Components
-import { ThoughtChain } from './ThoughtChain';
-import { JsonViewer } from './JsonViewer';
-import { ImageRenderer, ToolImageOutput, ToolDocumentOutput, ToolFeedbackOutput } from './ToolOutputRenderer';
-import { CodeBlock } from './CodeBlock';
-import { PersonaResponseActions } from './PersonaResponseActions';
+import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
+import { JsonViewer } from '@/core/components/chat/JsonViewer';
+import { ImageRenderer, ToolImageOutput, ToolDocumentOutput, ToolFeedbackOutput } from '@/core/components/chat/ToolOutputRenderer';
+import { CodeBlock } from '@/core/components/chat/CodeBlock';
+import { PersonaResponseActions } from '@/core/components/chat/PersonaResponseActions';
 
 import { safeJsonParse } from '@/services/utils/json';
-import { PlanCard } from './PlanCard';
+import { PlanCard } from '@/core/components/chat/PlanCard';
 import { livingPlanService, LivingPlan } from '@/services/agent/LivingPlanService';
 import { agentService } from '@/services/agent/AgentService';
 import { useEffect, useState } from 'react';

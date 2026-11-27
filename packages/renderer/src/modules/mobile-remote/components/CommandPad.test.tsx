@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import CommandPad from './CommandPad';
+import CommandPad from '@/modules/mobile-remote/components/CommandPad';
 
 const { mockSetModule, mockSendCommand, mockRelaySendCommand } = vi.hoisted(() => ({
     mockSetModule: vi.fn(),
@@ -53,7 +53,7 @@ vi.mock('motion/react', () => ({
     },
 }));
 
-vi.mock('../MobileRemote', () => ({
+vi.mock('@/modules/mobile-remote/MobileRemote', () => ({
     triggerHaptic: vi.fn(),
 }));
 

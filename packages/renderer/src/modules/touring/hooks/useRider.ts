@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { RiderService } from '@/services/touring/RiderService';
-import { RiderItem } from '../types';
+import { RiderItem } from '@/modules/touring/types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';

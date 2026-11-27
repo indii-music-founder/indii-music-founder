@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoAgent } from './VideoAgent';
+import { VideoAgent } from '@/services/agent/definitions/VideoAgent';
 
 // Mock raw prompt import
 vi.mock('@agents/video/prompt.md?raw', () => ({
@@ -7,7 +7,7 @@ vi.mock('@agents/video/prompt.md?raw', () => ({
 }));
 
 // Mock VideoTools
-vi.mock('../tools/VideoTools', () => ({
+vi.mock('@/services/agent/tools/VideoTools', () => ({
     VideoTools: {
         generate_video: vi.fn(),
         batch_edit_videos: vi.fn(),
@@ -20,14 +20,14 @@ vi.mock('../tools/VideoTools', () => ({
 }));
 
 // Mock DirectorTools
-vi.mock('../tools/DirectorTools', () => ({
+vi.mock('@/services/agent/tools/DirectorTools', () => ({
     DirectorTools: {
         analyze_audio: vi.fn(),
     }
 }));
 
 // Mock BlenderTools
-vi.mock('../tools/BlenderTools', () => ({
+vi.mock('@/services/agent/tools/BlenderTools', () => ({
     BlenderTools: {
         blender_get_status: vi.fn(),
         blender_list_templates: vi.fn(),
@@ -37,14 +37,14 @@ vi.mock('../tools/BlenderTools', () => ({
 }));
 
 // Mock UniversalTools
-vi.mock('../tools/UniversalTools', () => ({
+vi.mock('@/services/agent/tools/UniversalTools', () => ({
     UniversalTools: {
         web_extract: vi.fn(),
         indii_image_gen: vi.fn(),
     }
 }));
 
-vi.mock('../tools/VideoProjectTools', () => ({
+vi.mock('@/services/agent/tools/VideoProjectTools', () => ({
     VideoProjectTools: {
         inspect_video_project: vi.fn(),
         add_video_clip: vi.fn(),
@@ -54,14 +54,14 @@ vi.mock('../tools/VideoProjectTools', () => ({
 }));
 
 
-vi.mock('../tools/StorageTools', () => ({
+vi.mock('@/services/agent/tools/StorageTools', () => ({
     StorageTools: {
         list_files: vi.fn(),
         search_files: vi.fn(),
     }
 }));
 
-vi.mock('../tools/EditorTools', () => ({
+vi.mock('@/services/agent/tools/EditorTools', () => ({
     EditorTools: {
         video_list_renderable_assets: vi.fn(),
         video_plan_sequence: vi.fn(),

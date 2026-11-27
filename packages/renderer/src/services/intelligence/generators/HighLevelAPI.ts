@@ -13,17 +13,17 @@
 
 import type { Content, Part, Schema, Tool, WrappedResponse } from '@/shared/types/ai.dto';
 type GenerateContentResult = WrappedResponse;
-import type { IntelligenceContext } from '../IntelligenceContext';
+import type { IntelligenceContext } from '@/services/intelligence/IntelligenceContext';
 import type {
     GenerationConfig,
     GenerateContentOptions,
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { PromptSanitizer } from '@/services/security/PromptSanitizer';
-import { aiCache } from '../IntelligenceResponseCache';
+import { aiCache } from '@/services/intelligence/IntelligenceResponseCache';
 import { logger } from '@/utils/logger';
-import type { ChatMessage } from '../types';
-import { normalizeDisabledThinkingConfig } from './thinkingConfig';
+import type { ChatMessage } from '@/services/intelligence/types';
+import { normalizeDisabledThinkingConfig } from '@/services/intelligence/generators/thinkingConfig';
 
 /**
  * Generate text with optional thinking budget and system instruction.

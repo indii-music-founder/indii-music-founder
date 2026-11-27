@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { MerchCard } from './components/MerchCard';
-import { MerchButton } from './components/MerchButton';
+import { MerchCard } from '@/modules/merchandise/components/MerchCard';
+import { MerchButton } from '@/modules/merchandise/components/MerchButton';
 import {
     TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
     LayoutGrid, PenTool, Package, Settings, LogOut,
@@ -9,24 +9,24 @@ import {
     Flame, Globe, Wallet, Shield, Lock, type LucideIcon
 } from 'lucide-react';
 
-import { useMerchandise, MerchStats } from './hooks/useMerchandise';
-import type { MerchProduct } from './types';
+import { useMerchandise, MerchStats } from '@/modules/merchandise/hooks/useMerchandise';
+import type { MerchProduct } from '@/modules/merchandise/types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { TopSellingProductItem } from './components/TopSellingProductItem';
+import { TopSellingProductItem } from '@/modules/merchandise/components/TopSellingProductItem';
 import { formatCurrency } from '@/lib/utils';
-import { PODIntegrationPanel } from './components/PODIntegrationPanel';
+import { PODIntegrationPanel } from '@/modules/merchandise/components/PODIntegrationPanel';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 import { useAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
-import { InventoryTracker } from './components/InventoryTracker';
-import { PricingEngine } from './components/PricingEngine';
-import { DropCampaignWizard } from './components/DropCampaignWizard';
-import { WalletConnectPanel } from './components/WalletConnectPanel';
-import { SmartContractGenerator } from './components/SmartContractGenerator';
-import { BlockchainLedger } from './components/BlockchainLedger';
-import { TokenGatedPreview } from './components/TokenGatedPreview';
+import { InventoryTracker } from '@/modules/merchandise/components/InventoryTracker';
+import { PricingEngine } from '@/modules/merchandise/components/PricingEngine';
+import { DropCampaignWizard } from '@/modules/merchandise/components/DropCampaignWizard';
+import { WalletConnectPanel } from '@/modules/merchandise/components/WalletConnectPanel';
+import { SmartContractGenerator } from '@/modules/merchandise/components/SmartContractGenerator';
+import { BlockchainLedger } from '@/modules/merchandise/components/BlockchainLedger';
+import { TokenGatedPreview } from '@/modules/merchandise/components/TokenGatedPreview';
 
 type CenterTab = 'dashboard' | 'inventory' | 'pricing' | 'pod' | 'web3' | 'settings';
 type Web3SubTab = 'wallet' | 'contracts' | 'ledger' | 'gated';

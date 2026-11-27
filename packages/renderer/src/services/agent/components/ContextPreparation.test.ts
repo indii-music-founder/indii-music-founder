@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ContextPreparation } from './ContextPreparation';
+import { ContextPreparation } from '@/services/agent/components/ContextPreparation';
 
 const { warn } = vi.hoisted(() => ({ warn: vi.fn() }));
 vi.mock('@/core/logger/Logger', () => ({ Logger: { warn, info: vi.fn(), debug: vi.fn(), error: vi.fn() } }));

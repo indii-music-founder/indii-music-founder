@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastProvider } from '@/core/context/ToastContext';
-import { PhotoSourcePanel } from './PhotoSourcePanel';
+import { PhotoSourcePanel } from '@/modules/creative/components/PhotoSourcePanel';
 
 describe('PhotoSourcePanel camera lifecycle', () => {
     const stopTrack = vi.fn();

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
-import { ResourceTree } from './ResourceTree';
+import { ResourceTree } from '@/components/project/ResourceTree';
 import { useStore } from '@/core/store';
 import { StorageService } from '@/services/StorageService';
 import { vi } from 'vitest';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { X, Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square, Circle, PenTool } from 'lucide-react';
-import type { LayerInfo } from '../services/CanvasOperationsService';
+import type { LayerInfo } from '@/modules/creative/services/CanvasOperationsService';
 
 interface LayersPanelProps {
     isOpen: boolean;

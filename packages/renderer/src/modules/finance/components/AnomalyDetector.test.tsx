@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AnomalyDetector } from './AnomalyDetector';
+import { AnomalyDetector } from '@/modules/finance/components/AnomalyDetector';
 
 describe('AnomalyDetector without a verified stream source', () => {
     it('shows that monitoring is unavailable without implying the account was checked', () => {

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SetlistAnalytics } from './SetlistAnalytics';
+import { SetlistAnalytics } from '@/modules/touring/components/SetlistAnalytics';
 import type { SetlistDraft } from '@/services/touring/SetlistDraftService';
 
 const mocks = vi.hoisted(() => ({

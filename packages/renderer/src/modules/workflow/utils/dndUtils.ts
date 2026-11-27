@@ -1,5 +1,5 @@
 import { XYPosition, Node } from 'reactflow';
-import { Status } from '../types';
+import { Status } from '@/modules/workflow/types';
 import { logger } from '@/utils/logger';
 
 

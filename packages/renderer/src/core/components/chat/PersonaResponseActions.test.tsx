@@ -9,7 +9,7 @@ const warn = vi.hoisted(() => vi.fn());
 vi.mock('@/services/persona/PersonaInteractionRecorder', () => ({ recordSignalWithResult }));
 vi.mock('@/utils/logger', () => ({ logger: { warn } }));
 
-import { PersonaResponseActions } from './PersonaResponseActions';
+import { PersonaResponseActions } from '@/core/components/chat/PersonaResponseActions';
 
 describe('PersonaResponseActions', () => {
     beforeEach(() => {

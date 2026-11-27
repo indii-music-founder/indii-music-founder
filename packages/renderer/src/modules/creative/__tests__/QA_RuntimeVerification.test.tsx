@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi } from 'vitest';
-import AutonomousLab from '../components/AutonomousLab';
-import OmniWorkflow from '../video/OmniWorkflow';
+import AutonomousLab from '@/modules/creative/components/AutonomousLab';
+import OmniWorkflow from '@/modules/creative/video/OmniWorkflow';
 
 // Mock the Zustand store
 vi.mock('@/core/store', () => {

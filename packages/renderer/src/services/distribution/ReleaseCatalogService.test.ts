@@ -31,7 +31,7 @@ import {
     getReleaseTitle,
     getReleaseWriters,
     ReleaseCatalogService,
-} from './ReleaseCatalogService';
+} from '@/services/distribution/ReleaseCatalogService';
 
 describe('ReleaseCatalogService', () => {
     beforeEach(() => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CreateCampaignModal from './CreateCampaignModal';
+import CreateCampaignModal from '@/modules/marketing/components/CreateCampaignModal';
 import { useToast } from '@/core/context/ToastContext';
 import { vi } from 'vitest';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { InstagramOAuthCallback } from './InstagramOAuthCallback';
+import { InstagramOAuthCallback } from '@/modules/analytics/components/InstagramOAuthCallback';
 
 const service = vi.hoisted(() => ({
     beginCallback: vi.fn(),

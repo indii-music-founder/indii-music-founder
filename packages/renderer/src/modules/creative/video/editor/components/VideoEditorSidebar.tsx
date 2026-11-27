@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Settings, Layers, Image as ImageIcon, Trash2, Plus, Scissors } from 'lucide-react';
-import { EditorAssetLibrary } from './EditorAssetLibrary'; // Adjust import path as needed
-import { VideoChunkSlicerCard } from './VideoChunkSlicerCard';
-import { VideoProject, useVideoEditorStore } from '../../store/videoEditorStore';
+import { EditorAssetLibrary } from '@/modules/creative/video/editor/components/EditorAssetLibrary'; // Adjust import path as needed
+import { VideoChunkSlicerCard } from '@/modules/creative/video/editor/components/VideoChunkSlicerCard';
+import { VideoProject, useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 interface VideoEditorSidebarProps {

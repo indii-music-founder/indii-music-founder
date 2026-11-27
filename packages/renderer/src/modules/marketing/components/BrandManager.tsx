@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { BrandKit } from '@/modules/workflow/types';
-import BrandInterview from './BrandInterview';
+import BrandInterview from '@/modules/marketing/components/BrandInterview';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { calculateProfileStatus } from '@/services/onboarding/onboardingService';
 import { useToast } from '@/core/context/ToastContext';
-import { persistUserUpdates } from './brandPersistence';
+import { persistUserUpdates } from '@/modules/marketing/components/brandPersistence';
 import { resolveBrandManagerTab } from '@/modules/handoffViews';
 import {
     IdentityPanel,
@@ -20,8 +20,8 @@ import {
     HealthPanel,
     CareerStageSelector,
     PrimaryGoalSelector,
-} from './brand-manager';
-import type { BrandKitWithDefaults, ReleaseDetails } from './brand-manager';
+} from '@/modules/marketing/components/brand-manager';
+import type { BrandKitWithDefaults, ReleaseDetails } from '@/modules/marketing/components/brand-manager';
 
 type TabId = 'identity' | 'visuals' | 'release' | 'health' | 'interview';
 

@@ -13,8 +13,8 @@ import type {
     BreakoutAlert,
     AlertType,
     PopularityScores,
-} from './types';
-import { POPULARITY_MILESTONES } from './types';
+} from '@/services/analytics/types';
+import { POPULARITY_MILESTONES } from '@/services/analytics/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // ──────────────────────────────────────────────────────────────────────────────

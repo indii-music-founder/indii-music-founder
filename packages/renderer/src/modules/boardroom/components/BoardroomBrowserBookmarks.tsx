@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bookmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { BOARDROOM_PORTAL_URLS } from '../utils/boardroomUrls';
+import { BOARDROOM_PORTAL_URLS } from '@/modules/boardroom/utils/boardroomUrls';
 
 export interface QuickBookmark {
     id: string;

@@ -1,4 +1,4 @@
-import { listHeadIds } from './departments';
+import { listHeadIds } from '@/services/agent/departments';
 import type { CapabilitySnapshot, CapabilityStatus } from '@shared/schemas/capabilitySnapshot';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -15,7 +15,7 @@ import {
     recordToolCapabilityOutcome,
     resetCapabilityHealthForTests,
     sanitizeAgentCapabilityOutput,
-} from './capabilityTruth';
+} from '@/services/agent/capabilityTruth';
 
 const NOW = Date.parse('2026-07-30T12:00:00.000Z');
 

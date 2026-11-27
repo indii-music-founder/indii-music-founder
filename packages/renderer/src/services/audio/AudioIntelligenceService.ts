@@ -1,18 +1,18 @@
-import { audioAnalysisService } from './AudioAnalysisService';
+import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { AudioIntelligenceProfile, AudioSemanticData } from './types';
+import { AudioIntelligenceProfile, AudioSemanticData } from '@/services/audio/types';
 import type { Schema } from '@/shared/types/ai.dto';
-import { fingerprintService } from './FingerprintService';
+import { fingerprintService } from '@/services/audio/FingerprintService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { neuralCortex } from '@/services/intelligence/NeuralCortexService';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
-import { styleMemoryStore } from './StyleMemoryStore';
-import { energyMapService } from './EnergyMapService';
+import { styleMemoryStore } from '@/services/audio/StyleMemoryStore';
+import { energyMapService } from '@/services/audio/EnergyMapService';
 import { autoCopywriter } from '@/services/marketing/AutoCopywriter';
 import { syncMetadataTaggingService } from '@/services/licensing/SyncMetadataTaggingService';
-import { audioAnalysisReceiptService, type AudioAnalysisReceipt } from './AudioAnalysisReceiptService';
+import { audioAnalysisReceiptService, type AudioAnalysisReceipt } from '@/services/audio/AudioAnalysisReceiptService';
 import type { MasterAudioReference } from '@/services/metadata/types';
 
 

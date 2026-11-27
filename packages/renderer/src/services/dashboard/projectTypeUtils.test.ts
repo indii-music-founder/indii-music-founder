@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectToMetadata } from './projectTypeUtils';
+import { projectToMetadata } from '@/services/dashboard/projectTypeUtils';
 
 describe('projectToMetadata', () => {
     it('preserves the project organization boundary for downstream operations', () => {

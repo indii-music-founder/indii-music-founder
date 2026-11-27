@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { E2EEncryptionService } from './E2EEncryptionService';
+import { E2EEncryptionService } from '@/services/security/E2EEncryptionService';
 
 describe('E2EEncryptionService — Signature & Authenticity (ISSUE-1260)', () => {
   let e2eSender: E2EEncryptionService;

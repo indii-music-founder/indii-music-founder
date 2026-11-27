@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { TOOL_AUTHORIZATION } from './AgentStressTest.harness';
+import { TOOL_AUTHORIZATION } from '@/services/agent/__tests__/AgentStressTest.harness';
 
 // ============================================================================
 // Constants

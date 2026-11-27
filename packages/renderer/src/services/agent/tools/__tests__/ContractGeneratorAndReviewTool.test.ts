@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LegalTools } from '../LegalTools';
+import { LegalTools } from '@/services/agent/tools/LegalTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalService } from '@/services/legal/LegalService';
 

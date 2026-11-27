@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store'; // Access global store for userProfile
 import { useShallow } from 'zustand/react/shallow';
 import { PublicistService } from '@/services/publicist/PublicistService';
-import { Campaign, Contact, PublicistStats } from '../types';
+import { Campaign, Contact, PublicistStats } from '@/modules/publicist/types';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 
 export const usePublicist = () => {

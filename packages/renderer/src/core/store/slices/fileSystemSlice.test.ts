@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createFileSystemSlice, FileSystemSlice } from './fileSystemSlice';
+import { createFileSystemSlice, FileSystemSlice } from '@/core/store/slices/fileSystemSlice';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
 
 // Mock Service
@@ -36,7 +36,7 @@ describe('FileSystemSlice', () => {
     });
 
     it('createFileNode calls service and updates state', async () => {
-        const slice = createFileSystemSlice(mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('../index').StoreState>);
+        const slice = createFileSystemSlice(mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('@/core/store/index').StoreState>);
 
         const mockNewNode: FileNode = {
             id: 'new-file-id',
@@ -78,7 +78,7 @@ describe('FileSystemSlice', () => {
 
     describe('failed mutations are reported to the user', () => {
         const makeSlice = () => createFileSystemSlice(
-            mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('../index').StoreState>,
+            mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('@/core/store/index').StoreState>,
         );
 
         beforeEach(() => {

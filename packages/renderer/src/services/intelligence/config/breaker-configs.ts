@@ -1,4 +1,4 @@
-import { CircuitBreakerConfig } from '../utils/CircuitBreaker';
+import { CircuitBreakerConfig } from '@/services/intelligence/utils/CircuitBreaker';
 
 /**
  * Configuration for Intelligence Service Circuit Breakers.

@@ -7,7 +7,7 @@ import {
     validateImageForDistributor,
     getDistributorPromptContext,
     getRecommendedCanvasSize
-} from '../DistributorContext';
+} from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 
 // Helper to create mock profile with distributor

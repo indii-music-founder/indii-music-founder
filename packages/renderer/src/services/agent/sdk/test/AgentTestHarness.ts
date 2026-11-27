@@ -1,8 +1,8 @@
 import { vi, MockInstance } from 'vitest';
-import { BaseAgent } from '../../BaseAgent';
-import { AgentConfig, AgentContext } from '../../types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig, AgentContext } from '@/services/agent/types';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { TraceService } from '../../observability/TraceService';
+import { TraceService } from '@/services/agent/observability/TraceService';
 
 /**
  * A test harness for isolating and testing Agents.

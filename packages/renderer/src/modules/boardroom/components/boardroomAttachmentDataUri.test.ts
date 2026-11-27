@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAttachmentDataUri } from './boardroomAttachmentDataUri';
+import { buildAttachmentDataUri } from '@/modules/boardroom/components/boardroomAttachmentDataUri';
 
 describe('buildAttachmentDataUri', () => {
     it('reuses the URI for the same immutable attachment without rereading base64', () => {

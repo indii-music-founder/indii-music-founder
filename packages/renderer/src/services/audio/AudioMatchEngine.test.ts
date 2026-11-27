@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AudioMatchEngine, KnownCatalogFingerprintProvider, type AudioMatchProvider } from './AudioMatchEngine';
+import { AudioMatchEngine, KnownCatalogFingerprintProvider, type AudioMatchProvider } from '@/services/audio/AudioMatchEngine';
 
 describe('AudioMatchEngine', () => {
     it('aggregates provider evidence by confidence without asserting rights', async () => {

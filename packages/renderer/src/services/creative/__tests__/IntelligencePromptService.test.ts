@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { IntelligencePromptService, ImprovedPromptResult } from '../IntelligencePromptService';
+import { IntelligencePromptService, ImprovedPromptResult } from '@/services/creative/IntelligencePromptService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import * as judgments from '@/config/typesafeJudgments';
 

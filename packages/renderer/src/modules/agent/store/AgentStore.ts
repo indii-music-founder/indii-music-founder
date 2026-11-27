@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Venue, GigOpportunity, OutreachCampaign, GigStatus } from '../types';
+import { Venue, GigOpportunity, OutreachCampaign, GigStatus } from '@/modules/agent/types';
 
 interface AgentState {
     venues: Venue[];

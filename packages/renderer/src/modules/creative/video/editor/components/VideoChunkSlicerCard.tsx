@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Scissors, CheckCircle, XCircle, Sparkles, Plus, AlertTriangle, Film } from 'lucide-react';
-import { useVideoEditorStore } from '../../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { judgeVideoChunkQuality, VideoChunkVerdict } from '@/config/typesafeJudgments';
-import { durationSecondsToFrames } from '../utils/mediaMetadata';
+import { durationSecondsToFrames } from '@/modules/creative/video/editor/utils/mediaMetadata';
 import { toast } from '@/core/context/ToastContext';
 
 export interface SlicedChunkItem {

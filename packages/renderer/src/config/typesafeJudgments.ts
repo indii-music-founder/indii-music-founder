@@ -11,9 +11,9 @@ import { runBudgetedSemanticCall, SemanticCallCheckpointError, type SemanticCall
  */
 
 import { httpsCallable, getFunctions } from 'firebase/functions';
-import { parseBoardroomIntentDecision } from './boardroomIntentPolicy';
-import type { BoardroomIntent } from './boardroomIntentPolicy';
-export type { BoardroomIntent } from './boardroomIntentPolicy';
+import { parseBoardroomIntentDecision } from '@/config/boardroomIntentPolicy';
+import type { BoardroomIntent } from '@/config/boardroomIntentPolicy';
+export type { BoardroomIntent } from '@/config/boardroomIntentPolicy';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
 import type { MaskedTextCandidate } from '@/services/image/maskedTextEdit';

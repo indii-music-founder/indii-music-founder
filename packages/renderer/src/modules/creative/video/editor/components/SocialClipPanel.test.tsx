@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { SocialClipPanel } from './SocialClipPanel';
+import { SocialClipPanel } from '@/modules/creative/video/editor/components/SocialClipPanel';
 
 const mocks = vi.hoisted(() => ({
     state: { user: { uid: 'owner', isAnonymous: false }, currentProjectId: 'source', currentOrganizationId: 'org', addProject: vi.fn(), setProject: vi.fn() },
@@ -8,11 +8,11 @@ const mocks = vi.hoisted(() => ({
     create: vi.fn(), load: vi.fn(), save: vi.fn(),
 }));
 vi.mock('@/core/store', () => ({ useStore: Object.assign((selector: (state: typeof mocks.state) => unknown) => selector(mocks.state), { getState: () => mocks.state }) }));
-vi.mock('../../store/videoEditorStore', () => ({ useVideoEditorStore: Object.assign((selector: (state: unknown) => unknown) => selector({ project: mocks.project }), { getState: () => ({ currentTime: 0 }) }) }));
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({ useVideoEditorStore: Object.assign((selector: (state: unknown) => unknown) => selector({ project: mocks.project }), { getState: () => ({ currentTime: 0 }) }) }));
 vi.mock('@/services/ProjectService', () => ({ ProjectService: { createProject: mocks.create } }));
 vi.mock('@/services/dashboard/projectTypeUtils', () => ({ projectToMetadata: (project: unknown) => project }));
-vi.mock('../../services/VideoProjectPersistenceService', () => ({ loadVideoProject: mocks.load, saveVideoProject: mocks.save }));
-vi.mock('../../services/socialClipProject', () => ({ createSocialClipProject: () => ({ ...mocks.project, name: 'Social copy' }) }));
+vi.mock('@/modules/creative/video/services/VideoProjectPersistenceService', () => ({ loadVideoProject: mocks.load, saveVideoProject: mocks.save }));
+vi.mock('@/modules/creative/video/services/socialClipProject', () => ({ createSocialClipProject: () => ({ ...mocks.project, name: 'Social copy' }) }));
 
 describe('SocialClipPanel persistence lifecycle (structural)', () => {
     beforeEach(() => {

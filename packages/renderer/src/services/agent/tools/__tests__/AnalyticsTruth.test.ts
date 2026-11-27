@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnalyticsTools } from '../AnalyticsTools';
-import { AnalysisTools } from '../AnalysisTools';
+import { AnalyticsTools } from '@/services/agent/tools/AnalyticsTools';
+import { AnalysisTools } from '@/services/agent/tools/AnalysisTools';
 import { syncSpotifyStats } from '@/services/social/SocialPlatformService';
 
 const { authState } = vi.hoisted(() => ({

@@ -5,8 +5,8 @@ import {
     GraphEdge, 
     AgentContext,
     ValidAgentId
-} from '../types';
-import { agentGraphService } from './AgentGraphService';
+} from '@/services/agent/types';
+import { agentGraphService } from '@/services/agent/orchestration/AgentGraphService';
 
 /**
  * MastraService — High-Level Agent Graph Orchestrator

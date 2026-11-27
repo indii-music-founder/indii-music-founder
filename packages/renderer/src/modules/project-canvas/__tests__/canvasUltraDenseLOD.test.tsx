@@ -12,10 +12,10 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, renderHook, screen, fireEvent } from '@testing-library/react';
-import { SpatialGridIndex } from '../services/SpatialGridIndex';
-import { useCanvasVirtualization } from '../hooks/useCanvasVirtualization';
-import { ClusterBlock } from '../components/blocks/ClusterBlock';
-import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasClusterSummary } from '../types';
+import { SpatialGridIndex } from '@/modules/project-canvas/services/SpatialGridIndex';
+import { useCanvasVirtualization } from '@/modules/project-canvas/hooks/useCanvasVirtualization';
+import { ClusterBlock } from '@/modules/project-canvas/components/blocks/ClusterBlock';
+import type { ProjectCanvasBlock, ProjectCanvasEdge, CanvasClusterSummary } from '@/modules/project-canvas/types';
 
 function generateDenseFixtures(count = 1000): {
     blocks: ProjectCanvasBlock[];

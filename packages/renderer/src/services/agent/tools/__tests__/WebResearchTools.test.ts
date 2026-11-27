@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { WebResearchTools } from '../WebResearchTools';
+import { WebResearchTools } from '@/services/agent/tools/WebResearchTools';
 
 describe('WebResearchTools.web_extract', () => {
     const extractWebPage = vi.fn();

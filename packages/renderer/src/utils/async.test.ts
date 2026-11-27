@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { delay, fetchWithRetry, retry } from './async';
+import { delay, fetchWithRetry, retry } from '@/utils/async';
 
 describe('async utilities', () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HostedRightsConnectionLifecycle } from './HostedRightsConnectionLifecycle';
+import { HostedRightsConnectionLifecycle } from '@/services/rights/HostedRightsConnectionLifecycle';
 
 // Pure local transport transitions; no broker, ticket, account, or portal doubles.
 describe('hosted rights transport lifecycle', () => {

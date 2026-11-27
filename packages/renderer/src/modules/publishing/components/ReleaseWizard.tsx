@@ -17,8 +17,8 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
-import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
-import { ReleaseHarnessWorkspace } from './ReleaseHarnessWorkspace';
+import { useDDEXRelease, WizardStep } from '@/modules/publishing/hooks/useDDEXRelease';
+import { ReleaseHarnessWorkspace } from '@/modules/publishing/components/ReleaseHarnessWorkspace';
 // ISSUE-1440: shared disclosure + dropdown primitives for denser steps.
 import SectionCard from '@/components/ui/SectionCard';
 import {

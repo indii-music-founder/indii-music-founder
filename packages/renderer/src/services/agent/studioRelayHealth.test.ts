@@ -7,7 +7,7 @@ import {
     recordPresencePublishSuccess,
     resetStudioRelayHealth,
     STUDIO_RELAY_LIVE_WINDOW_MS,
-} from './studioRelayHealth';
+} from '@/services/agent/studioRelayHealth';
 
 const NOW = 1_000_000;
 

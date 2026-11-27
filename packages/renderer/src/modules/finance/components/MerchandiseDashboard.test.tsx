@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MerchandiseDashboard } from './MerchandiseDashboard';
+import { MerchandiseDashboard } from '@/modules/finance/components/MerchandiseDashboard';
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock Recharts to avoid layout/JSDOM issues
@@ -18,7 +18,7 @@ vi.mock('recharts', () => ({
 }));
 
 // Mock MerchTable
-vi.mock('./MerchTable', () => ({
+vi.mock('@/modules/finance/components/MerchTable', () => ({
     MerchTable: ({ isDashboardView }: { isDashboardView: boolean }) => (
         <div data-testid="merch-table">
             Mocked Merch Table (Dashboard View: {String(isDashboardView)})

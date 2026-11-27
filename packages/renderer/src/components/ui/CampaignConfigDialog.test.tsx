@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { CampaignConfigDialog } from './CampaignConfigDialog';
+import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 
 describe('CampaignConfigDialog', () => {
     it('returns the edited config when launched', async () => {

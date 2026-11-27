@@ -3,7 +3,7 @@ import {
     deterministicSpokenIntentFallback,
     judgeSpokenConversationIntent,
     parseSpokenIntentAnswers,
-} from '../liveConversationJudgments';
+} from '@/config/liveConversationJudgments';
 
 const mockHttpsCallable = vi.fn();
 

@@ -26,7 +26,7 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock('@/core/store', () => ({ useStore: { getState: () => state } }));
 
-import { NavigationTools } from '../NavigationTools';
+import { NavigationTools } from '@/services/agent/tools/NavigationTools';
 
 describe('NavigationTools navigation outcome', () => {
     beforeEach(() => {

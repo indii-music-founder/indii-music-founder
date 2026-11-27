@@ -25,14 +25,14 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 // Layer 4 — Captain's Log
-vi.mock('../CaptainsLogService', () => ({
+vi.mock('@/services/agent/memory/CaptainsLogService', () => ({
     captainsLogService: {
         getTodaysSummary: vi.fn().mockResolvedValue('Tasks (2): Generated art | Wrote press kit'),
     },
 }));
 
 // Layer 3 — Core Vault
-vi.mock('../CoreVaultService', () => ({
+vi.mock('@/services/agent/memory/CoreVaultService', () => ({
     coreVaultService: {
         readVault: vi.fn().mockResolvedValue({
             summary: 'Test summary',
@@ -48,7 +48,7 @@ vi.mock('../CoreVaultService', () => ({
 }));
 
 // Layer 2 — Always-On Memory Engine
-vi.mock('../AlwaysOnMemoryEngine', () => ({
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         getAllMemories: vi.fn().mockResolvedValue([
             { id: 'm1', content: 'Recent discussion about album sequencing', summary: 'Album sequencing conversation', tier: 'working', category: 'interaction', createdAt: Date.now(), topics: [] },
@@ -57,7 +57,7 @@ vi.mock('../AlwaysOnMemoryEngine', () => ({
 }));
 
 // Layer (User) — Memory Bank (Mem0)
-vi.mock('../MemoryBankService', () => ({
+vi.mock('@/services/agent/memory/MemoryBankService', () => ({
     memoryBankService: {
         searchMemories: vi.fn().mockResolvedValue({
             results: [
@@ -81,11 +81,11 @@ vi.mock('../MemoryBankService', () => ({
 // IMPORTS (after mocks)
 // ============================================================================
 
-import { bigBrainEngine } from '../BigBrainEngine';
-import { captainsLogService } from '../CaptainsLogService';
-import { coreVaultService } from '../CoreVaultService';
-import { alwaysOnMemoryEngine } from '../AlwaysOnMemoryEngine';
-import { memoryBankService } from '../MemoryBankService';
+import { bigBrainEngine } from '@/services/agent/memory/BigBrainEngine';
+import { captainsLogService } from '@/services/agent/memory/CaptainsLogService';
+import { coreVaultService } from '@/services/agent/memory/CoreVaultService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 
 // ============================================================================
 // TESTS

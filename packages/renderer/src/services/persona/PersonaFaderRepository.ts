@@ -7,7 +7,7 @@ import {
 } from '@indii/shared';
 import { auth, db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { PersonaFaderResolution } from './PersonaFaderResolution';
+import type { PersonaFaderResolution } from '@/services/persona/PersonaFaderResolution';
 
 export class PersonaFaderRepositoryError extends Error {}
 

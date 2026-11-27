@@ -1,5 +1,5 @@
 import { AgentConfig } from "@/services/agent/types";
-import systemPrompt from './prompt.md?raw';
+import systemPrompt from '@/agents/legal/prompt.md?raw';
 import { LegalTools } from "@/services/agent/tools/LegalTools";
 import { AnalysisTools } from "@/services/agent/tools/AnalysisTools";
 

@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { CanonicalMapService } from './CanonicalMapService';
+import { CanonicalMapService } from '@/services/distribution/CanonicalMapService';
 import { ExtendedGoldenMetadata, GoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 
 describe('CanonicalMapService', () => {

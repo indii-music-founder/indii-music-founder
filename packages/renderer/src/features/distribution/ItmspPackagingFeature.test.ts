@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ItmspPackagingFeature, ItmspPackagingOptions } from './ItmspPackagingFeature';
+import { ItmspPackagingFeature, ItmspPackagingOptions } from '@/features/distribution/ItmspPackagingFeature';
 
 describe('ItmspPackagingFeature', () => {
   let feature: ItmspPackagingFeature;

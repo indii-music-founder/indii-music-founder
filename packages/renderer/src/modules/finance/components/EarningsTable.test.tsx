@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { ReleaseEarnings } from '@/services/revenue/schema';
-import { EarningsTable } from './EarningsTable';
+import { EarningsTable } from '@/modules/finance/components/EarningsTable';
 
 const rows: ReleaseEarnings[] = Array.from({ length: 3 }, (_, index) => ({
     releaseId: `release-${index}`,

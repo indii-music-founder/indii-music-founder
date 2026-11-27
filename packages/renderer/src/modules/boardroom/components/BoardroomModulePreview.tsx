@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ExternalLink, ChevronDown } from 'lucide-react';
-import { PREVIEW_MODULES } from './boardroomPreviewModules';
+import { PREVIEW_MODULES } from '@/modules/boardroom/components/boardroomPreviewModules';
 import { cn } from '@/lib/utils';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';

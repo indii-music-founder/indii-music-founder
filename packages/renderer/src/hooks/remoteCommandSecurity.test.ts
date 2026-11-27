@@ -12,7 +12,7 @@ import {
   parseRemoteCommand,
   validateNavigationTarget,
   ALLOWED_COMMAND_PREFIXES,
-} from './remoteCommandSecurity';
+} from '@/hooks/remoteCommandSecurity';
 import { isValidModule } from '@/core/constants';
 
 describe('validateNavigationTarget', () => {

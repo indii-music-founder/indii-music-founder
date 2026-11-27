@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RightsIntelligenceInput } from '@indii/shared';
 import { INITIAL_METADATA } from '@/services/metadata/types';
-import { RightsIntelligenceService } from './RightsIntelligenceService';
+import { RightsIntelligenceService } from '@/services/rights/RightsIntelligenceService';
 
 describe('RightsIntelligenceService', () => {
     it('exposes the canonical claims inbox through the existing rights service', () => {

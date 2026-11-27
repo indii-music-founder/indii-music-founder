@@ -12,7 +12,7 @@ vi.mock('@/config/typesafeJudgments', () => ({
     judgeBrandMarkCandidate: mocks.judgeBrandMarkCandidate,
 }));
 
-import { createDefaultVisionProbe } from './BrandComplianceService';
+import { createDefaultVisionProbe } from '@/services/brand/BrandComplianceService';
 
 const objects = [
     { label: 'logo-shaped lettering', box: { ymin: 100, xmin: 100, ymax: 300, xmax: 400 } },

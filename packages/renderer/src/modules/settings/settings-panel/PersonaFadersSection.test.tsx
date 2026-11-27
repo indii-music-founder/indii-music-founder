@@ -18,7 +18,7 @@ vi.mock('@/services/persona/PersonaFaderRepository', () => ({
     resetPersonaFaderValues: (personaId: string) => mockResetFaders(personaId),
 }));
 
-import { PersonaFadersSection } from './PersonaFadersSection';
+import { PersonaFadersSection } from '@/modules/settings/settings-panel/PersonaFadersSection';
 
 describe('PersonaFadersSection', () => {
     beforeEach(() => {

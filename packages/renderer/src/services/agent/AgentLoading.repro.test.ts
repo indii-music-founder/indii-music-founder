@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 // Mock the registry to prevent loading real agents (which trigger Firebase/AI cascading imports)
 // All mock data MUST be defined inside the factory to avoid hoisting issues
-vi.mock('./registry', () => {
+vi.mock('@/services/agent/registry', () => {
     const mockGeneralistAgent = {
         id: 'generalist',
         name: 'indii',
@@ -24,7 +24,7 @@ vi.mock('./registry', () => {
     };
 });
 
-import { agentRegistry } from './registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 describe('AgentRegistry Loading', () => {
     it('should successfully load the GeneralistAgent specifically', async () => {

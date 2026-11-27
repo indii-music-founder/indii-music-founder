@@ -1,4 +1,4 @@
-import type { DistributorId, ReleaseStatus, ValidationError } from './distributor';
+import type { DistributorId, ReleaseStatus, ValidationError } from '@/services/distribution/types/distributor';
 
 /**
  * Represents a single deployment of a release to a specific distributor.

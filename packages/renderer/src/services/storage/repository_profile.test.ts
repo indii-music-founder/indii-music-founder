@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { saveAssetToStorage, saveProfileToStorage, getProfileFromStorage } from './repository';
+import { saveAssetToStorage, saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { UserProfile } from '@/modules/workflow/types';
 
 // Mock `idb` because it's an external dependency and uses IndexedDB which isn't available in Node environment
@@ -26,7 +26,7 @@ vi.mock('idb', () => ({
 }));
 
 // Mock Firebase
-vi.mock('../firebase', () => ({
+vi.mock('@/services/firebase', () => ({
     serverTimestamp: vi.fn(),
     db: {},
     storage: {},
@@ -91,7 +91,7 @@ describe('Profile Persistence', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const { auth } = await import('../firebase');
+        const { auth } = await import('@/services/firebase');
         (auth as unknown as { currentUser: unknown }).currentUser = { uid: 'test-user-uid' };
     });
 
@@ -123,7 +123,7 @@ describe('Profile Persistence', () => {
     });
 
     it('should not sync anonymous profiles to Firestore', async () => {
-        const { auth } = await import('../firebase');
+        const { auth } = await import('@/services/firebase');
         const { setDoc } = await import('firebase/firestore');
         (auth as unknown as { currentUser: unknown }).currentUser = { uid: 'anon-user', isAnonymous: true };
 
@@ -134,7 +134,7 @@ describe('Profile Persistence', () => {
     });
 
     it('should not upload anonymous assets to cloud storage', async () => {
-        const { auth } = await import('../firebase');
+        const { auth } = await import('@/services/firebase');
         const { uploadBytes } = await import('firebase/storage');
         (auth as unknown as { currentUser: unknown }).currentUser = { uid: 'anon-user', isAnonymous: true };
 

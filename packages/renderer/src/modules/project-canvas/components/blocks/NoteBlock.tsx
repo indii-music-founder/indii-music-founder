@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import type { ProjectCanvasBlock } from '../../types';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
 
 interface NoteBlockProps {
     block: ProjectCanvasBlock;

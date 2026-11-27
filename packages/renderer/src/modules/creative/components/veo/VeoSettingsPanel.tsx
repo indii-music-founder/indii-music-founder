@@ -5,7 +5,7 @@ import { useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useShallow } from 'zustand/react/shallow';
-import { useDirectGeneration } from '../../hooks/useDirectGeneration';
+import { useDirectGeneration } from '@/modules/creative/hooks/useDirectGeneration';
 import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 
 interface VeoSettingsPanelProps {

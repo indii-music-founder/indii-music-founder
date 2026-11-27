@@ -12,7 +12,7 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { VitalMetric, RUMSnapshot } from './RealUserMonitoringService';
+import type { VitalMetric, RUMSnapshot } from '@/services/observability/RealUserMonitoringService';
 
 export interface VitalStatus {
   metric: string;

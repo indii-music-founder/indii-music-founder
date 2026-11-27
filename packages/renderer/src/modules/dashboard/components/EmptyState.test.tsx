@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EmptyState } from './EmptyState';
+import { EmptyState } from '@/modules/dashboard/components/EmptyState';
 import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
 
 const mocks = vi.hoisted(() => ({
@@ -57,7 +57,7 @@ vi.mock('@/components/shared/IndiiFavicon', () => ({
     IndiiFavicon: () => <div data-testid="indii-favicon" />,
 }));
 
-vi.mock('./EntryOverlay', () => ({
+vi.mock('@/modules/dashboard/components/EntryOverlay', () => ({
     EntryOverlay: () => <div>Entry Assistant</div>,
 }));
 

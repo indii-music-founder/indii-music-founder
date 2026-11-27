@@ -1,6 +1,6 @@
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import FileUpload from './file-upload';
+import FileUpload from '@/components/kokonutui/file-upload';
 
 // Mock motion/motion to ensure children render immediately
 vi.mock('motion/react', () => ({

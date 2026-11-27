@@ -11,8 +11,8 @@ import {
     MusicMetadataAsset,
     SplitSheetAsset,
     ReleasePackageAsset
-} from '../types';
-import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '../services/nodeRegistry';
+} from '@/modules/workflow/types';
+import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '@/modules/workflow/services/nodeRegistry';
 import {
     CheckCircle,
     Hourglass,

@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RenderService } from '../RenderService';
+import { RenderService } from '@/services/video/RenderService';
 
 const privateConfig = {
     compositionId: 'Showreel',

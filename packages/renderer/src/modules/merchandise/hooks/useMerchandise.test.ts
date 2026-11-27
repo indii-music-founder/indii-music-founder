@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useMerchandise } from './useMerchandise';
+import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { revenueService } from '@/services/RevenueService';
 

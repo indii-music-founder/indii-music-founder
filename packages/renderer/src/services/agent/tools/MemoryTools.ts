@@ -1,9 +1,9 @@
 
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext, ToolFunctionResult } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction, AgentContext, ToolFunctionResult } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import { logger } from '@/utils/logger';
-import { alwaysOnMemoryEngine, type MemoryIngestReceipt } from '../memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine, type MemoryIngestReceipt } from '@/services/agent/memory/AlwaysOnMemoryEngine';
 import type { AlwaysOnMemoryCategory } from '@/types/AlwaysOnMemory';
 import { importWithRetry } from '@/utils/dynamicImport';
 
@@ -84,7 +84,7 @@ export const MemoryTools = {
         }
 
         try {
-            const { memoryBankService } = await importWithRetry(() => import('../memory/MemoryBankService'));
+            const { memoryBankService } = await importWithRetry(() => import('@/services/agent/memory/MemoryBankService'));
             const result = await memoryBankService.addMemory(userId, args.content);
             if (!result.length) return memoryWriteFailure('index_memory', 'Semantic memory save could not be confirmed. Check memory before retrying.');
             return toolSuccess({ results: result }, `Semantic memory saved. Reference: ${result.map(item => item.id).join(', ')}.`);

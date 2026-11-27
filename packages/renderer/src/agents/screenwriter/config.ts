@@ -1,5 +1,5 @@
 import { AgentConfig } from "@/services/agent/types";
-import systemPrompt from './prompt.md?raw';
+import systemPrompt from '@/agents/screenwriter/prompt.md?raw';
 import { ScreenwriterTools } from "@/services/agent/tools/ScreenwriterTools";
 
 export const ScreenwriterAgent: AgentConfig = {

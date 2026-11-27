@@ -23,7 +23,7 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: vi.fn(() => 'server-timestamp'),
 }));
 
-import { PublishingTools } from './PublishingTools';
+import { PublishingTools } from '@/services/agent/tools/PublishingTools';
 
 /**
  * ISSUE-812: register_work_with_pro previously fabricated a "Submitted"

@@ -1,6 +1,6 @@
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
-import { MediaAssetDataMessage, MediaAssetDataContent, MediaAssetDataRelease, MediaAssetDataResource, Biography } from './types/mead';
+import { MediaAssetDataMessage, MediaAssetDataContent, MediaAssetDataRelease, MediaAssetDataResource, Biography } from '@/services/distribution/proprietary-ingestion/types/mead';
 /**
  * MediaAssetData Service
  * Manages creation of Media Enrichment and Description messages (Lyrics, Bios, etc.)

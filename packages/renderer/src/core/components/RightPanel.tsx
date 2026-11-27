@@ -1,15 +1,15 @@
 import React from 'react';
-import { useStore } from '../store';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText, ShieldAlert, Book } from 'lucide-react';
 // Lazy-load subpanels to reduce the eager bundle footprint of RightPanel and the core entry chunk
-const StudioControlsPanel = React.lazy(() => import('./right-panel/StudioControlsPanel'));
-const WorkflowPanel = React.lazy(() => import('./right-panel/WorkflowPanel'));
-const KnowledgePanel = React.lazy(() => import('./right-panel/KnowledgePanel'));
-const AssetsPanel = React.lazy(() => import('./right-panel/AssetsPanel'));
-const ArtifactsPanel = React.lazy(() => import('./right-panel/ArtifactsPanel'));
-const ToolApprovalsPanel = React.lazy(() => import('./right-panel/ToolApprovalsPanel'));
-const MarketingPanel = React.lazy(() => import('./right-panel/MarketingPanel'));
+const StudioControlsPanel = React.lazy(() => import('@/core/components/right-panel/StudioControlsPanel'));
+const WorkflowPanel = React.lazy(() => import('@/core/components/right-panel/WorkflowPanel'));
+const KnowledgePanel = React.lazy(() => import('@/core/components/right-panel/KnowledgePanel'));
+const AssetsPanel = React.lazy(() => import('@/core/components/right-panel/AssetsPanel'));
+const ArtifactsPanel = React.lazy(() => import('@/core/components/right-panel/ArtifactsPanel'));
+const ToolApprovalsPanel = React.lazy(() => import('@/core/components/right-panel/ToolApprovalsPanel'));
+const MarketingPanel = React.lazy(() => import('@/core/components/right-panel/MarketingPanel'));
 
 const PanelSuspense = ({ children }: { children: React.ReactNode }) => (
     <React.Suspense fallback={
@@ -23,16 +23,16 @@ const PanelSuspense = ({ children }: { children: React.ReactNode }) => (
     </React.Suspense>
 );
 import { motion, AnimatePresence } from 'motion/react';
-import { PromptArea } from './command-bar/PromptArea';
-import { ConversationHistoryList } from './ConversationHistoryList';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
+import { ConversationHistoryList } from '@/core/components/ConversationHistoryList';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
 import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
-import { BatchingStatus } from './agent/BatchingStatus';
+import { BatchingStatus } from '@/core/components/agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
-import { AgentSwitcherStrip } from './AgentSwitcherStrip';
-import { AgentCanvasToggle } from './AgentCanvasToggle';
-import { getRightPanelLayout, MIN_RIGHT_PANEL_WIDTH } from '../layout/workspaceWidthBudget';
+import { AgentSwitcherStrip } from '@/core/components/AgentSwitcherStrip';
+import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
+import { getRightPanelLayout, MIN_RIGHT_PANEL_WIDTH } from '@/core/layout/workspaceWidthBudget';
 export default function RightPanel() {
 
     const {

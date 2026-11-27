@@ -17,7 +17,7 @@ import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports } from '@/modules/re
 import { CelebrationMoment } from '@/components/share/CelebrationMoment';
 import { ShareSheet } from '@/components/share/ShareSheet';
 import { claimMilestone } from '@/services/share/milestones';
-import { buildReleaseCatalogRecord } from '../releaseCatalogRecord';
+import { buildReleaseCatalogRecord } from '@/modules/distribution/releaseCatalogRecord';
 
 interface PipelineStep {
     id: string;

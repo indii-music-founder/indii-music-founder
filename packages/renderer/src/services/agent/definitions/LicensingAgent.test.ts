@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LicensingAgent } from './LicensingAgent';
-import { licensingService } from '../../licensing/LicensingService';
-import { licenseScannerService } from '../../knowledge/LicenseScannerService';
+import { LicensingAgent } from '@/services/agent/definitions/LicensingAgent';
+import { licensingService } from '@/services/licensing/LicensingService';
+import { licenseScannerService } from '@/services/knowledge/LicenseScannerService';
 
-vi.mock('../../licensing/LicensingService', () => ({
+vi.mock('@/services/licensing/LicensingService', () => ({
     licensingService: {
         createRequest: vi.fn(),
         updateRequest: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('../../licensing/LicensingService', () => ({
     }
 }));
 
-vi.mock('../../knowledge/LicenseScannerService', () => ({
+vi.mock('@/services/knowledge/LicenseScannerService', () => ({
     licenseScannerService: {
         scanUrl: vi.fn()
     }
@@ -41,7 +41,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';
 
-vi.mock('../tools/LegalTools', () => ({
+vi.mock('@/services/agent/tools/LegalTools', () => ({
     LegalTools: {
         draft_contract: vi.fn()
     }
@@ -168,7 +168,7 @@ describe('LicensingAgent', () => {
 
     describe('draft_license', () => {
         it('should use LegalTools to draft a contract', async () => {
-            const { LegalTools } = await importWithRetry(() => import('../tools/LegalTools'));
+            const { LegalTools } = await importWithRetry(() => import('@/services/agent/tools/LegalTools'));
             vi!.mocked(LegalTools.draft_contract!).mockResolvedValue({ success: true, data: { content: "Mocked Contract Content" } });
 
             const args = {

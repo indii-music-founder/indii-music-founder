@@ -2,8 +2,8 @@
 import { logger } from '@/utils/logger';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { useStore } from '@/core/store';
-import { AgentRunner, type AgentResponse } from './types';
-import { TraceService } from './observability/TraceService';
+import { AgentRunner, type AgentResponse } from '@/services/agent/types';
+import { TraceService } from '@/services/agent/observability/TraceService';
 
 export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import OnboardingPage from './OnboardingPage';
+import OnboardingPage from '@/modules/onboarding/pages/OnboardingPage';
 import * as OnboardingService from '@/services/onboarding/onboardingService';
 
 // Mock Store

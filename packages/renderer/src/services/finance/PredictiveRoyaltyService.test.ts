@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { predictiveRoyaltyService } from './PredictiveRoyaltyService';
+import { predictiveRoyaltyService } from '@/services/finance/PredictiveRoyaltyService';
 
 describe('PredictiveRoyaltyService', () => {
     const sampleHistory = [

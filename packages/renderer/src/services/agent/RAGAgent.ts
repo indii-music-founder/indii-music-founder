@@ -1,5 +1,5 @@
-import { BaseAgent } from './BaseAgent';
-import { AgentConfig, AgentContext, AgentProgressCallback, AgentResponse } from './types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig, AgentContext, AgentProgressCallback, AgentResponse } from '@/services/agent/types';
 import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
 import { logger } from '@/utils/logger';
 

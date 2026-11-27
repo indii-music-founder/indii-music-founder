@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { toMillisSafe } from './timestamps';
+import { toMillisSafe } from '@/utils/timestamps';
 
 it('reads legacy serialized Firestore timestamps and rejects invalid dates', () => {
     expect(toMillisSafe({ seconds: 1700000000, nanoseconds: 250000000 })).toBe(1700000000250);

@@ -1,5 +1,5 @@
 import type { HistoryItem } from '@/core/types/history';
-import { STUDIO_COLORS } from '../constants';
+import { STUDIO_COLORS } from '@/modules/creative/constants';
 
 export type CreativeModelTier = 'fast' | 'pro';
 export type CreativeEditRoute = 'rapid_edit' | 'typography' | 'heavy_rendering' | 'reference_blend' | 'grounded' | 'canvas_remix';

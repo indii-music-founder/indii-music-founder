@@ -13,13 +13,13 @@ vi.mock('@/services/firebase', () => ({
   functions: {},
 }));
 
-vi.mock('../truthOverclaimReporter', () => ({
+vi.mock('@/services/agent/truthOverclaimReporter', () => ({
   reportOverclaimIfNeeded: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 import { GUARDRAIL_QUESTIONS } from '@/config/typesafeJudgments';
-import { JevGuardrailService, estimateGuardrailReservation, parseGuardrailProbability, projectGuardrailToolEvidence } from './JevGuardrailService';
+import { JevGuardrailService, estimateGuardrailReservation, parseGuardrailProbability, projectGuardrailToolEvidence } from '@/services/agent/guardrails/JevGuardrailService';
 
 describe('guardrail probability contract (pure parser)', () => {
   it.each([0, 0.3, 0.5, 0.7, 1])('preserves valid probability %s in both supported shapes', probability => {
@@ -282,7 +282,7 @@ describe('JevGuardrailService', () => {
   });
 
   it('fires the readiness-overclaim flag and auto-files the truthfulness critique (issue #317)', async () => {
-    const { reportOverclaimIfNeeded } = await import('../truthOverclaimReporter');
+    const { reportOverclaimIfNeeded } = await import('@/services/agent/truthOverclaimReporter');
     const input = {
       text: 'All 23 departments are fully implemented, verified, and operational in production.',
       agentId: 'generalist',

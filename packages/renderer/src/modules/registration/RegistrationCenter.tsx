@@ -3,26 +3,26 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { FilingStateSchema } from '@indii/shared';
 import type { CatalogIntelligenceReport } from '@indii/shared';
-import { CatalogRail } from './components/CatalogRail';
+import { CatalogRail } from '@/modules/registration/components/CatalogRail';
 import {
   CanonicalCatalogIntelligenceSummary,
   type CanonicalCatalogIntelligenceStatus,
-} from './components/CanonicalCatalogIntelligenceSummary';
-import { RegistrationSheet } from './components/RegistrationSheet';
-import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
-import { SocietyRegistrationWorkspace } from './components/SocietyRegistrationWorkspace';
-import { RightsFilingWorkspace } from './components/RightsFilingWorkspace';
-import { FounderReadinessPanel } from './components/FounderReadinessPanel';
-import { CatalogVisibilityPanel } from './components/CatalogVisibilityPanel';
+} from '@/modules/registration/components/CanonicalCatalogIntelligenceSummary';
+import { RegistrationSheet } from '@/modules/registration/components/RegistrationSheet';
+import { RegistrationAutonomousRail } from '@/modules/registration/components/RegistrationAutonomousRail';
+import { SocietyRegistrationWorkspace } from '@/modules/registration/components/SocietyRegistrationWorkspace';
+import { RightsFilingWorkspace } from '@/modules/registration/components/RightsFilingWorkspace';
+import { FounderReadinessPanel } from '@/modules/registration/components/FounderReadinessPanel';
+import { CatalogVisibilityPanel } from '@/modules/registration/components/CatalogVisibilityPanel';
 import { Building2, Music, Compass, Sparkles } from 'lucide-react';
-import { ORG_ADAPTERS } from './adapters';
-import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord, FounderPrerequisiteId } from './types';
+import { ORG_ADAPTERS } from '@/modules/registration/adapters';
+import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord, FounderPrerequisiteId } from '@/modules/registration/types';
 import { logger } from '@/utils/logger';
-import { loadRegistrationCatalog } from './services/RegistrationCatalog';
-import { loadCanonicalCatalogIntelligence } from './services/CanonicalCatalogIntelligence';
-import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
+import { loadRegistrationCatalog } from '@/modules/registration/services/RegistrationCatalog';
+import { loadCanonicalCatalogIntelligence } from '@/modules/registration/services/CanonicalCatalogIntelligence';
+import { getRegistrationArtistContext } from '@/modules/registration/services/RegistrationArtistContext';
 import { existingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
-import { RightsRegistrationWalkthroughModal } from './components/RightsRegistrationWalkthroughModal';
+import { RightsRegistrationWalkthroughModal } from '@/modules/registration/components/RightsRegistrationWalkthroughModal';
 import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 // ============================================================================

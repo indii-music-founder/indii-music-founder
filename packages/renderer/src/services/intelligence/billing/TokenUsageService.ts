@@ -4,7 +4,7 @@ import { RATE_LIMITS } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
-import { estimateCostUsd, sanitizeModelKey } from './ModelPricing';
+import { estimateCostUsd, sanitizeModelKey } from '@/services/intelligence/billing/ModelPricing';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
 

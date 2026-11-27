@@ -8,7 +8,7 @@
  * - Export functionality validates before upload
  */
 
-import { getDistributorRequirements, DistributorRequirements } from './distributorRequirements';
+import { getDistributorRequirements, DistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import type { UserProfile } from '@/modules/workflow/types';
 
 // --- Types ---

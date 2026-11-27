@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeStorageFetch } from './safeStorageFetch';
+import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
 
 // Pure byte-decoding checks, not proof of authenticated artwork persistence.
 describe('inline artwork asset decoding', () => {

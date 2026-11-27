@@ -7,9 +7,9 @@ import { useState } from 'react';
 import { Mic, ShoppingBag, Receipt, PenTool, LayoutDashboard, Navigation, Car } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../haptics';
-import MobileMileageModal from './MobileMileageModal';
-import { businessMileageRate } from './mileageRate';
+import { triggerHaptic } from '@/modules/mobile-remote/haptics';
+import MobileMileageModal from '@/modules/mobile-remote/components/MobileMileageModal';
+import { businessMileageRate } from '@/modules/mobile-remote/components/mileageRate';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';

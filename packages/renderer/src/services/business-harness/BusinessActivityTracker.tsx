@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { auth } from '@/services/firebase';
-import { activityValueService } from './ActivityValueService';
-import { saveBusinessActivityEvent, saveBusinessCostLine } from './HarnessStorage';
-import type { BusinessActivityEvent } from './types';
+import { activityValueService } from '@/services/business-harness/ActivityValueService';
+import { saveBusinessActivityEvent, saveBusinessCostLine } from '@/services/business-harness/HarnessStorage';
+import type { BusinessActivityEvent } from '@/services/business-harness/types';
 import { logger } from '@/utils/logger';
 
 const MIN_PERSISTED_MINUTES = 1;

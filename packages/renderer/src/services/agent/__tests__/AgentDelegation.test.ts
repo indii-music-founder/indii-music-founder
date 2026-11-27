@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateHubAndSpoke, HUB_AGENT_ID, VALID_AGENT_IDS } from '../types';
+import { validateHubAndSpoke, HUB_AGENT_ID, VALID_AGENT_IDS } from '@/services/agent/types';
 describe('Agent Delegation and Collaboration', () => {
     describe('Delegation Validation', () => {
         it('validates delegation before executing', () => {

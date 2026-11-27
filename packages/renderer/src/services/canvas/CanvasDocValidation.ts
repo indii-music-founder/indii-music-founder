@@ -1,4 +1,4 @@
-import { NEUTRAL_ADJUSTMENTS, type CanvasDoc, type CanvasLayer, type AdjustmentStack } from './CanvasDoc';
+import { NEUTRAL_ADJUSTMENTS, type CanvasDoc, type CanvasLayer, type AdjustmentStack } from '@/services/canvas/CanvasDoc';
 
 function record(value: unknown): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid artwork document');

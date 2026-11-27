@@ -1,6 +1,6 @@
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useAutoResizeTextarea } from './use-auto-resize-textarea';
+import { useAutoResizeTextarea } from '@/hooks/use-auto-resize-textarea';
 import React from 'react';
 
 // Mock component to use the hook

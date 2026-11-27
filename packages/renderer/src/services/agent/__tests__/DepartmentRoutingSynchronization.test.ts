@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DEPARTMENTS, listHeadIds } from '../departments';
+import { DEPARTMENTS, listHeadIds } from '@/services/agent/departments';
 import {
     buildDepartmentAuditReport,
     isDepartmentAuditOrReadinessQuestion,
     detectUngroundedEngineeringHallucination,
-} from '../capabilityTruth';
+} from '@/services/agent/capabilityTruth';
 
 describe('DepartmentRoutingSynchronization & Capability Truth Architectural Guard', () => {
     it('ensures all registered departments in departments.ts are present in Conductor prompt routing table', () => {

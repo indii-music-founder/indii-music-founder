@@ -1,7 +1,7 @@
 import React from 'react';
-import { MerchandiseAnalytics } from './MerchandiseAnalytics';
-import { MerchTable } from './MerchTable';
-import { useFinance } from '../hooks/useFinance';
+import { MerchandiseAnalytics } from '@/modules/finance/components/MerchandiseAnalytics';
+import { MerchTable } from '@/modules/finance/components/MerchTable';
+import { useFinance } from '@/modules/finance/hooks/useFinance';
 import { motion } from 'motion/react';
 import { ShoppingBag, TrendingUp, Package } from 'lucide-react';
 

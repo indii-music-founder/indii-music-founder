@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { TransferPanel } from '../TransferPanel';
+import { TransferPanel } from '@/modules/distribution/components/TransferPanel';
 import { credentialService } from '@/services/security/CredentialService';
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/services/security/CredentialService', () => ({
     },
 }));
 
-vi.mock('../ConnectDistributorModal', () => ({
+vi.mock('@/modules/distribution/components/ConnectDistributorModal', () => ({
     default: {
         call: vi.fn().mockResolvedValue(true),
     },

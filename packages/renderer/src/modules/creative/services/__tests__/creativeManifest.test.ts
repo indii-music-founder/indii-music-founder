@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildReferenceRolePrompt, compileCreativeEditManifest, type CreativeVaultScope } from '../creativeManifest';
+import { buildReferenceRolePrompt, compileCreativeEditManifest, type CreativeVaultScope } from '@/modules/creative/services/creativeManifest';
 
 describe('buildReferenceRolePrompt', () => {
     it('turns per-color roles into prompt guidance', () => {

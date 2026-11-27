@@ -25,8 +25,8 @@ import {
     loadStoryboardProject,
     renderPendingStoryboardSlots,
     saveStoryboardProject,
-} from './StoryboardOrchestratorService';
-import type { StoryboardProject } from '../schemas/storyboard';
+} from '@/modules/creative/video/services/StoryboardOrchestratorService';
+import type { StoryboardProject } from '@/modules/creative/video/schemas/storyboard';
 
 const BASE_STORYBOARD: StoryboardProject = {
     id: 'sb_1',

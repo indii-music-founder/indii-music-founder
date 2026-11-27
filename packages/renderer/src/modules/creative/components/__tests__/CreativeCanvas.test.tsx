@@ -1,9 +1,9 @@
 // Structural-only legacy suite: test doubles do not verify the production customer path.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within, act } from '@testing-library/react';
-import CreativeCanvas from '../CreativeCanvas';
+import CreativeCanvas from '@/modules/creative/components/CreativeCanvas';
 import React from 'react';
-import { canvasOps } from '../../services/CanvasOperationsService';
+import { canvasOps } from '@/modules/creative/services/CanvasOperationsService';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { saveAssetToStorage } from '@/services/storage/repository';
 import { Editing } from '@/services/image/EditingService';
@@ -133,7 +133,7 @@ vi.mock('@/services/creative/CreativeStorageService', () => ({
     }
 }));
 
-vi.mock('../../services/CanvasOperationsService', () => ({
+vi.mock('@/modules/creative/services/CanvasOperationsService', () => ({
     canvasOps: {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),

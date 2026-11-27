@@ -1,5 +1,5 @@
-import { createHarnessRun, type HarnessRun, type HarnessScore, type HarnessFinding, type HarnessRecommendation, type HarnessAgentBrief } from '../business-harness/types';
-import type { ReleaseHarnessResult, HarnessAgentBrief as LegacyAgentBrief } from './types';
+import { createHarnessRun, type HarnessRun, type HarnessScore, type HarnessFinding, type HarnessRecommendation, type HarnessAgentBrief } from '@/services/business-harness/types';
+import type { ReleaseHarnessResult, HarnessAgentBrief as LegacyAgentBrief } from '@/services/release-harness/types';
 
 export function releaseResultToHarnessRun(result: ReleaseHarnessResult): HarnessRun<ReleaseHarnessResult> {
   const scores: HarnessScore[] = [

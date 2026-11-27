@@ -32,8 +32,8 @@ import type {
     WebRTCSignalMessage,
     WebRTCSignalType,
     WebRTCPeerStatus,
-} from '../types';
-import { WebRTCSignalMessageSchema } from '../types';
+} from '@/modules/project-canvas/types';
+import { WebRTCSignalMessageSchema } from '@/modules/project-canvas/types';
 import { logger } from '@/utils/logger';
 
 export const RTC_ICE_CONFIG: RTCConfiguration = {

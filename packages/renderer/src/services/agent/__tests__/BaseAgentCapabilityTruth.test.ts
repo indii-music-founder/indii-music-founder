@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from '../BaseAgent';
-import { AgentConfig } from '../types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
@@ -43,13 +43,13 @@ vi.mock('@/services/MembershipService', () => ({
     },
 }));
 
-vi.mock('../governance/ToolApprovalService', () => ({
+vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
     toolApprovalService: {
         createPendingApproval: vi.fn().mockResolvedValue('approval-123'),
     },
 }));
 
-vi.mock('../governance/ArtistOperatingProfileService', () => ({
+vi.mock('@/services/agent/governance/ArtistOperatingProfileService', () => ({
     artistOperatingProfileService: {
         getProfile: vi.fn().mockResolvedValue({
             schemaVersion: 'artist-operating-profile.v1',

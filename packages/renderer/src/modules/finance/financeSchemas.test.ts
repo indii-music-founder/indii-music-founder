@@ -4,7 +4,7 @@ import {
     ExpenseSchema,
     ReceiptScanResultSchema,
     sumPaidExpenses,
-} from './schemas';
+} from '@/modules/finance/schemas';
 
 describe('Finance Schemas', () => {
     describe('ExpenseCategorySchema', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { arePropsEqual, DailyItemProps } from './DailyItem.utils';
+import { arePropsEqual, DailyItemProps } from '@/modules/creative/video/components/DailyItem.utils';
 import { HistoryItem } from '@/core/store/slices/creative';
 const mockVideo: HistoryItem = {
     id: 'vid-1',

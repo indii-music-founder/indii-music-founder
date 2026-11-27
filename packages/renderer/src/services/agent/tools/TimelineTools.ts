@@ -17,10 +17,10 @@
  * - list_templates        — Show available timeline templates
  */
 
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import { timelineOrchestrator } from '@/services/timeline/TimelineOrchestratorService';
 import { logger } from '@/utils/logger';
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction } from '@/services/agent/types';
 import type { TimelineBrief, PhaseCadence } from '@/services/timeline/TimelineTypes';
 
 // ============================================================================

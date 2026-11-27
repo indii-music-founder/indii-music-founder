@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useStore } from '../../core/store';
+import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,7 +15,7 @@ import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as T
 import { motion } from 'motion/react';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
-import type { ConversationFile } from '../../modules/workflow/types';
+import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 import { secureRandomPick } from '@/utils/crypto-random';

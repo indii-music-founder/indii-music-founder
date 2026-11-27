@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EvolutionEngine } from './EvolutionEngine';
-import { AgentGene, EvolutionConfig } from './types';
+import { EvolutionEngine } from '@/services/agent/evolution/EvolutionEngine';
+import { AgentGene, EvolutionConfig } from '@/services/agent/evolution/types';
 
 /**
  * 🧬 HELIX: SAFETY FILTER RESILIENCE

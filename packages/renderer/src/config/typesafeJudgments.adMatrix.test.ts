@@ -15,7 +15,7 @@ import {
     heuristicAdMatrixCutJudgment,
     judgeAdMatrixCut,
     type AdMatrixCutState,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 
 const OVERLONG_VERTICAL_CUT: AdMatrixCutState = {
     variantId: 'camp_9x16_15s',

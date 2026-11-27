@@ -8,7 +8,7 @@ vi.mock('@/core/store', () => ({
     },
 }));
 
-import { executeWorkspaceAction } from './boardroomWorkspaceActions';
+import { executeWorkspaceAction } from '@/services/agent/boardroomWorkspaceActions';
 
 describe('boardroomWorkspaceActions (WP8)', () => {
     beforeEach(() => {

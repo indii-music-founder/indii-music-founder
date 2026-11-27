@@ -138,7 +138,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(mocks.initializeAppCheck).toHaveBeenCalled();
     expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
@@ -156,7 +156,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(mocks.initializeAppCheck).toHaveBeenCalledTimes(1);
     expect(mocks.CustomProvider).toHaveBeenCalledTimes(1);
@@ -177,7 +177,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
@@ -192,7 +192,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
@@ -204,7 +204,7 @@ describe('Firebase App Check Initialization', () => {
     }));
     const firestore = await import('firebase/firestore');
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(firestore.persistentSingleTabManager).toHaveBeenCalledWith({ forceOwnership: false });
     expect(firestore.persistentLocalCache).toHaveBeenCalledWith({ tabManager: { kind: 'single-tab' } });
@@ -221,7 +221,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com', appId: '1:123:web:abc' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     const customProviderOpts = mocks.CustomProvider.mock.calls[0]?.[0] as { getToken: () => Promise<unknown> };
     expect(customProviderOpts).toBeDefined();
@@ -268,7 +268,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com', appId: '1:123:web:abc' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     const customProviderOpts = mocks.CustomProvider.mock.calls[0]?.[0] as { getToken: () => Promise<unknown> };
     const result = await customProviderOpts.getToken();
@@ -297,7 +297,7 @@ describe('Firebase App Check Initialization', () => {
       firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
     }));
 
-    await import('./firebase');
+    await import('@/services/firebase');
 
     expect(mocks.authState.idTokenCallbacks).toHaveLength(1);
     const cb = mocks.authState.idTokenCallbacks[0]!;

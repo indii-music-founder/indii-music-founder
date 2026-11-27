@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MarketplaceService } from './MarketplaceService';
+import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 
 // --- Mocks ---
 

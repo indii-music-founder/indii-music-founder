@@ -1,4 +1,4 @@
-import { DSPComplianceReport } from './DSPComplianceValidator';
+import { DSPComplianceReport } from '@/services/audio/DSPComplianceValidator';
 
 export interface TechnicalAudit {
     peakLevel: number;

@@ -21,7 +21,7 @@ import {
     heuristicBoardroomWorkspaceRecommendation,
     judgeBoardroomWorkspaceRecommendation,
     __resetJudgmentCooldownForTests,
-} from './typesafeJudgments';
+} from '@/config/typesafeJudgments';
 
 describe('TypeSafe Boardroom Jev Judgments', () => {
     beforeEach(() => {

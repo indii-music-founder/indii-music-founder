@@ -25,7 +25,7 @@ vi.mock('@/services/firebase', () => ({
     },
 }));
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
-vi.mock('../tools', () => ({
+vi.mock('@/services/agent/tools', () => ({
     get TOOL_REGISTRY() { return mocks.toolRegistry; }
 }));
 vi.mock('firebase/firestore', async (importOriginal) => {
@@ -46,7 +46,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     };
 });
 
-import { toolApprovalService } from './ToolApprovalService';
+import { toolApprovalService } from '@/services/agent/governance/ToolApprovalService';
 import { where } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 

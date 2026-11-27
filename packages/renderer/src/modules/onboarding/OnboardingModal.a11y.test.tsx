@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { OnboardingModal } from './OnboardingModal';
+import { OnboardingModal } from '@/modules/onboarding/OnboardingModal';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -26,7 +26,7 @@ vi.mock('react-i18next', () => ({
 
 
 // Mock dependencies
-vi.mock('../../core/store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: vi.fn(() => ({
         userProfile: {
             brandKit: {},

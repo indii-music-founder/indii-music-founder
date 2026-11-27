@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
+import MarketingAssetGeneratorUI from '@/modules/marketing/components/MarketingAssetGeneratorUI';
 
 vi.mock('@/services/marketing/CampaignIntelligenceService', () => ({
     CampaignIntelligence: {

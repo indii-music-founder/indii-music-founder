@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { agentRegistry } from '../registry';
-import { AGENT_CONFIGS } from '../agentConfig';
+import { agentRegistry } from '@/services/agent/registry';
+import { AGENT_CONFIGS } from '@/services/agent/agentConfig';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
@@ -86,7 +86,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 }));
 
 // Mock execution context to prevent Firestore operations during tests
-vi.mock('../context/AgentExecutionContext', () => ({
+vi.mock('@/services/agent/context/AgentExecutionContext', () => ({
     ExecutionContextFactory: {
         fromAgentContext: vi.fn().mockResolvedValue({
             hasUncommittedChanges: vi.fn().mockReturnValue(false),
@@ -105,7 +105,7 @@ vi.mock('@/services/intelligence/context/ContextManager', () => ({
 }));
 
 // Mock ProactiveService
-vi.mock('../ProactiveService', () => ({
+vi.mock('@/services/agent/ProactiveService', () => ({
     proactiveService: {
         scheduleTask: vi.fn().mockResolvedValue('mock-task-id'),
         subscribeToEvent: vi.fn().mockResolvedValue('mock-subscription-id')

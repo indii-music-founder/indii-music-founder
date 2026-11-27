@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logger } from '@/utils/logger';
-import { MemorySummarizer } from './MemorySummarizer';
+import { MemorySummarizer } from '@/services/agent/memory/MemorySummarizer';
 
 const generateText = vi.hoisted(() => vi.fn());
-vi.mock('../../intelligence/FirebaseIntelligenceService', () => ({
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
     FirebaseIntelligenceService: { getInstance: () => ({ generateText }) },
 }));
 

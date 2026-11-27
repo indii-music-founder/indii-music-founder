@@ -1,4 +1,4 @@
-import { CustomNode, CustomEdge } from '../types';
+import { CustomNode, CustomEdge } from '@/modules/workflow/types';
 
 export interface ADKGraph {
     name: string;

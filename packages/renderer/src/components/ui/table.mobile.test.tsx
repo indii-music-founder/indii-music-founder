@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 describe('Table Component Mobile Responsiveness', () => {
   const ORIGINAL_INNER_WIDTH = window.innerWidth;

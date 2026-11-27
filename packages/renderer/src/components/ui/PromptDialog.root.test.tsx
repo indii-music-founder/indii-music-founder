@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { PromptDialog } from './PromptDialog';
+import { PromptDialog } from '@/components/ui/PromptDialog';
 
 describe('PromptDialog callable Root', () => {
     it.each([{ isComposing: true }, { keyCode: 229 }])('does not submit a composing Enter (%j)', async composition => {

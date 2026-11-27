@@ -3,15 +3,15 @@ import React, { useRef, useLayoutEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import type { Components } from 'react-markdown';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
-import { BoardroomAssetStrip } from './BoardroomAssetStrip';
-import { BoardroomStarterCards } from './BoardroomStarterCards';
+import { BoardroomAssetStrip } from '@/modules/boardroom/components/BoardroomAssetStrip';
+import { BoardroomStarterCards } from '@/modules/boardroom/components/BoardroomStarterCards';
 import { MessageSquare } from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
-import { BoardroomMessageRow } from './BoardroomMessageRow';
+import { BoardroomMessageRow } from '@/modules/boardroom/components/BoardroomMessageRow';
 
 interface BoardroomConversationPanelProps {
     messages?: AgentMessage[];

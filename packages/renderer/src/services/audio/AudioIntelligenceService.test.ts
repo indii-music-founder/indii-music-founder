@@ -28,11 +28,11 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: { generateStructuredData: mockGenerateStructuredData },
 }));
 
-vi.mock('./AudioAnalysisService', () => ({
+vi.mock('@/services/audio/AudioAnalysisService', () => ({
     audioAnalysisService: { analyze: mockAudioAnalyze },
 }));
 
-vi.mock('./FingerprintService', () => ({
+vi.mock('@/services/audio/FingerprintService', () => ({
     fingerprintService: { generateFingerprint: mockGenerateFingerprint },
 }));
 
@@ -43,7 +43,7 @@ vi.mock('@/services/music/MusicLibraryService', () => ({
     },
 }));
 
-vi.mock('./EnergyMapService', () => ({
+vi.mock('@/services/audio/EnergyMapService', () => ({
     energyMapService: {
         mapEmotionalArc: mockMapEmotionalArc,
         mapEmotionalArcWithProxy: mockMapEmotionalArcWithProxy,
@@ -54,7 +54,7 @@ vi.mock('@/services/marketing/AutoCopywriter', () => ({
     autoCopywriter: { generateCopyPackage: vi.fn(async () => undefined) },
 }));
 
-vi.mock('./StyleMemoryStore', () => ({
+vi.mock('@/services/audio/StyleMemoryStore', () => ({
     styleMemoryStore: {
         compareToDiscography: vi.fn(async () => null),
         recordTrack: vi.fn(async () => undefined),
@@ -69,7 +69,7 @@ vi.mock('@/services/intelligence/NeuralCortexService', () => ({
     neuralCortex: { ingest: vi.fn(async () => undefined) },
 }));
 
-import { AudioIntelligenceService } from './AudioIntelligenceService';
+import { AudioIntelligenceService } from '@/services/audio/AudioIntelligenceService';
 
 const TECHNICAL_FEATURES = {
     bpm: 120,

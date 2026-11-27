@@ -16,10 +16,10 @@
  * - Non-blocking: failures in any layer don't prevent agent execution
  */
 
-import { captainsLogService } from './CaptainsLogService';
-import { coreVaultService, type VaultCategory } from './CoreVaultService';
-import { alwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
-import { memoryBankService } from './MemoryBankService';
+import { captainsLogService } from '@/services/agent/memory/CaptainsLogService';
+import { coreVaultService, type VaultCategory } from '@/services/agent/memory/CoreVaultService';
+import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 

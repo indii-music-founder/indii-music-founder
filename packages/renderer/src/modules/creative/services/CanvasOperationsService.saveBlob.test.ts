@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CanvasOperationsService } from './CanvasOperationsService';
+import { CanvasOperationsService } from '@/modules/creative/services/CanvasOperationsService';
 
 describe('CanvasOperationsService.saveCanvasBlob (ISSUE-1708)', () => {
   it('exports flattened canvas directly via toCanvasElement + toBlob without base64 toDataURL conversion', async () => {

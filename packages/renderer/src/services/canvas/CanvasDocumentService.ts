@@ -14,10 +14,10 @@
 import { auth, db } from '@/services/firebase';
 import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
 import { collection, doc, getDoc, getDocs, query, runTransaction, where } from 'firebase/firestore';
-import type { CanvasDoc } from './CanvasDoc';
-import { normalizeCanvasDoc, readCanvasDocument, summarizeArtwork, newestArtworkFirst, type SavedArtworkSummary } from './CanvasDocValidation';
+import type { CanvasDoc } from '@/services/canvas/CanvasDoc';
+import { normalizeCanvasDoc, readCanvasDocument, summarizeArtwork, newestArtworkFirst, type SavedArtworkSummary } from '@/services/canvas/CanvasDocValidation';
 
-export type { SavedArtworkSummary } from './CanvasDocValidation';
+export type { SavedArtworkSummary } from '@/services/canvas/CanvasDocValidation';
 
 class CanvasDocumentServiceImpl {
     private knownRevisions = new Map<string, number>();

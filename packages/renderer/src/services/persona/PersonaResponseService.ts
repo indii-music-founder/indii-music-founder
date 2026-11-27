@@ -19,10 +19,10 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Schema } from '@/shared/types/ai.dto';
 import { logger } from '@/utils/logger';
-import { compilePersonaPrompt } from './PersonaPromptCompiler';
-import { assignAndResolve } from './PersonaControlGroup';
-import { recordSignal } from './PersonaInteractionRecorder';
-import { recordPersonaResponseMeasurement } from './PersonaMeasurementRecorder';
+import { compilePersonaPrompt } from '@/services/persona/PersonaPromptCompiler';
+import { assignAndResolve } from '@/services/persona/PersonaControlGroup';
+import { recordSignal } from '@/services/persona/PersonaInteractionRecorder';
+import { recordPersonaResponseMeasurement } from '@/services/persona/PersonaMeasurementRecorder';
 import type {
     PersonaFaderValues,
     PersonaId,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LegalAgent } from './LegalAgent';
+import { LegalAgent } from '@/services/agent/definitions/LegalAgent';
 
 // Mock the prompt import which uses Vite's ?raw
 vi.mock('@agents/legal/prompt.md?raw', () => ({

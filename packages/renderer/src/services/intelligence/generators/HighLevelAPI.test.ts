@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractAndParseJson, parseJSON } from './HighLevelAPI';
+import { extractAndParseJson, parseJSON } from '@/services/intelligence/generators/HighLevelAPI';
 
 describe('HighLevelAPI: extractAndParseJson & parseJSON', () => {
     it('parses raw valid JSON string', () => {

@@ -1,6 +1,6 @@
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import { blenderService } from '@/services/blender/BlenderService';
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction } from '@/services/agent/types';
 import type { BlenderTemplateId, BlenderRenderRequest } from '@/services/blender/types';
 
 export const BlenderTools: Record<string, AnyToolFunction> = {

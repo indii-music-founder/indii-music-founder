@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from './BaseAgent';
-import { createTool } from './utils/ZodUtils';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { createTool } from '@/services/agent/utils/ZodUtils';
 import { z } from 'zod';
-import { AgentConfig } from './types';
+import { AgentConfig } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { logger } from '@/utils/logger';
 
@@ -51,7 +51,7 @@ vi.mock('@/services/MembershipService', () => ({
 // ISSUE-1116: ToolApprovalService is dynamically-import-free here (statically imported by
 // BaseAgent.ts), so it must be mocked directly.
 const mockCreatePendingApproval = vi.fn().mockResolvedValue('approval-123');
-vi.mock('./governance/ToolApprovalService', () => ({
+vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
     toolApprovalService: {
         createPendingApproval: (...args: unknown[]) => mockCreatePendingApproval(...args)
     }
@@ -69,7 +69,7 @@ const mockGetAopProfile = vi.fn().mockResolvedValue({
     connectedServiceIds: [],
     permissions: { autonomousComputerControl: true, allowDestructiveTools: false, preApprovedToolNames: [] }
 });
-vi.mock('./governance/ArtistOperatingProfileService', () => ({
+vi.mock('@/services/agent/governance/ArtistOperatingProfileService', () => ({
     artistOperatingProfileService: {
         getProfile: () => mockGetAopProfile()
     }

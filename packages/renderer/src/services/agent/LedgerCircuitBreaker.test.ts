@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BaseAgent } from './BaseAgent';
-import { AgentConfig } from './types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig } from '@/services/agent/types';
 import { MembershipService } from '@/services/MembershipService';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
@@ -48,14 +48,14 @@ vi.mock('@/services/MembershipService', () => ({
 }));
 
 // Mock other dependencies to avoid crashes
-vi.mock('./AgentService', () => ({
+vi.mock('@/services/agent/AgentService', () => ({
     agentService: { runAgent: vi.fn() }
 }));
-vi.mock('./utils/ToolUtils', () => ({
+vi.mock('@/services/agent/utils/ToolUtils', () => ({
     toolError: (msg: string) => ({ success: false, error: msg }),
     wrapTool: vi.fn((tool) => tool)
 }));
-vi.mock('./ProactiveService', () => ({
+vi.mock('@/services/agent/ProactiveService', () => ({
     proactiveService: { scheduleTask: vi.fn(), subscribeToEvent: vi.fn() }
 }));
 vi.mock('@/core/events', () => ({
@@ -70,10 +70,10 @@ vi.mock('@/core/store', () => ({
         setState: vi.fn()
     }
 }));
-vi.mock('./tools', () => ({
+vi.mock('@/services/agent/tools', () => ({
     TOOL_REGISTRY: {}
 }));
-vi.mock('./context/AgentExecutionContext', () => ({
+vi.mock('@/services/agent/context/AgentExecutionContext', () => ({
     ExecutionContextFactory: {
         fromAgentContext: () => ({
             rollback: vi.fn(),

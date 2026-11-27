@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ActivityTimeValueCompiler } from './ActivityTimeValueCompiler';
+import { ActivityTimeValueCompiler } from '@/services/business-harness/ActivityTimeValueCompiler';
 import { BusinessActivityEvent } from '@indii/shared';
 
 describe('ActivityTimeValueCompiler', () => {

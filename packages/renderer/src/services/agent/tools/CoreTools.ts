@@ -1,15 +1,15 @@
-import { delegatedAgentResult } from '../executionFailure';
-import { inheritExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { delegatedAgentResult } from '@/services/agent/executionFailure';
+import { inheritExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 import { logger } from '@/utils/logger';
-import type { AnyToolFunction, AgentContext } from '../types';
-import type { ToolExecutionContext } from '../ToolExecutionContext';
+import type { AnyToolFunction, AgentContext } from '@/services/agent/types';
+import type { ToolExecutionContext } from '@/services/agent/ToolExecutionContext';
 import type { StoreState } from '@/core/store';
 
 import type { AgentMode } from '@/core/store/slices/agent';
-import { wrapTool, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolError } from '@/services/agent/utils/ToolUtils';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { getReleaseDate, getReleaseTitle, releaseCatalogService } from '@/services/distribution/ReleaseCatalogService';
-import { executeWorkspaceAction } from '../boardroomWorkspaceActions';
+import { executeWorkspaceAction } from '@/services/agent/boardroomWorkspaceActions';
 
 // ============================================================================
 // Types for CoreTools
@@ -28,10 +28,10 @@ export const CoreTools = {
         sharedContext?: string;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     }, context, toolContext) => {
-        const { agentService } = await importWithRetry(() => import('../AgentService'));
-        const { toolError } = await importWithRetry(() => import('../utils/ToolUtils'));
-        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await importWithRetry(() => import('../types'));
-        const { DelegationLoopDetector } = await importWithRetry(() => import('../LoopDetector'));
+        const { agentService } = await importWithRetry(() => import('@/services/agent/AgentService'));
+        const { toolError } = await importWithRetry(() => import('@/services/agent/utils/ToolUtils'));
+        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await importWithRetry(() => import('@/services/agent/types'));
+        const { DelegationLoopDetector } = await importWithRetry(() => import('@/services/agent/LoopDetector'));
 
         if (typeof args.targetAgentId !== 'string' || typeof args.task !== 'string') {
             return toolError('Invalid delegation parameters', 'INVALID_ARGS');

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MetadataValidationService } from '../MetadataValidationService';
+import { MetadataValidationService } from '@/services/distribution/MetadataValidationService';
 import { IngestionMetadata } from '@/types/distribution';
 
 describe('MetadataValidationService', () => {

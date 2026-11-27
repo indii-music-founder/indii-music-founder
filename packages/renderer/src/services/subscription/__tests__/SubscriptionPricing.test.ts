@@ -5,7 +5,7 @@ import {
   calculateBillingTotal,
   TIER_CONFIGS,
   getTierOrder,
-} from '../SubscriptionTier';
+} from '@/services/subscription/SubscriptionTier';
 
 describe('Subscription Pricing & Cadence Math', () => {
   describe.each([

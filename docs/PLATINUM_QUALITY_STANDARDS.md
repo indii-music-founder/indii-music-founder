@@ -192,3 +192,10 @@ Whenever an agent (including yourself) or a human declares a task "done" or a re
 Use a public health path such as `/health`, avoiding reserved paths ending in `z`. An internal startup probe passing does not prove that the same path is publicly routable. Compare an actual application route or WebSocket upgrade before declaring the service unreachable or changing IAM. Boardroom deployment uses `/health`; see `CLOUD_RUN_RESERVED_HEALTH_PATH` in the error ledger.
 
 **Optional conversation enrichment must have its own budget.** Saved-memory and older-history reads must settle before the required-context deadline, propagate Stop, and disclose missing context to the artist and model. Never cache a partial/late summary as complete or allow timed-out serial work to schedule more model calls. Required artist directives remain mandatory.
+
+## Refactor Phase 1 Guardrails (Enforced in `npm run lint`)
+
+- **Renderer Path Aliases (`@/` and `@shared/`):** All imports in `packages/renderer/src/**/*.{ts,tsx}` must use `@/` or `@shared/` instead of relative `./` or `../` paths (enforced by ESLint `no-restricted-imports`; run `node scripts/codemods/relative-to-alias.mjs --write` for bulk rewrites). `new URL(..., import.meta.url)`, `import.meta.glob`, and `packages/firebase` are exempt.
+- **Source File-Size Budget Ratchet (1,000 lines):** No tracked `packages/*/src/**/*.{ts,tsx}` file may exceed 1,000 lines, and legacy files recorded in `scripts/file-size-budget.allowlist.json` may not grow (enforced by `npm run check:file-size`). Remove allowlist entries as soon as a file is split to `<= 1,000` lines.
+- **No Direct Firebase SDK in UI Components:** Renderer `.tsx` components must call `*Service.ts` or hooks rather than importing `firebase/firestore`, `firebase/storage`, `firebase/functions`, `firebase/auth`, or `firebase/database` directly (currently `warn` in `eslint.config.js`; scheduled for `error` promotion in Phase 2).
+

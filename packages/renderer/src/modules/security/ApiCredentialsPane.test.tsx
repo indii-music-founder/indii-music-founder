@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { ApiCredentialsPane } from './ApiCredentialsPane';
+import { ApiCredentialsPane } from '@/modules/security/ApiCredentialsPane';
 import { credentialService } from '@/services/security/CredentialService';
 
 describe('ApiCredentialsPane', () => {

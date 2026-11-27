@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isStorageObjectNotFound } from './storageErrors';
+import { isStorageObjectNotFound } from '@/utils/storageErrors';
 
 describe('idempotent Storage deletion classification', () => {
     it('recognizes only the exact missing-object code', () => {

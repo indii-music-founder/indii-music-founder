@@ -1,15 +1,15 @@
 import type { CapabilitySnapshot } from '@shared/schemas/capabilitySnapshot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BaseAgent } from '../BaseAgent';
-import { loadCapabilitySnapshot } from '../CapabilitySnapshotService';
-import { GeneralistAgent } from './GeneralistAgent';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { loadCapabilitySnapshot } from '@/services/agent/CapabilitySnapshotService';
+import { GeneralistAgent } from '@/services/agent/specialists/GeneralistAgent';
 
-vi.mock('../CapabilitySnapshotService', () => ({
+vi.mock('@/services/agent/CapabilitySnapshotService', () => ({
     loadCapabilitySnapshot: vi.fn(),
 }));
 
-vi.mock('../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAll: vi.fn(() => []),
     },

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 
 // Lazy-load Canvas and WaveMesh to break the vendor-three → vendor-react circular dependency
 // This ensures Three.js is not loaded during app bootstrap
-const CanvasRenderer = lazy(() => import('./CanvasRenderer'));
+const CanvasRenderer = lazy(() => import('@/components/shared/CanvasRenderer'));
 
 export const AudioVisualizer: React.FC = () => {
     const { isPlaying } = useStore(useShallow(state => ({

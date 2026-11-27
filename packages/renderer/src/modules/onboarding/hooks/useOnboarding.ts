@@ -18,7 +18,7 @@ import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
-import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
+import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '@/modules/onboarding/onboardingUtils';
 import { hydrateProfileWithAssessment } from '@/services/onboarding/passportHydrationService';
 import { secureRandomPick } from '@/utils/crypto-random';
 import { logger } from '@/utils/logger';

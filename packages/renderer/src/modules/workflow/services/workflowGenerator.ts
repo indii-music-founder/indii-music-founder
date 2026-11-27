@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
+import { NODE_REGISTRY, LOGIC_REGISTRY } from '@/modules/workflow/services/nodeRegistry';
 import type {
     SavedWorkflow,
     CustomNode,
@@ -9,8 +9,8 @@ import type {
     SubgraphNodeData,
     WorkflowAuditionVariant,
     InputNodeData
-} from '../types';
-import { Status } from '../types';
+} from '@/modules/workflow/types';
+import { Status } from '@/modules/workflow/types';
 
 interface JobSummary {
     id: string;

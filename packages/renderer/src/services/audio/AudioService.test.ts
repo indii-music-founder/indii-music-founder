@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { audioService, AudioPlaybackInterruptedError } from './AudioService';
+import { audioService, AudioPlaybackInterruptedError } from '@/services/audio/AudioService';
 
 describe('AudioService URL playback', () => {
     const play = vi.fn(async () => undefined);

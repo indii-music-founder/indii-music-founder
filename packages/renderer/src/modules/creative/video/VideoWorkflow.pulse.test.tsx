@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import VideoWorkflow from './VideoWorkflow';
+import VideoWorkflow from '@/modules/creative/video/VideoWorkflow';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useVideoEditorStore } from './store/videoEditorStore';
-import { VideoGeneration } from '../../../services/video/VideoGenerationService';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import userEvent from '@testing-library/user-event';
 
 // --- Mocks ---
@@ -84,7 +84,7 @@ vi.mock('@/core/store', () => ({
     serverTimestamp: vi.fn()
 }));
 
-vi.mock('./store/videoEditorStore', () => ({
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => ({
     useVideoEditorStore: mockUseVideoEditorStore
 }));
 

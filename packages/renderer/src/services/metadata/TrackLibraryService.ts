@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 
 import { auth, db } from '@/services/firebase';
-import type { ExtendedGoldenMetadata } from './types';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 export class TrackLibraryService {
     private requireUserId(): string {

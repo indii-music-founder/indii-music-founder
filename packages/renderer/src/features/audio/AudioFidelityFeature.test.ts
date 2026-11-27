@@ -9,7 +9,7 @@ vi.mock('../../../../main/src/utils/AgentSupervisor', () => ({
     }
 }));
 
-import { AudioFidelityFeature } from './AudioFidelityFeature';
+import { AudioFidelityFeature } from '@/features/audio/AudioFidelityFeature';
 
 describe('AudioFidelityFeature', () => {
     let feature: AudioFidelityFeature;

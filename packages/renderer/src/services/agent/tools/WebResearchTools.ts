@@ -1,6 +1,6 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import { readBoardroomBrowser } from '../boardroomBrowserResearch';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import { readBoardroomBrowser } from '@/services/agent/boardroomBrowserResearch';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 /** Public-page research only. This surface has no browser input or session controls. */
 export const WebResearchTools = {

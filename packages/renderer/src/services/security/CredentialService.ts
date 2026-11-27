@@ -1,4 +1,4 @@
-import { DistributorId } from '../distribution/types/distributor.ts';
+import { DistributorId } from '@/services/distribution/types/distributor.ts';
 
 export interface Credentials {
     apiKey?: string;

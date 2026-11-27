@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RightsEditorDialog } from '../RightsEditorDialog';
+import { RightsEditorDialog } from '@/services/assets/RightsEditorDialog';
 
 describe('RightsEditorDialog callable Root (H2.2 — RTL dialog pattern)', () => {
     beforeEach(() => vi.clearAllMocks());

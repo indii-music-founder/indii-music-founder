@@ -16,8 +16,8 @@ import {
     type BoardroomExecutiveMission,
     type BoardroomExecutiveVerdict,
 } from '@/config/typesafeJudgments';
-import { BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
-import { BOARDROOM_MISSIONS, type BoardroomMissionDefinition } from '../constants/boardroomMissions';
+import { BOARDROOM_PRIMARY_HEAD_IDS } from '@/modules/boardroom/components/ParticipantSelector';
+import { BOARDROOM_MISSIONS, type BoardroomMissionDefinition } from '@/modules/boardroom/constants/boardroomMissions';
 
 export type BoardroomMissionOption = BoardroomMissionDefinition;
 export { BOARDROOM_MISSIONS };

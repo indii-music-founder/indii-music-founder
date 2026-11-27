@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
-import { audioContextManager } from './AudioContextManager';
+import { audioContextManager } from '@/services/audio/AudioContextManager';
 import { useStore } from '@/core/store';
 
 /**

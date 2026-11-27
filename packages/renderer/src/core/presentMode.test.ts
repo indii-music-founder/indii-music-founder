@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { __resetPresentModeForTests, installPresentModeShortcut, isPresenting } from './presentMode';
+import { __resetPresentModeForTests, installPresentModeShortcut, isPresenting } from '@/core/presentMode';
 
 describe('present mode shortcut', () => {
     afterEach(() => __resetPresentModeForTests(false));

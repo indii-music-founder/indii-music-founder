@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MultiTurnAutorater, TraceMessage } from '../MultiTurnAutorater';
+import { MultiTurnAutorater, TraceMessage } from '@/services/agent/governance/MultiTurnAutorater';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 

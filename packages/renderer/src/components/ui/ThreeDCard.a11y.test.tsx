@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { ThreeDCard } from './ThreeDCard';
+import { ThreeDCard } from '@/components/ui/ThreeDCard';
 import { describe, it, expect, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';

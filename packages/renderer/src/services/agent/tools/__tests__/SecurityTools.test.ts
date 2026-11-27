@@ -9,7 +9,7 @@ import {
     audit_permissions,
     generate_security_report,
     log_audit_event
-} from '../SecurityTools';
+} from '@/services/agent/tools/SecurityTools';
 import { collection, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 

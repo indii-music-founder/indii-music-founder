@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { splitsResolveExactly, sumShareUnits, SHARE_UNITS_PER_PERCENT } from '@indii/shared';
-import { PandaDocService } from './PandaDocService';
+import { PandaDocService } from '@/services/legal/PandaDocService';
 
 /**
  * Item 241: Digital Signature Service

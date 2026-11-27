@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { Slider } from './slider'
+import { Slider } from '@/components/ui/slider'
 import { describe, it, expect, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import * as matchers from 'vitest-axe/matchers'

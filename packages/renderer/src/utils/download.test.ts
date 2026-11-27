@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { downloadAsset, downloadBlob } from './download';
+import { downloadAsset, downloadBlob } from '@/utils/download';
 
 vi.mock('@/utils/logger', () => ({
     logger: {

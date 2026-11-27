@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { LayeredValidator } from '../LayeredValidator';
-import { DistroKidStatementAdapter } from '../adapters/DistroKidStatementAdapter';
-import { EvidenceIntakeService } from '../EvidenceIntakeService';
+import { LayeredValidator } from '@/services/foundry/LayeredValidator';
+import { DistroKidStatementAdapter } from '@/services/foundry/adapters/DistroKidStatementAdapter';
+import { EvidenceIntakeService } from '@/services/foundry/EvidenceIntakeService';
 
 describe('LayeredValidator', () => {
   const sampleTsv = `Reporting Date\tSale Month\tStore\tArtist\tTitle\tISRC\tUPC\tQuantity\tEarnings (USD)\tCountry of Sale

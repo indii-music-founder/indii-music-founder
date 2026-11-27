@@ -1,4 +1,4 @@
-import { serializeDesignCanvas, restoreDesignCanvas } from '../designArtboard';
+import { serializeDesignCanvas, restoreDesignCanvas } from '@/modules/merchandise/designArtboard';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { logger } from '@/utils/logger';

@@ -9,8 +9,8 @@
 import { logger } from '@/utils/logger';
 import { Logger } from '@/core/logger/Logger';
 import JSZip from 'jszip';
-import { ExtendedGoldenMetadata, INITIAL_METADATA } from '../metadata/types';
-import { DSPComplianceValidator, DSPComplianceReport } from './DSPComplianceValidator';
+import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
+import { DSPComplianceValidator, DSPComplianceReport } from '@/services/audio/DSPComplianceValidator';
 
 export interface DAWExportOptions {
     bpm: number;

@@ -1,6 +1,6 @@
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
-import { AgentTrace, TraceStep, UsageMetrics } from './types';
+import { AgentTrace, TraceStep, UsageMetrics } from '@/services/agent/observability/types';
 import { MODEL_PRICING, getModelKey } from '@/core/config/intelligence-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { remoteConfig } from '@/services/firebase';

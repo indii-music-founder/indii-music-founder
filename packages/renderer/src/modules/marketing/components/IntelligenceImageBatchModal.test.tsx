@@ -1,8 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import IntelligenceImageBatchModal from './IntelligenceImageBatchModal';
-import { CampaignAsset, CampaignStatus } from '../types';
+import IntelligenceImageBatchModal from '@/modules/marketing/components/IntelligenceImageBatchModal';
+import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({

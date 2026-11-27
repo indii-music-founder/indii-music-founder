@@ -4,7 +4,7 @@ import {
   type VideoFrameLike,
   type VideoDecoderFactory,
   type VideoDecoderLike,
-} from './VideoTrackDecoder';
+} from '@/services/video/nle/VideoTrackDecoder';
 
 describe('VideoTrackDecoder - Ring-Buffered WebCodecs Decoder', () => {
   const createMockFrame = (timestampUs: number): VideoFrameLike => {

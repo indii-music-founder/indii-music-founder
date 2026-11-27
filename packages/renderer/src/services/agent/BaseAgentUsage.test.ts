@@ -1,14 +1,14 @@
 // Structural-only orchestration tests with literal tool outcomes; deployed behavior remains unverified.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BaseAgent } from './BaseAgent';
-import { AgentConfig } from './types';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { AgentConfig } from '@/services/agent/types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { recordToolOutcome } from './governance/ToolOutcomeAudit';
-import type { ToolFunctionResult } from './types';
+import { recordToolOutcome } from '@/services/agent/governance/ToolOutcomeAudit';
+import type { ToolFunctionResult } from '@/services/agent/types';
 
-vi.mock('./governance/ToolOutcomeAudit', () => ({
+vi.mock('@/services/agent/governance/ToolOutcomeAudit', () => ({
     recordToolOutcome: vi.fn(async () => ({ status: 'unavailable' })),
 }));
 
@@ -54,7 +54,7 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
-vi.mock('./registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         get: vi.fn((agentId: string) => ({ id: agentId, name: agentId })),
     },

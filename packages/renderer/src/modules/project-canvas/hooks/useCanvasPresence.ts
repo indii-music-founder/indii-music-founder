@@ -26,9 +26,9 @@ import type {
     CanvasPresenceState,
     CanvasViewport,
     WebRTCPeerStatus,
-} from '../types';
-import { CanvasPresenceSchema } from '../types';
-import { WebRTCPresenceMesh } from '../services/WebRTCPresenceMesh';
+} from '@/modules/project-canvas/types';
+import { CanvasPresenceSchema } from '@/modules/project-canvas/types';
+import { WebRTCPresenceMesh } from '@/modules/project-canvas/services/WebRTCPresenceMesh';
 import { logger } from '@/utils/logger';
 
 export const COLLABORATOR_PALETTE = [

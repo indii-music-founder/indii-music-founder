@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import MobileMileageModal from '@/modules/mobile-remote/components/MobileMileageModal';
 import { useVoice } from '@/core/context/VoiceContext';
-import { useTouring } from '../hooks/useTouring';
+import { useTouring } from '@/modules/touring/hooks/useTouring';
 import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
 import { searchNearbyPlaces, navigateToPlace, type NearbyPlace, type NearbySearchResult } from '@/services/places/NearbyPlacesService';

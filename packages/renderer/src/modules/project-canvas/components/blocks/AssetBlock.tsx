@@ -17,8 +17,8 @@ import {
     Sparkles,
     AlertCircle,
 } from 'lucide-react';
-import type { ProjectCanvasBlock } from '../../types';
-import { EntityResolver, type ResolvedAssetData } from '../../resolvers/EntityResolver';
+import type { ProjectCanvasBlock } from '@/modules/project-canvas/types';
+import { EntityResolver, type ResolvedAssetData } from '@/modules/project-canvas/resolvers/EntityResolver';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 

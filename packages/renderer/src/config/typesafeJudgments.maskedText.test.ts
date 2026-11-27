@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canvasTextCandidateIndex } from './typesafeJudgments';
+import { canvasTextCandidateIndex } from '@/config/typesafeJudgments';
 
 describe('masked text routing decision bands (structural regression, not live proof)', () => {
     const regions = 'ABCDEFG'.split('').map((letter, index) => {

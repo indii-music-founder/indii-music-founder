@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React, { useState } from 'react';
-import CreativeGallery from './CreativeGallery';
-import CreativeNavbar from './CreativeNavbar';
-import CreativeCanvas from './CreativeCanvas';
+import CreativeGallery from '@/modules/creative/components/CreativeGallery';
+import CreativeNavbar from '@/modules/creative/components/CreativeNavbar';
+import CreativeCanvas from '@/modules/creative/components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
@@ -18,28 +18,28 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock complex sub-components
-vi.mock('./CandidatesCarousel', () => ({
+vi.mock('@/modules/creative/components/CandidatesCarousel', () => ({
     CandidatesCarousel: () => <div data-testid="candidates-carousel" />
 }));
 
-vi.mock('./EndFrameSelector', () => ({
+vi.mock('@/modules/creative/components/EndFrameSelector', () => ({
     EndFrameSelector: () => <div data-testid="end-frame-selector" />
 }));
 
-vi.mock('./AnnotationPalette', () => ({
+vi.mock('@/modules/creative/components/AnnotationPalette', () => ({
     default: () => <div data-testid="annotation-palette" />
 }));
 
-vi.mock('./CanvasToolbar', () => ({
+vi.mock('@/modules/creative/components/CanvasToolbar', () => ({
     CanvasToolbar: () => <div data-testid="canvas-toolbar" />
 }));
 
-vi.mock('./EditDefinitionsPanel', () => ({
+vi.mock('@/modules/creative/components/EditDefinitionsPanel', () => ({
     default: () => <div data-testid="edit-definitions-panel" />
 }));
 
 // Mock Canvas operations
-vi.mock('../services/CanvasOperationsService', () => ({
+vi.mock('@/modules/creative/services/CanvasOperationsService', () => ({
     canvasOps: {
         isInitialized: vi.fn().mockReturnValue(true),
         initialize: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock('@/services/storage/repository', () => ({
     getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('../services/VideoDirector', () => ({
+vi.mock('@/modules/creative/services/VideoDirector', () => ({
     VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) }
 }));
 

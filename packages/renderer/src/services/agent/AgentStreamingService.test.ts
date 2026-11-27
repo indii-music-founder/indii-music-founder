@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { AgentStreamingService } from './AgentStreamingService';
+import { AgentStreamingService } from '@/services/agent/AgentStreamingService';
 
 vi.mock('@/utils/dynamicImport', () => ({
   importWithRetry: vi.fn(async (fn: () => Promise<unknown>) => fn()),

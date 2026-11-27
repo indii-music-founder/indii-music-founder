@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { importWithRetry } from '@/utils/dynamicImport';
-import { DelegationLoopDetector } from '../LoopDetector';
+import { DelegationLoopDetector } from '@/services/agent/LoopDetector';
 
 /**
  * Judgment layer: consult_specialist must share the same delegation-depth /
@@ -10,7 +10,7 @@ import { DelegationLoopDetector } from '../LoopDetector';
 
 const mockInvoke = vi.fn();
 
-vi.mock('../a2a/A2AClient', () => ({
+vi.mock('@/services/agent/a2a/A2AClient', () => ({
     a2aClient: {
         stream: vi.fn(),
         invoke: (...args: unknown[]) => mockInvoke(...args),
@@ -18,7 +18,7 @@ vi.mock('../a2a/A2AClient', () => ({
     A2ATransportUnavailableError: class extends Error {},
 }));
 
-vi.mock('../governance/AgentIdentity', () => ({
+vi.mock('@/services/agent/governance/AgentIdentity', () => ({
     agentIdentityService: { recordDelegation: vi.fn() },
 }));
 
@@ -45,7 +45,7 @@ describe('consult_specialist — delegation depth cap', () => {
     });
 
     it('rejects a consult once the delegation chain reaches MAX_DELEGATION_DEPTH', async () => {
-        const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
+        const { consult_specialist } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
         const ctx = makeContext();
 
         // Pre-seed the chain to MAX_DELEGATION_DEPTH (4) with distinct agents.
@@ -62,7 +62,7 @@ describe('consult_specialist — delegation depth cap', () => {
     });
 
     it('rejects consulting the same specialist twice within one swarm/trace', async () => {
-        const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
+        const { consult_specialist } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
         const ctx = makeContext();
 
         const first = await consult_specialist({ targetAgentId: 'marketing', task: 'go' }, ctx as never);
@@ -74,7 +74,7 @@ describe('consult_specialist — delegation depth cap', () => {
     });
 
     it('allows a fresh consult when under the depth cap and no repeat target', async () => {
-        const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
+        const { consult_specialist } = await importWithRetry(() => import('@/services/agent/tools/SwarmTools'));
         const ctx = makeContext();
 
         const result = await consult_specialist({ targetAgentId: 'marketing', task: 'go' }, ctx as never);

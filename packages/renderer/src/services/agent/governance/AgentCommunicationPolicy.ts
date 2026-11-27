@@ -1,4 +1,4 @@
-import { getDepartmentOf, isHead, isWorker } from '../departments';
+import { getDepartmentOf, isHead, isWorker } from '@/services/agent/departments';
 
 export type AgentCommunicationKind = 'task' | 'note';
 export type AgentConversationMode = 'direct' | 'department' | 'boardroom';

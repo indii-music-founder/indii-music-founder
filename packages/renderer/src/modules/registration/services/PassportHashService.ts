@@ -1,4 +1,4 @@
-import type { CatalogTrack } from '../types';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 /**
  * ISSUE-567: Song Passport hash for approval freshness validation.

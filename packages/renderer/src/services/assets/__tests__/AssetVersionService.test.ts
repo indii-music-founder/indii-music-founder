@@ -28,7 +28,7 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 
-import { AssetVersionService } from '../AssetVersionService';
+import { AssetVersionService } from '@/services/assets/AssetVersionService';
 import { setDoc } from 'firebase/firestore';
 
 const base = {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ call: vi.fn(), enabled: vi.fn() }));
 vi.mock('firebase/functions', () => ({ getFunctions: () => ({}), httpsCallable: () => mocks.call }));
 vi.mock('@/config/featureFlags', () => ({ featureFlags: { isEnabled: mocks.enabled }, FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' } }));
-import { judgeCreativePromptAdditiveSuggestions, rankAdditivesDeterministically, __resetJudgmentCooldownForTests } from './typesafeJudgments';
+import { judgeCreativePromptAdditiveSuggestions, rankAdditivesDeterministically, __resetJudgmentCooldownForTests } from '@/config/typesafeJudgments';
 
 // Structural shortlist/permutation contracts; not semantic relevance or live UI acceptance.
 describe('prompt additive ranking contract', () => {

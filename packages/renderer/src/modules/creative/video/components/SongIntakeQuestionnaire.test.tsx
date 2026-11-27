@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { INITIAL_METADATA } from '@/services/metadata/types';
 import { songIntakeReviewService } from '@/services/ingestion/SongIntakeReviewService';
-import { SongIntakeQuestionnaire } from './SongIntakeQuestionnaire';
+import { SongIntakeQuestionnaire } from '@/modules/creative/video/components/SongIntakeQuestionnaire';
 
 vi.mock('@/services/ingestion/SongIntakeReviewService', () => ({
     songIntakeReviewService: { answer: vi.fn() },

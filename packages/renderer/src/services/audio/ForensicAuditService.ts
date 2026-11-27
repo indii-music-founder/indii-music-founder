@@ -16,7 +16,7 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import type { Schema } from '@/shared/types/ai.dto';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
-import type { AudioFeatures } from './types';
+import type { AudioFeatures } from '@/services/audio/types';
 
 // ─── Result Types ─────────────────────────────────────────────────────────────
 

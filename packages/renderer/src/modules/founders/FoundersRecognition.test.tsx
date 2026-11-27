@@ -21,7 +21,7 @@ vi.mock('@/components/share/ShareSheet', () => ({
     },
 }));
 
-import FoundersRecognition from './FoundersRecognition';
+import FoundersRecognition from '@/modules/founders/FoundersRecognition';
 
 const SAMPLE_FOUNDERS: FounderRecord[] = [
     {

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import WhiskPresetStyles, { STYLE_PRESETS } from '../WhiskPresetStyles';
+import WhiskPresetStyles, { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 

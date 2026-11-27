@@ -44,7 +44,7 @@ import {
     studioStateFreshnessRemainingMs,
     DESKTOP_HEARTBEAT_STALE_MS as _DESKTOP_HEARTBEAT_STALE_MS,
     type DesktopState
-} from './RemoteRelayService';
+} from '@/services/agent/RemoteRelayService';
 
 describe('serializeRemoteResponse (ISSUE-981)', () => {
     it('uses the same terminal contract without undefined optional fields', () => {

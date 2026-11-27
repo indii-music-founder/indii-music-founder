@@ -1,5 +1,5 @@
-import { entryCommandHydrationCache } from '../commands/EntryCommandHydrationCache';
-import { clearAllAccountBoundOAuthSessions } from './AccountBoundOAuthSession';
+import { entryCommandHydrationCache } from '@/services/commands/EntryCommandHydrationCache';
+import { clearAllAccountBoundOAuthSessions } from '@/services/auth/AccountBoundOAuthSession';
 import { logger } from '@/utils/logger';
 
 const CLEANUP_SCHEMA_KEY = 'indii:account-boundary-cleanup';

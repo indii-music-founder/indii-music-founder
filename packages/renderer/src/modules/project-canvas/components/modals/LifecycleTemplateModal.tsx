@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { X, LayoutTemplate, Layers, ArrowRight, Sparkles, Check } from 'lucide-react';
 import { useStore } from '@/core/store';
-import { LifecycleTemplateService } from '../../services/LifecycleTemplateService';
+import { LifecycleTemplateService } from '@/modules/project-canvas/services/LifecycleTemplateService';
 
 interface LifecycleTemplateModalProps {
     isOpen: boolean;

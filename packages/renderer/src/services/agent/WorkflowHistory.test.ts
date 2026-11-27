@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWorkflowHistorySummary, parseWorkflowHistoryRecord } from './WorkflowHistory';
+import { getWorkflowHistorySummary, parseWorkflowHistoryRecord } from '@/services/agent/WorkflowHistory';
 
 // Literal schema inputs for pure boundary/presentation checks; no customer path is simulated.
 const input = {

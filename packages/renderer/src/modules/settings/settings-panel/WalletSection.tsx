@@ -36,7 +36,7 @@ import {
     type CreditTransaction,
     type CreditWallet,
 } from '@indii/shared';
-import { SectionHeader } from './SettingsShared';
+import { SectionHeader } from '@/modules/settings/settings-panel/SettingsShared';
 import { logger } from '@/utils/logger';
 
 const FEATURE_UNLOCKS = [

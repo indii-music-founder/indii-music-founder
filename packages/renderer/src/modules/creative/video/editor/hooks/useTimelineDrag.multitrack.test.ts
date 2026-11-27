@@ -1,12 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useTimelineDrag, computeMoveUpdate, findTrackAtPoint } from './useTimelineDrag';
-import { isClipCompatibleWithTrack } from '../utils/timelineUtils';
-import { useVideoEditorStore, VideoProject } from '../../store/videoEditorStore';
+import { useTimelineDrag, computeMoveUpdate, findTrackAtPoint } from '@/modules/creative/video/editor/hooks/useTimelineDrag';
+import { isClipCompatibleWithTrack } from '@/modules/creative/video/editor/utils/timelineUtils';
+import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 
 // Un-stub global setup's store mock so authentic store mutations execute
 vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => importOriginal());
-vi.mock('../../store/videoEditorStore', async (importOriginal) => importOriginal());
+vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => importOriginal());
 
 describe('multi-track dragging (Feature 18)', () => {
     describe('isClipCompatibleWithTrack', () => {

@@ -15,7 +15,7 @@ import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdap
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { logger } from '@/utils/logger';
-import { aggregateNativeEarnings, summarizeNativeRevenue } from './aggregateNativeEarnings';
+import { aggregateNativeEarnings, summarizeNativeRevenue } from '@/services/revenue/aggregateNativeEarnings';
 
 /**
  * ISSUE-1280: aggregation results carry which distributors failed to report, so a

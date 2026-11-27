@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SocialAgent } from './SocialAgent';
+import { SocialAgent } from '@/services/agent/definitions/SocialAgent';
 
 // Mock raw prompt import
 vi.mock('@agents/social/prompt.md?raw', () => ({
@@ -7,7 +7,7 @@ vi.mock('@agents/social/prompt.md?raw', () => ({
 }));
 
 // Mock SocialTools
-vi.mock('../tools/SocialTools', () => ({
+vi.mock('@/services/agent/tools/SocialTools', () => ({
     SocialTools: {
         generate_social_post: vi.fn(),
         analyze_social_sentiment: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('../tools/SocialTools', () => ({
 }));
 
 // Mock UniversalTools
-vi.mock('../tools/UniversalTools', () => ({
+vi.mock('@/services/agent/tools/UniversalTools', () => ({
     UniversalTools: {
         web_extract: vi.fn(),
         indii_image_gen: vi.fn(),

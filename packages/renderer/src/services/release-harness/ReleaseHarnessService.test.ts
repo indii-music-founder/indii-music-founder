@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { releaseHarnessService } from './ReleaseHarnessService';
+import { releaseHarnessService } from '@/services/release-harness/ReleaseHarnessService';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
 import type { UserProfile } from '@/types/User';
 

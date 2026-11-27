@@ -4,7 +4,7 @@ import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { UserProfile } from '@/types/User';
-import type { ArtistOperatingModel, DdexDeliveryAuthorityEvidence, DistributionReadiness, ReleaseDna } from './types';
+import type { ArtistOperatingModel, DdexDeliveryAuthorityEvidence, DistributionReadiness, ReleaseDna } from '@/services/release-harness/types';
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { splitsResolveExactly } from '@indii/shared';
 

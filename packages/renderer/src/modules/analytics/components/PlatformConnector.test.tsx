@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { PlatformConnector } from './PlatformConnector';
+import { PlatformConnector } from '@/modules/analytics/components/PlatformConnector';
 
 vi.mock('@/services/analytics/SpotifyService', () => ({
     spotifyService: {

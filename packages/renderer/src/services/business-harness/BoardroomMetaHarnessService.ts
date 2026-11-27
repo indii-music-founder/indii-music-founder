@@ -1,5 +1,5 @@
-import type { BoardroomHarnessDecision, HarnessRun, HarnessSeverity } from './types';
-import { hiddenCostHarnessService } from './HiddenCostHarnessService';
+import type { BoardroomHarnessDecision, HarnessRun, HarnessSeverity } from '@/services/business-harness/types';
+import { hiddenCostHarnessService } from '@/services/business-harness/HiddenCostHarnessService';
 
 const SEVERITY_ORDER: HarnessSeverity[] = ['info', 'low', 'medium', 'high', 'critical'];
 

@@ -5,7 +5,7 @@ const { getSessions, getDocs } = vi.hoisted(() => ({
     getDocs: vi.fn(),
 }));
 vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn(() => ({ agentHistory: [] })) } }));
-vi.mock('../registry', () => ({ agentRegistry: { get: vi.fn() } }));
+vi.mock('@/services/agent/registry', () => ({ agentRegistry: { get: vi.fn() } }));
 vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user1' } }, db: {} }));
 vi.mock('@/services/firebase', () => ({
     app: {},
@@ -13,8 +13,8 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     remoteConfig: null,
 }));
-vi.mock('../utils/SummaryService', () => ({ SummaryService: { summarize: vi.fn() } }));
-vi.mock('../memory/AlwaysOnMemoryEngine', () => ({ alwaysOnMemoryEngine: { retrieve: vi.fn() } }));
+vi.mock('@/services/agent/utils/SummaryService', () => ({ SummaryService: { summarize: vi.fn() } }));
+vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({ alwaysOnMemoryEngine: { retrieve: vi.fn() } }));
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: { getSessionsForUserPaginated: getSessions },
 }));
@@ -31,7 +31,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     };
 });
 
-import { HistoryManager } from './HistoryManager';
+import { HistoryManager } from '@/services/agent/components/HistoryManager';
 
 describe('HistoryManager session search', () => {
     beforeEach(() => vi.clearAllMocks());

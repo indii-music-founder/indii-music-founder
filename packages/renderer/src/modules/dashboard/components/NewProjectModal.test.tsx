@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
-import NewProjectModal from "./NewProjectModal";
+import NewProjectModal from "@/modules/dashboard/components/NewProjectModal";
 import { vi } from "vitest";
 import React from "react";
 

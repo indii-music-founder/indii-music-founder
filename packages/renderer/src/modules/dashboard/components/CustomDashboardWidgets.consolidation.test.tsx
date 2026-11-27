@@ -96,7 +96,7 @@ import {
     loadWidgets,
     STORAGE_KEY,
     type Widget,
-} from './CustomDashboardWidgets';
+} from '@/modules/dashboard/components/CustomDashboardWidgets';
 
 describe('Consolidated Dashboard Widgets & Operational Gates', () => {
     beforeEach(() => {

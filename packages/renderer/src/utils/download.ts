@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { imageDownloadFilename } from './downloadFilename';
+import { imageDownloadFilename } from '@/utils/downloadFilename';
 
 async function filenameForBlob(filename: string, blob: Blob): Promise<string> {
     const prefix = blob.slice(0, 12);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 
 describe('FirebaseIntelligenceService stream completion & abort handling (ISSUE-1688)', () => {
   afterEach(() => {

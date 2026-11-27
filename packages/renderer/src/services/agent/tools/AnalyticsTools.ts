@@ -1,7 +1,7 @@
-import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
-import { detect_streaming_anomalies } from './AnalysisTools';
-import { run_cohort_analysis } from './BigQueryTools';
+import { wrapTool, toolError, toolSuccess } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
+import { detect_streaming_anomalies } from '@/services/agent/tools/AnalysisTools';
+import { run_cohort_analysis } from '@/services/agent/tools/BigQueryTools';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export const AnalyticsTools = {

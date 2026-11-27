@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileApprovalToTimeline, TimelineCompileError, VideoProject } from './videoEditorStore';
+import { compileApprovalToTimeline, TimelineCompileError, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
 
 const OWNER_UID = 'user-1';
 

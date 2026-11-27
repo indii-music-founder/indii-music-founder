@@ -1,6 +1,6 @@
 import { StorageService } from '@/services/StorageService';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { useStore } from '@/core/store';
 

@@ -1,6 +1,6 @@
 // EndpointService Test Suite
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EndpointService } from './EndpointService';
+import { EndpointService } from '@/core/config/EndpointService';
 import { env } from '@/config/env';
 
 // Mock the environment

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { earningsReportService } from './EarningsReportService';
-import type { EarningsReportReport } from './types/dsr';
+import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
+import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('EarningsReportService', () => {

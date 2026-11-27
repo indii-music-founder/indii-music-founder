@@ -16,9 +16,9 @@ import { useToast } from '@/core/context/ToastContext';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import FounderBadge from '../components/FounderBadge';
+import FounderBadge from '@/modules/settings/components/FounderBadge';
 import { getColorForModule } from '@/core/theme/moduleColors';
-import { SectionHeader } from './SettingsShared';
+import { SectionHeader } from '@/modules/settings/settings-panel/SettingsShared';
 import { StorageService } from '@/services/StorageService';
 import { UserService } from '@/services/UserService';
 

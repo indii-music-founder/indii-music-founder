@@ -2,15 +2,15 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import '@/services/business-harness';
-import { RegistrationForm } from './RegistrationForm';
-import { ORG_ADAPTERS } from '../adapters';
-import type { CatalogTrack, OrgId } from '../types';
+import { RegistrationForm } from '@/modules/registration/components/RegistrationForm';
+import { ORG_ADAPTERS } from '@/modules/registration/adapters';
+import type { CatalogTrack, OrgId } from '@/modules/registration/types';
 
-vi.mock('../services/RegistrationPersistence', () => ({
+vi.mock('@/modules/registration/services/RegistrationPersistence', () => ({
   persistOrgRecord: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('../services/PassportHashService', () => ({
+vi.mock('@/modules/registration/services/PassportHashService', () => ({
   computePassportHash: vi.fn().mockResolvedValue('passport_hash_mock_123'),
   validateApprovalFreshness: vi.fn().mockResolvedValue({ isFresh: true }),
 }));

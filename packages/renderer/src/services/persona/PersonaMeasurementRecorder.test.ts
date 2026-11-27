@@ -19,7 +19,7 @@ vi.mock('@/services/firebase', () => ({
     functions: { region: 'us-central1' },
 }));
 
-import { recordPersonaResponseMeasurement } from './PersonaMeasurementRecorder';
+import { recordPersonaResponseMeasurement } from '@/services/persona/PersonaMeasurementRecorder';
 
 const REQUEST: PersonaMeasurementRequest = {
     personaId: 'manager',

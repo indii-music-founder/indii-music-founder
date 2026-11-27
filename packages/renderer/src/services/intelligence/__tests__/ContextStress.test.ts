@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ContextManager } from '../context/ContextManager';
+import { ContextManager } from '@/services/intelligence/context/ContextManager';
 import { Content } from '@/shared/types/ai.dto';
 
 describe('ContextManager Stress Tests', () => {

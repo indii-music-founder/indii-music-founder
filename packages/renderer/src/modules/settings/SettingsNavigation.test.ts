@@ -3,7 +3,7 @@ import {
     getRequestedSettingsSection,
     requestSettingsSection,
     SETTINGS_SECTION_REQUEST_EVENT,
-} from './SettingsNavigation';
+} from '@/modules/settings/SettingsNavigation';
 
 describe('SettingsNavigation', () => {
     beforeEach(() => {

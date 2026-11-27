@@ -19,7 +19,7 @@ import {
     AlertCircle,
     RefreshCw,
 } from 'lucide-react';
-import type { CanvasViewport } from '../types';
+import type { CanvasViewport } from '@/modules/project-canvas/types';
 
 interface CanvasHUDProps {
     viewport: CanvasViewport;

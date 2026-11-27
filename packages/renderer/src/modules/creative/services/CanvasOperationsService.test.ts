@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CanvasOperationsService, CANVAS_SERIALIZATION_PROPERTIES } from './CanvasOperationsService';
+import { CanvasOperationsService, CANVAS_SERIALIZATION_PROPERTIES } from '@/modules/creative/services/CanvasOperationsService';
 
 let mockCanvasInstance: any;
 

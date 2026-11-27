@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ArtistBusinessGraphNormalizer } from '../ArtistBusinessGraphNormalizer';
-import { DistroKidStatementAdapter } from '../adapters/DistroKidStatementAdapter';
+import { ArtistBusinessGraphNormalizer } from '@/services/foundry/ArtistBusinessGraphNormalizer';
+import { DistroKidStatementAdapter } from '@/services/foundry/adapters/DistroKidStatementAdapter';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('ArtistBusinessGraphNormalizer', () => {

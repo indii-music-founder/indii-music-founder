@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
     getDocs: vi.fn().mockResolvedValue({ docs: [], size: 0 }),
 }));
 
-vi.mock('./ImageGenerationInstrument', () => ({
+vi.mock('@/services/agent/instruments/ImageGenerationInstrument', () => ({
     ImageGenerationInstrument: class {
         metadata = { id: 'generate_image', name: 'generate_image', description: 'generate_image' };
         inputs = [{ name: 'prompt', required: true }];
@@ -17,7 +17,7 @@ vi.mock('./ImageGenerationInstrument', () => ({
     },
 }));
 
-vi.mock('./VideoGenerationInstrument', () => ({
+vi.mock('@/services/agent/instruments/VideoGenerationInstrument', () => ({
     VideoGenerationInstrument: class {
         metadata = { id: 'generate_video', name: 'generate_video', description: 'generate_video' };
         inputs = [{ name: 'prompt', required: true }];
@@ -34,7 +34,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
 
-import { instrumentRegistry } from './InstrumentRegistry';
+import { instrumentRegistry } from '@/services/agent/instruments/InstrumentRegistry';
 
 describe('InstrumentRegistry secure aggregate writes', () => {
     beforeEach(() => {

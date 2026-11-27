@@ -6,7 +6,7 @@
  * existing coverage convention (only extracted pure logic gets dedicated tests).
  */
 import { describe, it, expect } from 'vitest';
-import { validateComputerTaskDispatch, buildComputerTaskInstruction } from './useRemoteCommandListener';
+import { validateComputerTaskDispatch, buildComputerTaskInstruction } from '@/hooks/useRemoteCommandListener';
 
 describe('validateComputerTaskDispatch', () => {
     it('rejects when the desktop Computer API is unavailable', () => {

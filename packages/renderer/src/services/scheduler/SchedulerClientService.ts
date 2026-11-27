@@ -3,7 +3,7 @@ import type {
     ScheduledTask,
     SchedulerStatus,
     SchedulerTickEvent,
-} from './types';
+} from '@/services/scheduler/types';
 
 /**
  * indii Scheduler Client Service

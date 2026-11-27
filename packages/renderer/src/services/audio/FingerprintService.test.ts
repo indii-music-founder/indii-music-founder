@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FingerprintService } from './FingerprintService';
-import { audioAnalysisService } from './AudioAnalysisService';
+import { FingerprintService } from '@/services/audio/FingerprintService';
+import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 
 // Mock dependencies
-vi.mock('./AudioAnalysisService', () => ({
+vi.mock('@/services/audio/AudioAnalysisService', () => ({
     audioAnalysisService: {
         analyze: vi.fn()
     }
@@ -113,7 +113,7 @@ describe('FingerprintService', () => {
         vi.spyOn(document, 'createElement').mockImplementation((() => mockAudio) as unknown as typeof document.createElement);
 
         // Pass undefined for filePath (2nd arg) to ensure existingFeatures (3rd arg) is used
-        const fingerprint = await service.generateFingerprint(mockFile, undefined, existingFeatures as unknown as import('./types').AudioFeatures);
+        const fingerprint = await service.generateFingerprint(mockFile, undefined, existingFeatures as unknown as import('@/services/audio/types').AudioFeatures);
 
         expect(fingerprint).toContain('150s');
     });

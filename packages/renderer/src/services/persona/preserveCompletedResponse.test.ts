@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { preserveCompletedResponse } from './preserveCompletedResponse';
+import { preserveCompletedResponse } from '@/services/persona/preserveCompletedResponse';
 
 // Pure text preservation; no customer, model, or service path is simulated.
 describe('completed response preservation', () => {

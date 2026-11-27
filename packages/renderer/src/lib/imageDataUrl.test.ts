@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { imageDataUrlToBlob } from './imageDataUrl';
+import { imageDataUrlToBlob } from '@/lib/imageDataUrl';
 
 // Pure byte conversion: no browser authentication, upload, or network response is simulated.
 describe('canvas image decoding', () => {

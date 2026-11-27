@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { DistributorCard } from './DistributorCard';
-import ConnectDistributorModal from './ConnectDistributorModal';
+import { DistributorCard } from '@/modules/distribution/components/DistributorCard';
+import ConnectDistributorModal from '@/modules/distribution/components/ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { logger } from '@/utils/logger';
 
-import DistributorCredentialsPanel from './DistributorCredentialsPanel';
+import DistributorCredentialsPanel from '@/modules/distribution/components/DistributorCredentialsPanel';
 
 export const DistributorConnectionsPanel: React.FC = () => {
     const { distribution, fetchDistributors } = useStore(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildChunkRecoveryUrl } from './dynamicImport';
+import { buildChunkRecoveryUrl } from '@/utils/dynamicImport';
 
 describe('buildChunkRecoveryUrl', () => {
     it('cache-busts the document while preserving the route and existing query', () => {

@@ -10,7 +10,7 @@ import {
     CampaignObjective,
     CampaignTone,
     Platform
-} from '../types';
+} from '@/modules/marketing/types';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface IntelligenceCampaignModalProps {

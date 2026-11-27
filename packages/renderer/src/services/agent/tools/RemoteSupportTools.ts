@@ -1,10 +1,10 @@
 import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { requestSettingsSection } from '@/modules/settings/SettingsNavigation';
-import { isFreshStudioState, type DesktopState } from '../RemoteRelayService';
-import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
-import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
-import type { AnyToolFunction } from '../types';
+import { isFreshStudioState, type DesktopState } from '@/services/agent/RemoteRelayService';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 export const RemoteSupportTools = {
     open_remote_setup: wrapTool('open_remote_setup', async () => {

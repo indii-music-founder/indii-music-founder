@@ -5,7 +5,7 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
-import { isSafeExternalAssetUrl } from '../utils/boardroomUrls';
+import { isSafeExternalAssetUrl } from '@/modules/boardroom/utils/boardroomUrls';
 
 /**
  * BoardroomAssetStrip — a horizontal strip of the artist's most recent

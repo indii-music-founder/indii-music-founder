@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     PlatformOAuthCallback,
-} from './PlatformOAuthCallback';
+} from '@/modules/analytics/components/PlatformOAuthCallback';
 import {
     getPlatformOAuthCallbackProvider,
     type PlatformOAuthCallbackProvider,
-} from './platformOAuthCallbackRoute';
+} from '@/modules/analytics/components/platformOAuthCallbackRoute';
 
 const services = vi.hoisted(() => ({
     spotify: { handleCallback: vi.fn() },

@@ -2,7 +2,7 @@ import {
     executeWorkspaceAction,
     type BoardroomWorkspaceAction,
     type BoardroomWorkspaceResult,
-} from './boardroomWorkspaceActions';
+} from '@/services/agent/boardroomWorkspaceActions';
 
 export interface BoardroomBrowserAssignment {
     requestId: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ParallelRenderOrchestrator } from '../ParallelRenderOrchestrator';
+import { ParallelRenderOrchestrator } from '@/services/video/ParallelRenderOrchestrator';
 
 describe('ParallelRenderOrchestrator', () => {
     it('fails closed with a typed unsupported receipt and no fabricated URLs', async () => {

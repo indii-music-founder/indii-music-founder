@@ -17,7 +17,7 @@ import type {
   ParentalWarningType,
   AIGenerationInfo,
   RightsController,
-} from './common';
+} from '@/services/distribution/proprietary-ingestion/types/common';
 
 export type { Contributor };
 

@@ -40,7 +40,7 @@ vi.mock('firebase/firestore', () => ({
   Timestamp: mockTimestamp.MockTimestamp,
 }));
 
-import { MetricsService } from '../MetricsService';
+import { MetricsService } from '@/services/agent/observability/MetricsService';
 
 describe('MetricsService', () => {
   beforeEach(() => {

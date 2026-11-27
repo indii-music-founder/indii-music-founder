@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PromptSanitizer } from './PromptSanitizer';
+import { PromptSanitizer } from '@/services/security/PromptSanitizer';
 
 describe('PromptSanitizer', () => {
     // ==========================================================================

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuthorityPanel } from '../AuthorityPanel';
+import { AuthorityPanel } from '@/modules/distribution/components/AuthorityPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PODCredentialService } from './PODCredentialService';
+import { PODCredentialService } from '@/services/pod/PODCredentialService';
 
 const USER_ID = 'user_test_123';
 

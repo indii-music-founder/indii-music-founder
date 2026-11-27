@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { DeptLoader } from './DeptLoader';
+import { DeptLoader } from '@/components/ui/DeptLoader';
 import { describe, it, expect } from 'vitest';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';

@@ -7,7 +7,7 @@ import {
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { getStoryboardTimingError, isValidStoryboardSceneDuration, MAX_STORYBOARD_SCENE_SECONDS } from './screenwriterTiming';
+import { getStoryboardTimingError, isValidStoryboardSceneDuration, MAX_STORYBOARD_SCENE_SECONDS } from '@/modules/screenwriter/screenwriterTiming';
 import {
     screenwriterDraftService,
     ScreenwriterDraftConflictError,

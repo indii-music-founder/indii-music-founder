@@ -7,7 +7,7 @@ import { secureRandomInt } from '@/utils/crypto-random';
  * Works with the subscription system to enforce limits.
  */
 
-import { UsageRecord } from './types';
+import { UsageRecord } from '@/services/subscription/types';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 class UsageTracker {
@@ -99,7 +99,7 @@ class UsageTracker {
         ...record,
         timestamp: Date.now()
       });
-      const { subscriptionService } = await import('./SubscriptionService');
+      const { subscriptionService } = await import('@/services/subscription/SubscriptionService');
       subscriptionService.clearCache(userId);
     } catch (error: unknown) {
       logger.error(`[UsageTracker] Error tracking usage (attempt ${attempt + 1}):`, error);

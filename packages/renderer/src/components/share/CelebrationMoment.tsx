@@ -15,7 +15,7 @@ import { ArrowRight, Share2, Volume2, VolumeX } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
 import { FREQUENCY_PALETTE, type ShareCardOptions, type ShareCardTemplate } from '@shared/share/shareCardTemplates';
-import { ShareSheet } from './ShareSheet';
+import { ShareSheet } from '@/components/share/ShareSheet';
 import { isMilestoneSoundEnabled, playSonicLogo, setMilestoneSoundEnabled } from '@/services/share/milestones';
 import { burstConfetti } from '@/services/moments/confetti';
 import { useStore } from '@/core/store';

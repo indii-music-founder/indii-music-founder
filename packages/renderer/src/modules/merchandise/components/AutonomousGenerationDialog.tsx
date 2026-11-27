@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
-import { MerchCard } from './MerchCard';
-import { MerchButton } from './MerchButton';
+import { MerchCard } from '@/modules/merchandise/components/MerchCard';
+import { MerchButton } from '@/modules/merchandise/components/MerchButton';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';

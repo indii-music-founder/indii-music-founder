@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useIsFounderTier } from './useIsFounderTier';
+import { useIsFounderTier } from '@/hooks/useIsFounderTier';
 
 const stateMock = vi.hoisted(() => ({ userProfile: null as unknown }));
 

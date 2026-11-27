@@ -1,7 +1,7 @@
 
-import { GeneralistAgent } from './GeneralistAgent';
+import { GeneralistAgent } from '@/services/agent/specialists/GeneralistAgent';
 import { Logger } from '@/core/logger/Logger';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 const TAG = 'debug-tools';
 

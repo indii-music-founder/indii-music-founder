@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
+import { CandidatesCarousel, Candidate } from '@/modules/creative/components/CandidatesCarousel';
 
 describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
     const mockCandidates: Candidate[] = [

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { RoadTravelCompiler, RoadTravelInput } from './RoadTravelCompiler';
+import { RoadTravelCompiler, RoadTravelInput } from '@/services/touring/RoadTravelCompiler';
 
 describe('RoadTravelCompiler', () => {
   const compiler = new RoadTravelCompiler();

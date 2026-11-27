@@ -56,7 +56,7 @@ vi.mock('@/core/components/ModuleErrorBoundary', () => ({
 
 // The Memory module is 817 lines — we test the root renders correctly
 // Sub-components are already well-structured inline functions that are now ready for extraction
-import MemoryDashboard from './MemoryDashboard';
+import MemoryDashboard from '@/modules/memory/MemoryDashboard';
 
 describe('MemoryDashboard', () => {
     beforeEach(() => {

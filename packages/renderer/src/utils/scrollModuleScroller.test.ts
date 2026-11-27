@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { scrollModuleScrollerToTop } from './scrollModuleScroller';
+import { scrollModuleScrollerToTop } from '@/utils/scrollModuleScroller';
 
 describe('scrollModuleScrollerToTop', () => {
     beforeEach(() => {

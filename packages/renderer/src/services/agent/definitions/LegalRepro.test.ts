@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agentRegistry } from '../registry';
+import { agentRegistry } from '@/services/agent/registry';
 
 describe('Legal Agent Load Repro', () => {
     it('should attempt to load the real legal agent and print the error', async () => {

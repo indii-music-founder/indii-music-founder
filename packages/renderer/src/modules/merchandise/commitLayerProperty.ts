@@ -1,5 +1,5 @@
 import type { Canvas, FabricObject } from 'fabric';
-import type { LayerPropertyValue } from './types/fabric-extensions';
+import type { LayerPropertyValue } from '@/modules/merchandise/types/fabric-extensions';
 
 export function commitLayerProperty(
     canvas: Pick<Canvas, 'getObjects' | 'fire' | 'requestRenderAll'> | null,

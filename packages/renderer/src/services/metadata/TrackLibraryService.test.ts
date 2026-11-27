@@ -32,8 +32,8 @@ vi.mock('firebase/firestore', () => ({
     Timestamp: firebaseMocks.timestamp,
 }));
 
-import { TrackLibraryService } from './TrackLibraryService';
-import type { ExtendedGoldenMetadata } from './types';
+import { TrackLibraryService } from '@/services/metadata/TrackLibraryService';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('TrackLibraryService', () => {
     const metadata = {

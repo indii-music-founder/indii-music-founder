@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Layers, Clock } from 'lucide-react';
-import DesignHistoryDrawer from './DesignHistoryDrawer';
-import PromptHistoryDrawer from './PromptHistoryDrawer';
+import DesignHistoryDrawer from '@/modules/creative/components/DesignHistoryDrawer';
+import PromptHistoryDrawer from '@/modules/creative/components/PromptHistoryDrawer';
 
 /**
  * Unified History drawer (ISSUE-496) — folds the previously-separate "Versions"

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, User, MessageCircle } from 'lucide-react';
-import { Contact } from '../types';
+import { Contact } from '@/modules/publicist/types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';

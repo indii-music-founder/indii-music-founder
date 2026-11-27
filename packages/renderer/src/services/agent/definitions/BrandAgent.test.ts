@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { BrandAgent } from './BrandAgent';
+import { BrandAgent } from '@/services/agent/definitions/BrandAgent';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({

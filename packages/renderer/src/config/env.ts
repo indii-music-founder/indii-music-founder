@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
+import { CommonEnvSchema } from '@/shared/schemas/env.schema.ts';
 import { logger } from '@/utils/logger';
 
 const toBoolean = (value: string | boolean | undefined): boolean => {

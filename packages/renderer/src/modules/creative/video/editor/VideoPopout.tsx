@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import '@hyperframes/player';
 import type { HyperframesPlayer } from '@hyperframes/player';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
-import { useCompiledVideoPreview } from './hooks/useCompiledVideoPreview';
+import { useCompiledVideoPreview } from '@/modules/creative/video/editor/hooks/useCompiledVideoPreview';
 import { judgePreviewErrorGuidance, type PreviewErrorAction } from '@/config/typesafeJudgments';
 
 /** Artist-facing copy per judgment action; the raw error always stays visible too. */

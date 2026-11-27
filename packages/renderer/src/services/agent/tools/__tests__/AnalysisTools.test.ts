@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AnalysisTools } from '../AnalysisTools';
+import { AnalysisTools } from '@/services/agent/tools/AnalysisTools';
 
 const mockGenerateContent = vi.fn();
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({

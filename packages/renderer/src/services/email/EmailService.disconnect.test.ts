@@ -22,7 +22,7 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
 }));
 
-import { EmailService } from './EmailService';
+import { EmailService } from '@/services/email/EmailService';
 import { setDoc } from 'firebase/firestore';
 
 describe('EmailService.disconnectAccount', () => {

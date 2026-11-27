@@ -9,7 +9,7 @@ import type { BrandKit } from '@/types/User';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Part, Schema } from '@/shared/types/ai.dto';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { toInlineBase64 } from './imagePayload';
+import { toInlineBase64 } from '@/services/brand/imagePayload';
 
 export interface AestheticViolationInput {
     detail: string;

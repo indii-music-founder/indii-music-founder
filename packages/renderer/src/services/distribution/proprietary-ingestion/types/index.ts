@@ -3,10 +3,10 @@
  */
 
 // Common types
-export * from './common';
+export * from '@/services/distribution/proprietary-ingestion/types/common';
 
 // IngestionNotification (Electronic Release Notification) types
-export * from './ern';
+export * from '@/services/distribution/proprietary-ingestion/types/ern';
 
 // EarningsReport (Digital Sales Reporting) types
-export * from './dsr';
+export * from '@/services/distribution/proprietary-ingestion/types/dsr';

@@ -21,7 +21,7 @@ vi.mock('@/core/store', () => {
     return { useStore: { getState: () => mockStore } };
 });
 
-import { MediaTools } from '../MediaTools';
+import { MediaTools } from '@/services/agent/tools/MediaTools';
 import { useStore } from '@/core/store';
 import { AssetVersionService } from '@/services/assets/AssetVersionService';
 

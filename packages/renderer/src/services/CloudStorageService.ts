@@ -9,7 +9,7 @@
  */
 
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from './firebase';
+import { storage } from '@/services/firebase';
 import { Logger } from '@/core/logger/Logger';
 
 export interface ImageCompressionOptions {

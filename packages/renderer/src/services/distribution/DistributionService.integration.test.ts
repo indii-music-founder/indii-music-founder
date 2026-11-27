@@ -1,5 +1,5 @@
 
-import { distributionService } from './DistributionService';
+import { distributionService } from '@/services/distribution/DistributionService';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 

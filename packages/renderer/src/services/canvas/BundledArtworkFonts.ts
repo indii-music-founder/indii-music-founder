@@ -1,12 +1,12 @@
 import JSZip from 'jszip';
 import { EMBEDDED_FONT_FACE_ASSETS } from '@indii/video-compiler/fontAssets';
-import montserratLicense from './fontLicenses/montserrat-OFL.txt?url';
-import archivoLicense from './fontLicenses/archivoblack-OFL.txt?url';
-import monoLicense from './fontLicenses/spacemono-OFL.txt?url';
-import montserratLicenseText from './fontLicenses/montserrat-OFL.txt?raw';
-import archivoLicenseText from './fontLicenses/archivoblack-OFL.txt?raw';
-import monoLicenseText from './fontLicenses/spacemono-OFL.txt?raw';
-import type { TypographyLayer } from './CanvasDoc';
+import montserratLicense from '@/services/canvas/fontLicenses/montserrat-OFL.txt?url';
+import archivoLicense from '@/services/canvas/fontLicenses/archivoblack-OFL.txt?url';
+import monoLicense from '@/services/canvas/fontLicenses/spacemono-OFL.txt?url';
+import montserratLicenseText from '@/services/canvas/fontLicenses/montserrat-OFL.txt?raw';
+import archivoLicenseText from '@/services/canvas/fontLicenses/archivoblack-OFL.txt?raw';
+import monoLicenseText from '@/services/canvas/fontLicenses/spacemono-OFL.txt?raw';
+import type { TypographyLayer } from '@/services/canvas/CanvasDoc';
 
 /** Reuse the app's pinned font bytes; no font download or new dependency. */
 export const BUNDLED_ARTWORK_FONTS = [

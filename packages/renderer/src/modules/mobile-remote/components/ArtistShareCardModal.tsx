@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ImageIcon, X } from 'lucide-react';
 import { ShareSheet } from '@/components/share/ShareSheet';
 import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
-import { buildArtistShareCard } from './artistShareCard';
+import { buildArtistShareCard } from '@/modules/mobile-remote/components/artistShareCard';
 
 export default function ArtistShareCardModal({ name, email, onClose }: { name: string; email?: string; onClose: () => void }) {
     const [includeEmail, setIncludeEmail] = useState(false);

@@ -1,12 +1,12 @@
-import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
+import { FirebaseIntelligenceService as AIService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
-import { backendEmbedTexts } from './backendEmbeddings';
+import { backendEmbedTexts } from '@/services/agent/memory/backendEmbeddings';
 import type { Content, GenerationConfig } from '@/shared/types/ai.dto';
-import { MemorySummarizer } from './MemorySummarizer';
-import { memoryBankService } from './MemoryBankService';
+import { MemorySummarizer } from '@/services/agent/memory/MemorySummarizer';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
@@ -19,7 +19,7 @@ import {
     MAX_INLINE_FILE_SIZE_BYTES,
 } from '@/types/AlwaysOnMemory';
 import { Timestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { importWithRetry } from '@/utils/dynamicImport';

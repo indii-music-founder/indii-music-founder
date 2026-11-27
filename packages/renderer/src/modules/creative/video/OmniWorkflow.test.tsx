@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import OmniWorkflow from './OmniWorkflow';
+import OmniWorkflow from '@/modules/creative/video/OmniWorkflow';
 import { CREATIVE_ASSET_MIME } from '@/services/creative/CreativeAssetDragService';
 
 function droppedAssetDataTransfer(asset: Record<string, unknown>): DataTransfer {

@@ -17,9 +17,9 @@ import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { studioExecutorLeaseService } from '@/services/agent/StudioExecutorLeaseService';
 import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
 import { resolveRemoteCommandExecutionTarget } from '@/services/agent/RemoteRelayService';
-import { createRendererExecutionAdapter } from './rendererExecutionAdapter';
-import type { ExecutorCoreDeps } from './studioExecutorContracts';
-import { StudioExecutorCore } from './StudioExecutorCore';
+import { createRendererExecutionAdapter } from '@/services/remote/rendererExecutionAdapter';
+import type { ExecutorCoreDeps } from '@/services/remote/studioExecutorContracts';
+import { StudioExecutorCore } from '@/services/remote/StudioExecutorCore';
 
 async function defaultScanPending(uid: string): Promise<Array<RemoteCommand & { id: string }>> {
     const cmdsRef = collection(db, 'users', uid, 'remote-relay-commands');

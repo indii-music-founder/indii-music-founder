@@ -18,7 +18,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { pushNotificationService } from '@/services/notifications/PushNotificationService';
 import { EmailService } from '@/services/email/EmailService';
 import type { EmailAccount } from '@/services/email/types';
-import { SectionHeader, SettingRow } from './SettingsShared';
+import { SectionHeader, SettingRow } from '@/modules/settings/settings-panel/SettingsShared';
 import { useTranslation } from 'react-i18next';
 
 const ConnectionsSection: React.FC = () => {

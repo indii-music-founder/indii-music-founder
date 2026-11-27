@@ -1,6 +1,6 @@
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import WebcamCapture from './WebcamCapture';
+import WebcamCapture from '@/components/shared/WebcamCapture';
 
 describe('WebcamCapture media lifecycle', () => {
     const stopTrack = vi.fn();

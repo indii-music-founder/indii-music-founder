@@ -1,4 +1,4 @@
-import type { CanvasDoc, CanvasLayer } from './CanvasDoc';
+import type { CanvasDoc, CanvasLayer } from '@/services/canvas/CanvasDoc';
 
 export const MAX_VIEWPORT_PROXY = 1024;
 

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentExecutor } from '../AgentExecutor';
-import { BaseAgent } from '../../BaseAgent';
-import { TraceService } from '../../observability/TraceService';
-import { agentRegistry } from '../../registry';
+import { AgentExecutor } from '@/services/agent/components/AgentExecutor';
+import { BaseAgent } from '@/services/agent/BaseAgent';
+import { TraceService } from '@/services/agent/observability/TraceService';
+import { agentRegistry } from '@/services/agent/registry';
 
 // Mock TraceService
-vi.mock('../../observability/TraceService');
+vi.mock('@/services/agent/observability/TraceService');
 
 // Mock AgentRegistry
-vi.mock('../../registry', () => ({
+vi.mock('@/services/agent/registry', () => ({
     agentRegistry: {
         getAgent: vi.fn(),
         getAsync: vi.fn()

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ReflectionLoop } from './ReflectionLoop';
+import { ReflectionLoop } from '@/services/agent/ReflectionLoop';
 
 describe('ReflectionLoop', () => {
   let service: ReflectionLoop;

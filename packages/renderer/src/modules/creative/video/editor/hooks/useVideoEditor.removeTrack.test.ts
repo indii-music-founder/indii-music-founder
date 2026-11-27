@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useVideoEditor } from './useVideoEditor';
+import { useVideoEditor } from '@/modules/creative/video/editor/hooks/useVideoEditor';
 import { useVideoEditorStore, blankProjectForId } from '@/modules/creative/video/store/videoEditorStore';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 

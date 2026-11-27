@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { CanvasEditorPortal } from './CanvasEditorPortal';
+import { CanvasEditorPortal } from '@/modules/creative/components/CanvasEditorPortal';
 
 // DOM structure checks only; these do not claim live editor/service validation.
 describe('CanvasEditorPortal', () => {

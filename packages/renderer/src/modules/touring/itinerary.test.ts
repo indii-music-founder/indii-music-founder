@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findNextItineraryStop, formatTouringDate, parseTouringDate, toTouringDateOnly } from './itinerary';
+import { findNextItineraryStop, formatTouringDate, parseTouringDate, toTouringDateOnly } from '@/modules/touring/itinerary';
 
 describe('touring date helpers', () => {
     it('treats a date-only itinerary value as a local calendar date', () => {

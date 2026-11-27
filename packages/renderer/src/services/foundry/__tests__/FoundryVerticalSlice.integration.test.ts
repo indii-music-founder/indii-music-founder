@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { EvidenceIntakeService } from '../EvidenceIntakeService';
-import { FormatForensicsEngine } from '../FormatForensicsEngine';
-import { HypothesisLedger } from '../HypothesisLedger';
-import { AdapterConstructor } from '../AdapterConstructor';
-import { LayeredValidator } from '../LayeredValidator';
-import { ArtistBusinessGraphNormalizer } from '../ArtistBusinessGraphNormalizer';
+import { EvidenceIntakeService } from '@/services/foundry/EvidenceIntakeService';
+import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
+import { HypothesisLedger } from '@/services/foundry/HypothesisLedger';
+import { AdapterConstructor } from '@/services/foundry/AdapterConstructor';
+import { LayeredValidator } from '@/services/foundry/LayeredValidator';
+import { ArtistBusinessGraphNormalizer } from '@/services/foundry/ArtistBusinessGraphNormalizer';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 describe('FoundryVerticalSlice (Integration)', () => {

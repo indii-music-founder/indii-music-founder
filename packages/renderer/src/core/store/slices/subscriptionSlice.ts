@@ -98,19 +98,19 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
         });
 
         // Clear file-scoped listeners
-        import('./agent/agentOrchestrationSlice').then(({ resetGraphListeners }) => {
+        import('@/core/store/slices/agent/agentOrchestrationSlice').then(({ resetGraphListeners }) => {
             resetGraphListeners();
         }).catch(err => logger.error('[SubscriptionManager] Failed to reset graph listeners:', err));
 
-        import('./agent/agentSessionSlice').then(({ resetAgentSessionsListener }) => {
+        import('@/core/store/slices/agent/agentSessionSlice').then(({ resetAgentSessionsListener }) => {
             resetAgentSessionsListener();
         }).catch(err => logger.error('[SubscriptionManager] Failed to reset agent sessions listener:', err));
 
-        import('./creative/creativeHistorySlice').then(({ resetCreativeHistoryListener }) => {
+        import('@/core/store/slices/creative/creativeHistorySlice').then(({ resetCreativeHistoryListener }) => {
             resetCreativeHistoryListener();
         }).catch(err => logger.error('[SubscriptionManager] Failed to reset creative history listener:', err));
 
-        import('./financeSlice').then(({ resetFinanceListener }) => {
+        import('@/core/store/slices/financeSlice').then(({ resetFinanceListener }) => {
             resetFinanceListener();
         }).catch(err => logger.error('[SubscriptionManager] Failed to reset finance listener:', err));
 

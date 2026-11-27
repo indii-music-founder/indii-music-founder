@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { VideoGeneration } from './VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { httpsCallable } from 'firebase/functions';
 
@@ -47,7 +47,7 @@ vi.mock('firebase/functions', () => ({
 }));
 
 // Mock Firebase Autonomous (used in analyzeTemporalContext)
-vi.mock('../intelligence/FirebaseIntelligenceService', () => ({
+vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
     firebaseAI: {
         analyzeImage: vi.fn()
     }

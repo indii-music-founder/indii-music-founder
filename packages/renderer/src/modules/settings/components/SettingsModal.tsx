@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
-import SettingsPanel from '../SettingsPanel';
+import SettingsPanel from '@/modules/settings/SettingsPanel';
 
 export interface SettingsModalProps {
     isOpen: boolean;

@@ -13,8 +13,8 @@ import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
 import { PersonaResponseActions } from '@/core/components/chat/PersonaResponseActions';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { displaySenderId } from '@/services/commands/entryCommandSender';
-import { buildAttachmentDataUri } from './boardroomAttachmentDataUri';
-import { AGENT_ICONS } from '../constants/agentIcons';
+import { buildAttachmentDataUri } from '@/modules/boardroom/components/boardroomAttachmentDataUri';
+import { AGENT_ICONS } from '@/modules/boardroom/constants/agentIcons';
 
 const MemoPersonaResponseActions = React.memo(PersonaResponseActions);
 const MemoThoughtChain = React.memo(ThoughtChain);

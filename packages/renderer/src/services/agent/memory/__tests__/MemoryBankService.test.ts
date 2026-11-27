@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { write } = vi.hoisted(() => ({ write: vi.fn() }));
 vi.mock('firebase/functions', () => ({ httpsCallable: () => write }));
 vi.mock('@/services/firebase', () => ({ functions: {} }));
-import { memoryBankService } from '../MemoryBankService';
+import { memoryBankService } from '@/services/agent/memory/MemoryBankService';
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({

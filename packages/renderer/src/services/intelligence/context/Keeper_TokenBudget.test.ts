@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { ContextManager } from './ContextManager';
+import { ContextManager } from '@/services/intelligence/context/ContextManager';
 import { Content } from '@/shared/types/ai.dto';
 
 // ----------------------------------------------------------------------------

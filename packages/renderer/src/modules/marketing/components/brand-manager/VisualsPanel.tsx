@@ -7,9 +7,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
-import { FontSelector } from './BrandSubComponents';
-import UnifiedAssetLibrary from '../UnifiedAssetLibrary';
-import type { BrandManagerTabProps } from './types';
+import { FontSelector } from '@/modules/marketing/components/brand-manager/BrandSubComponents';
+import UnifiedAssetLibrary from '@/modules/marketing/components/UnifiedAssetLibrary';
+import type { BrandManagerTabProps } from '@/modules/marketing/components/brand-manager/types';
 import { parseColor } from '@/utils/colorUtils';
 
 interface VisualsPanelProps extends BrandManagerTabProps {}

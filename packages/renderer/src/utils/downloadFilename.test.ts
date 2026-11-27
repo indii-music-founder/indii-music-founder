@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { imageDownloadFilename } from './downloadFilename';
+import { imageDownloadFilename } from '@/utils/downloadFilename';
 
 describe('image download encoding names (pure logic)', () => {
     it('uses JPEG bytes even when the filename and MIME claim PNG', () => {

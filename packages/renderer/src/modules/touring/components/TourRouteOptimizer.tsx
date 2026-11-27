@@ -4,9 +4,9 @@ import { MapPin, Plus, X, Zap, Route, Info, BookOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/core/context/ToastContext';
-import { useTouring } from '../hooks/useTouring';
-import { createTouringStopId } from '../itinerary';
-import { TourMap } from './TourMap';
+import { useTouring } from '@/modules/touring/hooks/useTouring';
+import { createTouringStopId } from '@/modules/touring/itinerary';
+import { TourMap } from '@/modules/touring/components/TourMap';
 
 interface City {
     id: string;

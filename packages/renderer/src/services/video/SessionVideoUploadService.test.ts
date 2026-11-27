@@ -10,9 +10,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
 vi.mock('firebase/app-check', () => ({ getToken: mocks.getToken }));
-vi.mock('../firebase', () => ({ functions: { region: 'us-central1' }, getAppCheck: mocks.getAppCheck }));
+vi.mock('@/services/firebase', () => ({ functions: { region: 'us-central1' }, getAppCheck: mocks.getAppCheck }));
 
-import { SessionVideoUploadService, normalizeSessionVideoFile } from './SessionVideoUploadService';
+import { SessionVideoUploadService, normalizeSessionVideoFile } from '@/services/video/SessionVideoUploadService';
 
 const sessionId = 'a'.repeat(40);
 const now = '2026-07-21T18:00:00.000Z';

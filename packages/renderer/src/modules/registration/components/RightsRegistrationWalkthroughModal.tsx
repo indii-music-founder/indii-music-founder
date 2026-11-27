@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useId } from 'react';
-import { reportPrerequisite, type PrerequisiteReports } from '../prerequisiteReports';
+import { reportPrerequisite, type PrerequisiteReports } from '@/modules/registration/prerequisiteReports';
 import { motion } from 'motion/react';
 import {
     X,
@@ -34,7 +34,7 @@ import {
     Barcode,
     Share2
 } from 'lucide-react';
-import type { FounderPrerequisiteId } from '../types';
+import type { FounderPrerequisiteId } from '@/modules/registration/types';
 
 export interface RightsWalkthroughGuide {
     id: FounderPrerequisiteId;

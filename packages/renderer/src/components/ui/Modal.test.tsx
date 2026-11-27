@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { globalKeyboardOrchestrator } from '@/services/keyboard/GlobalKeyboardOrchestrator';
-import { Modal } from './Modal';
+import { Modal } from '@/components/ui/Modal';
 
 afterEach(() => globalKeyboardOrchestrator.dispose());
 

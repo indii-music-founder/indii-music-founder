@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions, auth } from '@/services/firebase';
 import { audioAnalysisReceiptService, type AudioAnalysisReceipt } from '@/services/audio/AudioAnalysisReceiptService';
-import { VideoGeneration } from './VideoGenerationService';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { logger } from '@/utils/logger';
 import type { CanonicalMasterRenderReference, VideoProject, VideoClip, VideoTrack } from '@/modules/creative/video/store/videoEditorStore';

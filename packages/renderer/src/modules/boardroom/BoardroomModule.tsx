@@ -3,23 +3,23 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import ParticipantSelector from './components/ParticipantSelector';
-import { BoardroomTable } from './components/BoardroomTable';
-import { BoardroomConversationPanel } from './components/BoardroomConversationPanel';
+import ParticipantSelector from '@/modules/boardroom/components/ParticipantSelector';
+import { BoardroomTable } from '@/modules/boardroom/components/BoardroomTable';
+import { BoardroomConversationPanel } from '@/modules/boardroom/components/BoardroomConversationPanel';
 import { useMobile } from '@/hooks/useMobile';
-import { BoardroomJourney } from './components/BoardroomJourney';
+import { BoardroomJourney } from '@/modules/boardroom/components/BoardroomJourney';
 
 import { ArrowLeft, Users, Layers, LayoutGrid, Network, MessageSquare, PanelLeft, PanelRight, X } from 'lucide-react';
-import { BOARDROOM_WORKSPACE_TABS } from './constants/boardroomWorkspaceTabs';
-import { LivingPlansTracker } from './components/LivingPlansTracker';
-import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
-import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
-import { BoardroomWorkspacePane } from './components/BoardroomWorkspacePane';
+import { BOARDROOM_WORKSPACE_TABS } from '@/modules/boardroom/constants/boardroomWorkspaceTabs';
+import { LivingPlansTracker } from '@/modules/boardroom/components/LivingPlansTracker';
+import { SwarmCollaborationFeed } from '@/modules/boardroom/components/SwarmCollaborationFeed';
+import { MobileParticipantDrawer } from '@/modules/boardroom/components/MobileParticipantDrawer';
+import { BoardroomWorkspacePane } from '@/modules/boardroom/components/BoardroomWorkspacePane';
 import { cn } from '@/lib/utils';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
-import { BoardroomRightRail } from './components/BoardroomRightRail';
+import { BoardroomRightRail } from '@/modules/boardroom/components/BoardroomRightRail';
 import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 import { Z_LAYER } from '@/core/zLayers';
 

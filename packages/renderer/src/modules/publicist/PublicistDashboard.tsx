@@ -14,20 +14,20 @@ import {
     Crown,
     type LucideIcon
 } from 'lucide-react';
-import { usePublicist } from './hooks/usePublicist';
-import { CampaignCard } from './components/CampaignCard';
-import { ContactList } from './components/ContactList';
-import { CreateCampaignModal } from './components/CreateCampaignModal';
-import { CreateContactModal } from './components/CreateContactModal';
-import { CampaignDetailsModal } from './components/CampaignDetailsModal';
-import { ContactDetailsModal } from './components/ContactDetailsModal';
-import { ProTipsModal } from './components/ProTipsModal';
-import { OnboardingModal } from '../onboarding/OnboardingModal';
-import { ReleaseKitModal } from './components/ReleaseKitModal';
-import { PitchDraftingModal } from './components/PitchDraftingModal';
-import { SuperfanCRM } from './components/SuperfanCRM';
+import { usePublicist } from '@/modules/publicist/hooks/usePublicist';
+import { CampaignCard } from '@/modules/publicist/components/CampaignCard';
+import { ContactList } from '@/modules/publicist/components/ContactList';
+import { CreateCampaignModal } from '@/modules/publicist/components/CreateCampaignModal';
+import { CreateContactModal } from '@/modules/publicist/components/CreateContactModal';
+import { CampaignDetailsModal } from '@/modules/publicist/components/CampaignDetailsModal';
+import { ContactDetailsModal } from '@/modules/publicist/components/ContactDetailsModal';
+import { ProTipsModal } from '@/modules/publicist/components/ProTipsModal';
+import { OnboardingModal } from '@/modules/onboarding/OnboardingModal';
+import { ReleaseKitModal } from '@/modules/publicist/components/ReleaseKitModal';
+import { PitchDraftingModal } from '@/modules/publicist/components/PitchDraftingModal';
+import { SuperfanCRM } from '@/modules/publicist/components/SuperfanCRM';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { Campaign, Contact } from './types';
+import { Campaign, Contact } from '@/modules/publicist/types';
 
 export default function PublicistDashboard() {
     const {

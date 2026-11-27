@@ -9,7 +9,7 @@ import {
   HumanReviewValidationReceipt,
   NormalizedStatementReport
 } from '@indii/shared';
-import { EvidenceIntakeService } from './EvidenceIntakeService';
+import { EvidenceIntakeService } from '@/services/foundry/EvidenceIntakeService';
 
 export class LayeredValidator {
   /**

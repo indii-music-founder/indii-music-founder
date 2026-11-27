@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { IndiiVideoProject } from '@indii/shared';
 
-import { processNextRelayJob } from './DesktopRenderRelayService';
+import { processNextRelayJob } from '@/services/video/DesktopRenderRelayService';
 
 const project: IndiiVideoProject = {
     id: 'proj-1', name: 'Relay', fps: 30, width: 1920, height: 1080, durationInFrames: 60,

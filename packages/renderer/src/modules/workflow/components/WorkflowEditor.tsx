@@ -22,9 +22,9 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { validateConnection } from '../utils/validationUtils';
-import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from './CustomNodes';
-import { createNodeFromDrop } from '../utils/dndUtils';
+import { validateConnection } from '@/modules/workflow/utils/validationUtils';
+import { DepartmentNode, InputNode, OutputNode, AudioSegmentNode, LogicNode } from '@/modules/workflow/components/CustomNodes';
+import { createNodeFromDrop } from '@/modules/workflow/utils/dndUtils';
 const nodeTypes = {
     departmentNode: DepartmentNode,
     inputNode: InputNode,

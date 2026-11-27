@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { getDoc, getDocFromCache, setDoc, onSnapshot } from 'firebase/firestore';
-import { artistDirectiveService, ArtistDirectiveService } from './ArtistDirectiveService';
+import { artistDirectiveService, ArtistDirectiveService } from '@/services/agent/skills/ArtistDirectiveService';
 import { DEFAULT_ARTIST_MASTER_DIRECTIVE, type ArtistMasterDirective } from '@indii/shared';
 
 vi.mock('@/utils/authGuards', () => ({

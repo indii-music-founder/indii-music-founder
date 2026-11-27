@@ -63,7 +63,7 @@ vi.mock("@/components/motion-primitives/text-effect", () => ({
   ),
 }));
 
-import { BoardroomConversationPanel } from "./BoardroomConversationPanel";
+import { BoardroomConversationPanel } from "@/modules/boardroom/components/BoardroomConversationPanel";
 
 describe("BoardroomConversationPanel message rendering", () => {
   beforeEach(() => {

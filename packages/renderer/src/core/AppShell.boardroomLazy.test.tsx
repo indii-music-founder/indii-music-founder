@@ -19,18 +19,18 @@ const storeState = vi.hoisted(() => ({
     conversationMode: 'direct' as 'direct' | 'boardroom',
 }));
 
-vi.mock('../modules/boardroom/BoardroomModule', () => {
+vi.mock('@/modules/boardroom/BoardroomModule', () => {
     boardroomImportSpy();
     return {
         BoardroomModule: () => <div data-testid="lazy-boardroom-module" />,
     };
 });
 
-vi.mock('../modules/dashboard/Dashboard', () => ({
+vi.mock('@/modules/dashboard/Dashboard', () => ({
     default: () => <div data-testid="dashboard-module" />,
 }));
 
-vi.mock('./store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: Object.assign(
         (selector: (state: typeof storeState) => unknown) => selector(storeState),
         { getState: () => storeState },
@@ -63,21 +63,21 @@ vi.mock('@/services/share/snapshotService', () => ({
     captureAndShareSnapshot: vi.fn(),
 }));
 
-vi.mock('./components/Sidebar', () => ({ default: () => null }));
-vi.mock('./components/RightPanel', () => ({ default: () => null }));
+vi.mock('@/core/components/Sidebar', () => ({ default: () => null }));
+vi.mock('@/core/components/RightPanel', () => ({ default: () => null }));
 vi.mock('@/components/ui/WorkspaceBackground', () => ({
     WorkspaceBackground: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
 }));
-vi.mock('./context/ToastContext', () => ({ ToastProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
-vi.mock('./context/VoiceContext', () => ({ VoiceProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
-vi.mock('./context/ThemeContext', () => ({ ThemeProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
-vi.mock('./components/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</> }));
-vi.mock('./components/ModuleErrorBoundary', () => ({ ModuleErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</> }));
-vi.mock('./components/ModuleAmbientBackground', () => ({ ModuleAmbientBackground: () => null }));
-vi.mock('./components/MobileTabBar', () => ({ MobileTabBar: () => null }));
-vi.mock('./components/MobileHeader', () => ({ MobileHeader: () => null }));
-vi.mock('./components/ApprovalModal', () => ({ ApprovalModal: () => null }));
-vi.mock('./components/CostWarningModal', () => ({ default: () => null }));
+vi.mock('@/core/context/ToastContext', () => ({ ToastProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/context/VoiceContext', () => ({ VoiceProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/context/ThemeContext', () => ({ ThemeProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/components/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/components/ModuleErrorBoundary', () => ({ ModuleErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/components/ModuleAmbientBackground', () => ({ ModuleAmbientBackground: () => null }));
+vi.mock('@/core/components/MobileTabBar', () => ({ MobileTabBar: () => null }));
+vi.mock('@/core/components/MobileHeader', () => ({ MobileHeader: () => null }));
+vi.mock('@/core/components/ApprovalModal', () => ({ ApprovalModal: () => null }));
+vi.mock('@/core/components/CostWarningModal', () => ({ default: () => null }));
 vi.mock('@/components/ui/AlertDialog', () => ({ AlertDialog: () => null }));
 vi.mock('@/components/ui/PromptDialog', () => ({ PromptDialog: () => null }));
 vi.mock('@/components/ui/CampaignConfigDialog', () => ({ CampaignConfigDialog: () => null }));
@@ -86,7 +86,7 @@ vi.mock('@/components/ui/AddTaxCollaboratorDialog', () => ({ AddTaxCollaboratorD
 vi.mock('@/modules/distribution/components/ConnectDistributorModal', () => ({ default: () => null }));
 vi.mock('@/components/ui/CreateCampaignDialog', () => ({ CreateCampaignDialog: () => null }));
 vi.mock('@/modules/dashboard/components/NewProjectModal', () => ({ default: () => null }));
-vi.mock('./components/auth/BiometricGate', () => ({ BiometricGate: ({ children }: React.PropsWithChildren) => <>{children}</> }));
+vi.mock('@/core/components/auth/BiometricGate', () => ({ BiometricGate: ({ children }: React.PropsWithChildren) => <>{children}</> }));
 vi.mock('@/providers/ResponsiveLayoutProvider', () => ({ ResponsiveLayoutProvider: ({ children }: React.PropsWithChildren) => <>{children}</> }));
 vi.mock('@/core/components/ShareTargetHandler', () => ({ ShareTargetHandler: () => null }));
 vi.mock('@/utils/moduleDeepLink', () => ({ readModuleDeepLinkFromLocation: () => null }));
@@ -103,16 +103,16 @@ vi.mock('@/components/shared/BackgroundJobMonitor', () => ({ BackgroundJobMonito
 vi.mock('@/components/shared/AudioPIPPlayer', () => ({ default: () => null }));
 vi.mock('@/core/components/LoadingFallbacks', () => ({ LoadingFallback: () => null }));
 vi.mock('@/modules/finance/hooks/useSubscription', () => ({ useSubscription: () => ({ subscription: null, loading: false }) }));
-vi.mock('./components/UpdaterMonitor', () => ({ UpdaterMonitor: () => null }));
+vi.mock('@/core/components/UpdaterMonitor', () => ({ UpdaterMonitor: () => null }));
 vi.mock('@/components/shared/CookieConsentBanner', () => ({ CookieConsentBanner: () => null }));
 vi.mock('@/components/shared/FirstRunTour', () => ({ FirstRunTour: () => null }));
 vi.mock('@/services/business-harness/BusinessActivityTracker', () => ({ BusinessActivityTracker: () => null }));
 vi.mock('@/components/ui/AgentFeedbackWidget', () => ({ AgentFeedbackWidget: () => null }));
-vi.mock('./components/TaskPlanWidget', () => ({ TaskPlanWidget: () => null }));
-vi.mock('./components/AgentCanvasPanel', () => ({ AgentCanvasPanel: () => null }));
-vi.mock('./components/ChatOverlay', () => ({ default: () => null }));
+vi.mock('@/core/components/TaskPlanWidget', () => ({ TaskPlanWidget: () => null }));
+vi.mock('@/core/components/AgentCanvasPanel', () => ({ AgentCanvasPanel: () => null }));
+vi.mock('@/core/components/ChatOverlay', () => ({ default: () => null }));
 vi.mock('@/services/observability/SentryService', () => ({ setSentryUser: vi.fn(), clearSentryUser: vi.fn() }));
-vi.mock('./context/OrganizationAccessContext', () => ({
+vi.mock('@/core/context/OrganizationAccessContext', () => ({
     OrganizationAccessProvider: ({ children }: React.PropsWithChildren) => <>{children}</>,
     useOrganizationAccess: () => ({ activeOrganizationId: null, isControlledModule: () => false }),
 }));
@@ -120,7 +120,7 @@ vi.mock('@/modules/settings/components/SettingsModal', () => ({ SettingsModal: (
 vi.mock('@/modules/notes/components/QuickNotesDrawer', () => ({ QuickNotesDrawer: () => null }));
 vi.mock('@/components/layout/SmartNextActionBanner', () => ({ SmartNextActionBanner: () => null }));
 
-import AppShell from './AppShell';
+import AppShell from '@/core/AppShell';
 
 describe('AppShell Boardroom lazy mount (ISSUE-1643)', () => {
     beforeEach(() => {

@@ -3,8 +3,8 @@ import { runAgenticWorkflow } from '@/services/rag/ragService';
 import { db, auth } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import { wrapTool, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 import { devKnowledgeService } from '@/services/knowledge/DevKnowledgeService';
 import { importWithRetry } from '@/utils/dynamicImport';
 

@@ -16,10 +16,10 @@
 
 import { upscalerService } from '@/services/upscale/UpscalerService';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
-import { PrintCropCancelledError } from './PrintPreparationControl';
+import { PrintCropCancelledError } from '@/services/upscale/PrintPreparationControl';
 import { calculateCoverBox, drawBleedMirror, drawGuideOverlay } from '@indii/shared';
-import { planPrintUpscale, type PrintUpscaleMethod } from './printUpscalePlan';
-import { runPrintStage } from './runPrintStage';
+import { planPrintUpscale, type PrintUpscaleMethod } from '@/services/upscale/printUpscalePlan';
+import { runPrintStage } from '@/services/upscale/runPrintStage';
 
 export interface PrintReadyUpscaleOptions {
     dataUrl: string;
@@ -151,7 +151,7 @@ export class PrintReadyUpscaleService {
             } else {
                 options.onProgress?.(0.3, 'Enhancing details with on-device browser AI...');
                 const { browserUpscale } = await runPrintStage('Loading browser enhancement', 120_000,
-                    () => import('./BrowserUpscale'), options.signal);
+                    () => import('@/services/upscale/BrowserUpscale'), options.signal);
                 let currentDataUrl = sourceDataUrl;
                 let currentWidth = sourceImg.naturalWidth;
                 let currentHeight = sourceImg.naturalHeight;

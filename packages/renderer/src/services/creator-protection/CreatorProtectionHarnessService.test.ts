@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { creatorProtectionHarnessService } from './CreatorProtectionHarnessService';
+import { creatorProtectionHarnessService } from '@/services/creator-protection/CreatorProtectionHarnessService';
 
 describe('CreatorProtectionHarnessService', () => {
   it('keeps enacted TAKE IT DOWN law separate from proposed NO FAKES law', () => {

@@ -2,8 +2,8 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ExistingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
-import { CatalogRail } from './CatalogRail';
-import type { CatalogTrack } from '../types';
+import { CatalogRail } from '@/modules/registration/components/CatalogRail';
+import type { CatalogTrack } from '@/modules/registration/types';
 
 const now = '2026-09-22T12:00:00.000Z';
 

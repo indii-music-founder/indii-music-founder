@@ -1,8 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ScreenwriterTools } from '../ScreenwriterTools';
-import { ProducerTools } from '../ProducerTools';
-import { LegalTools } from '../LegalTools';
+import { ScreenwriterTools } from '@/services/agent/tools/ScreenwriterTools';
+import { ProducerTools } from '@/services/agent/tools/ProducerTools';
+import { LegalTools } from '@/services/agent/tools/LegalTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 // Mock Autonomous Models

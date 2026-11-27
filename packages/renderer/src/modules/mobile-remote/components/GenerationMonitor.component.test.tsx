@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import GenerationMonitor from './GenerationMonitor';
+import GenerationMonitor from '@/modules/mobile-remote/components/GenerationMonitor';
 
 const mockSendCommand = vi.hoisted(() => vi.fn());
 const mockCancelCommand = vi.hoisted(() => vi.fn());

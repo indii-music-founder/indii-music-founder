@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
-import { WhiskDropZone } from '../WhiskDropZone';
+import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import React from 'react';

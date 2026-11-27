@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { extractVideoFrameAt } from '../video';
+import { extractVideoFrameAt } from '@/utils/video';
 
 // Mock resolveStorageUrl to avoid firebase/network dependency
 vi.mock('@/services/storage/resolveStorageUrl', () => ({

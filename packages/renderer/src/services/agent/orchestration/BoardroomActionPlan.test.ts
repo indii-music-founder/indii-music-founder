@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateBoardroomSteps, normalizeBoardroomSteps, extractConfirmedProposalContext, boardroomAddressedAgents, withAddressedBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
+import { validateBoardroomSteps, normalizeBoardroomSteps, extractConfirmedProposalContext, boardroomAddressedAgents, withAddressedBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from '@/services/agent/orchestration/BoardroomActionPlan';
 
 // Pure scheduling and receipt interpretation; no accounts, provider mocks,
 // persisted product data, or claims that a real customer action succeeded.

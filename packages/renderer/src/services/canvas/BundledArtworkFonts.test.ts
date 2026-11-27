@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
-import { BUNDLED_ARTWORK_FONTS, buildBundledArtworkFontArchive } from './BundledArtworkFonts';
+import { BUNDLED_ARTWORK_FONTS, buildBundledArtworkFontArchive } from '@/services/canvas/BundledArtworkFonts';
 
 describe('bundled artwork font downloads', () => {
     it.each(BUNDLED_ARTWORK_FONTS)('exports $family with its WOFF2 and OFL text', async font => {

@@ -10,26 +10,26 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('./components/CampaignDashboard', () => ({
+vi.mock('@/modules/marketing/components/CampaignDashboard', () => ({
     default: () => <div data-testid="campaign-dashboard-stub">Campaign Dashboard</div>,
 }));
-vi.mock('./components/BrandManager', () => ({
+vi.mock('@/modules/marketing/components/BrandManager', () => ({
     default: () => <div data-testid="brand-manager-stub">Brand Manager</div>,
 }));
-vi.mock('../publicist/PublicistDashboard', () => ({
+vi.mock('@/modules/publicist/PublicistDashboard', () => ({
     default: () => <div data-testid="publicist-dashboard-stub">Publicist Dashboard</div>,
 }));
-vi.mock('../social/SocialDashboard', () => ({
+vi.mock('@/modules/social/SocialDashboard', () => ({
     default: () => <div data-testid="social-dashboard-stub">Social Dashboard</div>,
 }));
-vi.mock('../crm/CRMDashboard', () => ({
+vi.mock('@/modules/crm/CRMDashboard', () => ({
     default: () => <div data-testid="crm-dashboard-stub">CRM Dashboard</div>,
 }));
-vi.mock('../analytics/GrowthIntelligenceDashboard', () => ({
+vi.mock('@/modules/analytics/GrowthIntelligenceDashboard', () => ({
     default: () => <div data-testid="analytics-dashboard-stub">Analytics Dashboard</div>,
 }));
 
-import MarketingDashboard from './MarketingDashboard';
+import MarketingDashboard from '@/modules/marketing/MarketingDashboard';
 
 describe('MarketingDashboard tab consolidation', () => {
     beforeEach(() => {

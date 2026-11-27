@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cancelledPrintResponse, finishedPrintResponse, printGalleryReference } from './PrintPreparationControl';
+import { cancelledPrintResponse, finishedPrintResponse, printGalleryReference } from '@/services/upscale/PrintPreparationControl';
 import { boardroomRequestedSourceId } from '@/services/agent/orchestration/BoardroomActionPlan';
 
 // Pure request binding and terminal-receipt policy; no service or account doubles.

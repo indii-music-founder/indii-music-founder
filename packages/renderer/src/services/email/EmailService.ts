@@ -18,8 +18,8 @@ import { logger } from '@/utils/logger';
 import { auth, db, functions } from '@/services/firebase';
 import { doc, getDoc, setDoc, onSnapshot, collection, Unsubscribe } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { GmailProvider } from './GmailProvider';
-import { OutlookProvider } from './OutlookProvider';
+import { GmailProvider } from '@/services/email/GmailProvider';
+import { OutlookProvider } from '@/services/email/OutlookProvider';
 import type {
     EmailProvider,
     EmailAccount,
@@ -29,7 +29,7 @@ import type {
     ComposeEmailData,
     SendEmailResult,
     EmailProviderInterface,
-} from './types';
+} from '@/services/email/types';
 import {
     beginAccountBoundOAuthSession,
     clearAccountBoundOAuthSession,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDDEXRelease } from './useDDEXRelease';
+import { useDDEXRelease } from '@/modules/publishing/hooks/useDDEXRelease';
 
 const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockPersistFromUrl, mockAuditArtwork, docIds, mockStoreState } = vi.hoisted(() => ({
     mockAddDoc: vi.fn(),

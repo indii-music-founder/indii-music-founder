@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CoreWebVitalsReporter } from './CoreWebVitalsReporter';
-import type { RUMSnapshot } from './RealUserMonitoringService';
+import { CoreWebVitalsReporter } from '@/services/observability/CoreWebVitalsReporter';
+import type { RUMSnapshot } from '@/services/observability/RealUserMonitoringService';
 
 describe('CoreWebVitalsReporter', () => {
   let reporter: CoreWebVitalsReporter;

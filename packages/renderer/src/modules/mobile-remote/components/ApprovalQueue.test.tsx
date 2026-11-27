@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import ApprovalQueue from './ApprovalQueue';
+import ApprovalQueue from '@/modules/mobile-remote/components/ApprovalQueue';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
 
 vi.mock('motion/react', () => ({

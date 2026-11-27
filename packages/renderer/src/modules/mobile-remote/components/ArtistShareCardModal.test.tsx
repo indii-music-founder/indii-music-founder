@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import ArtistShareCardModal from './ArtistShareCardModal';
+import ArtistShareCardModal from '@/modules/mobile-remote/components/ArtistShareCardModal';
 
 vi.mock('qrcode.react', () => ({
     QRCodeSVG: ({ value }: { value: string }) => <div data-testid="artist-share-qr" data-value={value} />,

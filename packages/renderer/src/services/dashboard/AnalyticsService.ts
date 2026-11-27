@@ -25,7 +25,7 @@ import {
     DashboardMerchSalesSchema,
     DashboardTourStatus,
     DashboardTourStatusSchema,
-} from './schema';
+} from '@/services/dashboard/schema';
 import { db } from '@/services/firebase';
 import {
     doc,
