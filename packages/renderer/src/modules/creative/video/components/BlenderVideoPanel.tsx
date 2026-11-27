@@ -28,6 +28,7 @@ interface BlenderVideoPanelProps {
     artistName?: string;
     trackTitle?: string;
     bpm?: number;
+    bpmSource?: 'measured' | 'estimated';
     pendingSaveKey?: string;
     onRenderComplete?: (outputPath: string) => Promise<string | void> | string | void;
 }
@@ -46,6 +47,7 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
     artistName = 'Artist',
     trackTitle = 'Track',
     bpm = 120,
+    bpmSource = 'estimated',
     pendingSaveKey,
     onRenderComplete
 }) => {
@@ -367,9 +369,21 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
-                        Duration (Seconds)
-                    </label>
+                    <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                            Duration (Seconds)
+                        </label>
+                        <span
+                            data-testid="blender-bpm-badge"
+                            className={`text-[11px] font-mono px-2 py-0.5 rounded border ${
+                                bpmSource === 'measured'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                                    : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                            }`}
+                        >
+                            {Math.round(bpm * 10) / 10} BPM · {bpmSource === 'measured' ? 'Measured' : 'Estimated'}
+                        </span>
+                    </div>
                     <div className="flex items-center space-x-3">
                         <input
                             type="range"

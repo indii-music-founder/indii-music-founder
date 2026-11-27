@@ -134,4 +134,53 @@ describe('BlenderVideoPanel structural guards', () => {
         expect(onCompleteMock).not.toHaveBeenCalled();
         expect(screen.queryByText(/Video rendered and saved/i)).not.toBeInTheDocument();
     });
+
+    it('displays measured BPM badge and passes hydrated BPM to blenderService.renderMusicVideo', async () => {
+        const win = window as unknown as { electronAPI?: { blender?: Record<string, unknown> } };
+        const originalElectronApi = win.electronAPI;
+        win.electronAPI = { blender: { cancelRender: vi.fn() } };
+        try {
+            await act(async () => {
+                render(
+                    <BlenderVideoPanel
+                        currentAudioPath="/audio/measured-track.wav"
+                        artistName="Nova"
+                        trackTitle="Midnight Avenue"
+                        bpm={128.4}
+                        bpmSource="measured"
+                        pendingSaveKey="save-key-1"
+                        onRenderComplete={vi.fn().mockResolvedValue('https://cdn.example.com/3d.mp4')}
+                    />
+                );
+            });
+
+            const badge = screen.getByTestId('blender-bpm-badge');
+            expect(badge.textContent).toContain('128.4 BPM');
+            expect(badge.textContent).toMatch(/Measured/i);
+
+            const renderButton = screen.getByRole('button', { name: /Render 3D Music Video/i });
+            expect(renderButton).toBeEnabled();
+            await act(async () => {
+                fireEvent.click(renderButton);
+            });
+
+            expect(blenderService.renderMusicVideo).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    bpm: 128.4,
+                    audioFilePath: '/audio/measured-track.wav',
+                })
+            );
+        } finally {
+            win.electronAPI = originalElectronApi;
+        }
+    });
+
+    it('labels fallback tempo as Estimated when bpmSource is omitted or estimated', async () => {
+        await act(async () => {
+            render(<BlenderVideoPanel />);
+        });
+        const badge = screen.getByTestId('blender-bpm-badge');
+        expect(badge.textContent).toContain('120 BPM');
+        expect(badge.textContent).toMatch(/Estimated/i);
+    });
 });

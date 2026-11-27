@@ -3,8 +3,21 @@ import { ReleaseLaunchKitSchema, type ScoredAdVariantRecord } from '@indii/share
 import {
     CampaignIntelligence,
     attachSmartLinkAttribution,
+    resolveMarketingImageModel,
 } from '@/services/marketing/CampaignIntelligenceService';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn(async () => 'gs://bucket/generated.png'),
+    },
+}));
+
+vi.mock('firebase/storage', () => ({
+    ref: vi.fn((_s, p) => ({ fullPath: p })),
+    getDownloadURL: vi.fn(async () => 'https://cdn.example.com/generated.png'),
+}));
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
@@ -233,5 +246,38 @@ describe('CampaignIntelligence.generateReleaseLaunchKit', () => {
         const xHeader = byPlatform.get('XHeader')!;
         expect(xHeader.attachedVariantId).toBeUndefined();
         expect(xHeader.copy).not.toContain('utm_source=');
+    });
+});
+
+describe('CampaignIntelligence image model switcher', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('resolves all MarketingImageModelTier options cleanly from INTELLIGENCE_MODELS.IMAGE', () => {
+        expect(resolveMarketingImageModel()).toBe(INTELLIGENCE_MODELS.IMAGE.GENERATION);
+        expect(resolveMarketingImageModel('pro')).toBe('gemini-3-pro-image');
+        expect(resolveMarketingImageModel('fast')).toBe('gemini-3.1-flash-image');
+        expect(resolveMarketingImageModel('imagen-fast')).toBe(INTELLIGENCE_MODELS.IMAGE.IMAGEN_FAST);
+        expect(resolveMarketingImageModel('imagen-pro')).toBe(INTELLIGENCE_MODELS.IMAGE.IMAGEN_PRO);
+    });
+
+    it('forwards the selected imageModelTier to GenAI.generateImage in generateSingleImage', async () => {
+        vi.mocked(AI.generateImage).mockResolvedValueOnce('ZmFrZUJhc2U2NA==');
+
+        const url = await CampaignIntelligence.generateSingleImage(
+            {
+                id: 'post-switcher-1',
+                platform: 'Instagram',
+                copy: 'Stream Midnight',
+                day: 1,
+                status: 'PENDING' as never,
+                imageAsset: { assetType: 'image', title: 'Cover', imageUrl: '', caption: 'Minimal studio lighting' },
+            },
+            { imageModelTier: 'fast' },
+        );
+
+        expect(url).toBe('https://cdn.example.com/generated.png');
+        expect(AI.generateImage).toHaveBeenCalledWith(expect.any(String), 'gemini-3.1-flash-image');
     });
 });
