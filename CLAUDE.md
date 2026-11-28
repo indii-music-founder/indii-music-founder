@@ -631,6 +631,7 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | `.claude/commands/plat.md` | `/plat` slash command — platinum finishing touches before every push |
 | `docs/CHAT_IMAGE_INTERACTION_PLAN.md` | **Living plan** — chat image annotator + Studio handoff + visual verification loop. Update Section 5 (Current State) before ending any session that touches this work. |
 | `docs/plans/boardroom-modernization-plan-2026-11-19.md` | **Living plan** — Boardroom speed/bug/cleanup + OPEN_ISSUES_V4 migration. Agent-neutral work cards. Update its Section 5 (Current State) before ending any session that touches Boardroom. |
+| `docs/plans/deel-patterns-bos-plan-2026-11-28.md` | **Living plan** — Post-mastering BOS: domain event relay, agreement generation + signing, ledger-sourced payout routing, break-even calculator, founders funnel. Update its Section 8 (Current State) before ending any session that touches this work. |
 
 ---
 
