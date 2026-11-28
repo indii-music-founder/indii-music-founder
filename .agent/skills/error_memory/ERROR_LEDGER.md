@@ -2854,3 +2854,10 @@ committing.
 - FIX: Rerun the failed job (`gh run rerun <id> --failed`) once the other rollout has finished; earlier revisions keep serving.
 - DIAGNOSIS THAT WORKED: `gcloud run revisions list --service <svc> --limit 4 --format='value(name,status.conditions[0].status,status.conditions[0].message)'` gives the real reason when the deploy log only says the container failed to start.
 - PREVENTION: Before calling a Cloud Run deploy failure a code problem, read the revision's condition message. If quota keeps recurring, deploy `print-prep` and `engine-dsp` one after the other in the workflow, or request more regional CPU quota.
+
+## 2026-11-28 — Persistent `mockRejectedValue` fails a test even though the component catches the rejection (VITEST_PERSISTENT_REJECTED_MOCK)
+
+**SEVERITY:** Low (false test failure; no product bug)
+- BUG: In `CircuitBreakerPanel.test.tsx`, `checkBudget.mockRejectedValue(new Error('offline'))` failed the test with `Error: offline` pointing at the mock line, although the component awaits the call inside `try/catch` and the UI rendered the expected fallback. A sync throw from `mockImplementation` and `mockRejectedValue('string')` failed the same way; other suites using `mockRejectedValueOnce` pass.
+- FIX: Use `mockRejectedValueOnce(...)` for single-call failure paths.
+- PREVENTION: Prefer the `...Once` variants for rejection paths in renderer tests; if a rejection-path test fails at the mock line while the UI assertion passes, switch to `mockRejectedValueOnce` before debugging the component.

@@ -43,6 +43,7 @@ import { SectionHeader, SettingRow, SelectDropdown } from '@/modules/settings/se
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import DownloadHub from '@/modules/settings/components/DownloadHub';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -252,7 +253,7 @@ const DesktopSection: React.FC = () => {
                         </p>
                     </div>
                 </div>
-
+                <DownloadHub />
             </div>
         );
     }

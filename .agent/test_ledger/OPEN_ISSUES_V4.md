@@ -4403,3 +4403,14 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Severity:** 🟢 LOW
 - **Module:** `packages/renderer/src/modules/boardroom`, `packages/renderer/src/core/store/slices/boardroomSlice.ts`
 - **Acceptance:** Confirm green CI and full renderer build after merge.
+
+### ISSUE-1727: Wire never-connected renderer features into the app (wire-in pass)
+
+- **Status:** 🟡 PARTIAL (2026-11-28 — batch W1 wired on `claude/wire-unconnected-w1`; remaining batches pending)
+- **Severity:** 🟡 MEDIUM
+- **Module:** `packages/renderer/src` — the 109 never-imported files listed in `docs/plans/dead-code-candidates-2026-11-28.md` (branch `claude/prune-unreachable-renderer`)
+- **Context:** William chose to connect the unwired features instead of deleting them ("use everything that hasn't been connected yet … work backwards"). Each file is wired only where a real host and real data exist; a file whose live twin already ships, or whose backend/behavior is missing, gets a recorded reason instead of a dead affordance.
+- **W1 (done):** Observability dashboard now mounts `CircuitBreakerPanel` (fixed: an unreachable budget service showed "Closed (Healthy)"; now "Status Unavailable", and an unlimited builder budget shows "Unlimited" instead of `$Infinity`) and `SchedulerStatusPanel`. Settings → Appearance mounts `LanguageSelector`; `useLanguage` now drives the live `@/core/i18n` instance (en, es) instead of the never-initialised `config/i18n` codes (`es-ES`, …) that had no resources. Settings → Desktop (web) mounts `DownloadHub` (links to the same GitHub release feed the desktop updater uses; dropped the unbacked "Founder Exclusive" claim).
+- **Not wired, with reason (W1 review):** `ThemeToggle` — no light-theme CSS exists (`.light` has zero rules), so Light would change nothing; needs a light theme first. `DoNotSellToggle` — nothing reads `privacyPreferences.doNotSell`; wiring needs analytics/Sentry/RUM gating on the flag first, or the toggle promises an opt-out it does not perform. `ModuleDashboard` — superseded layout shell (`docs/REDUNDANCY_AUDIT_UI_FIRST.md` §7). `EarningsBreakdown`/`useEarnings`/`useDistributorConnections` — publishing forks deliberately removed in ISSUE-1441 in favour of finance/distribution originals.
+- **Depends on:** ISSUE-1726 (same file list; this issue replaces its "delete" outcome with "wire" wherever a host exists).
+- **Acceptance:** Every row of the candidates doc is wired with a reachable import from `src/main.tsx`, or carries a recorded reason above; reachability scan re-run after each batch.

@@ -1,15 +1,12 @@
 /**
  * Appearance Settings Section
  *
- * Controls theme (dark/light/system), compact mode, and animation preferences.
+ * Controls language, compact mode, and animation preferences.
  */
 
 import React from 'react';
 import {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Moon,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Sun,
+    Globe,
     Palette,
     RefreshCw,
     Sparkles,
@@ -17,6 +14,7 @@ import {
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { SectionHeader, SettingRow, Toggle, SelectDropdown } from '@/modules/settings/settings-panel/SettingsShared';
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
 
 const AppearanceSection: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -41,6 +39,10 @@ const AppearanceSection: React.FC = () => {
             />
 
             <div className="space-y-1">
+                <SettingRow icon={Globe} label="Language" description="Interface language for translated screens">
+                    <LanguageSelector />
+                </SettingRow>
+
                 <SettingRow icon={Palette} label="Compact Mode" description="Reduce spacing for more content density">
                     <Toggle
                         enabled={compactMode}

@@ -3,8 +3,9 @@ import { ShieldCheck, ShieldAlert, ShieldX, Loader2, RefreshCw, DollarSign } fro
 import { MembershipService } from '@/services/MembershipService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { logger } from '@/utils/logger';
 
-type BreakerState = 'closed' | 'open' | 'half-open' | 'loading';
+type BreakerState = 'closed' | 'open' | 'half-open' | 'loading' | 'unavailable';
 
 interface BudgetStatus {
     allowed: boolean;
@@ -42,6 +43,13 @@ const STATE_CONFIG: Record<BreakerState, {
         label: 'Open (Blocked)',
         description: 'Daily budget exhausted. Agent API calls are paused until reset.',
     },
+    unavailable: {
+        icon: ShieldAlert,
+        color: 'text-slate-300',
+        bg: 'bg-slate-800 border-slate-700',
+        label: 'Status Unavailable',
+        description: 'The budget service could not be reached. Spend limits are still enforced on every agent call.',
+    },
     loading: {
         icon: Loader2,
         color: 'text-slate-400',
@@ -51,73 +59,58 @@ const STATE_CONFIG: Record<BreakerState, {
     },
 };
 
+interface BreakerReading {
+    state: Exclude<BreakerState, 'loading'>;
+    budget: BudgetStatus | null;
+}
+
+async function readBreaker(): Promise<BreakerReading> {
+    try {
+        const budget = await MembershipService.checkBudget(0);
+        const state = !budget.allowed ? 'open' : budget.requiresApproval ? 'half-open' : 'closed';
+        return { state, budget };
+    } catch (error) {
+        // Fail closed in the UI: an unreachable budget service is "unknown", never "healthy".
+        logger.warn('[CircuitBreakerPanel] Budget check failed', error);
+        return { state: 'unavailable', budget: null };
+    }
+}
+
 export const CircuitBreakerPanel: React.FC = () => {
     const [breakerState, setBreakerState] = useState<BreakerState>('loading');
     const [budget, setBudget] = useState<BudgetStatus | null>(null);
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
+    const userId = useStore(useShallow(s => s.user?.uid ?? null));
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { user } = useStore(useShallow(s => ({ user: s.user })));
-
-    const checkBudget = useCallback(async () => {
-        setBreakerState('loading');
-        try {
-            const result = await MembershipService.checkBudget(0);
-            setBudget(result);
-
-            if (!result.allowed) {
-                setBreakerState('open');
-            } else if (result.requiresApproval) {
-                setBreakerState('half-open');
-            } else {
-                setBreakerState('closed');
-            }
-
-            setLastChecked(new Date());
-        } catch {
-            // Unable to reach budget service — treat as unknown/closed
-            setBreakerState('closed');
-            setBudget(null);
-        }
+    const apply = useCallback((result: BreakerReading) => {
+        setBudget(result.budget);
+        setBreakerState(result.state);
+        setLastChecked(new Date());
     }, []);
+
+    const refresh = useCallback(async () => {
+        setBreakerState('loading');
+        apply(await readBreaker());
+    }, [apply]);
 
     useEffect(() => {
         let cancelled = false;
-        (async () => {
-            try {
-                const result = await MembershipService.checkBudget(0);
-                if (cancelled) return;
-                setBudget(result);
-
-                if (!result.allowed) {
-                    setBreakerState('open');
-                } else if (result.requiresApproval) {
-                    setBreakerState('half-open');
-                } else {
-                    setBreakerState('closed');
-                }
-
-                setLastChecked(new Date());
-            } catch {
-                if (!cancelled) {
-                    setBreakerState('closed');
-                    setBudget(null);
-                }
-            }
-        })();
+        void readBreaker().then((result) => {
+            if (!cancelled) apply(result);
+        });
         return () => { cancelled = true; };
-    }, []);
+    }, [apply, userId]);
 
     const config = STATE_CONFIG[breakerState];
     const StateIcon = config.icon;
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-3 space-y-6">
+        <div className="space-y-5">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Cost Circuit Breaker</h2>
                 <button
-                    onClick={checkBudget}
+                    onClick={() => void refresh()}
                     className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-white transition-colors"
                 >
                     <RefreshCw size={13} />
@@ -151,7 +144,7 @@ export const CircuitBreakerPanel: React.FC = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-slate-400">Remaining Budget</span>
                             <span className={`text-sm font-bold ${budget.remainingBudget > 0.5 ? 'text-emerald-400' : budget.remainingBudget > 0.1 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                ${budget.remainingBudget.toFixed(4)}
+                                {Number.isFinite(budget.remainingBudget) ? `$${budget.remainingBudget.toFixed(4)}` : 'Unlimited'}
                             </span>
                         </div>
 
