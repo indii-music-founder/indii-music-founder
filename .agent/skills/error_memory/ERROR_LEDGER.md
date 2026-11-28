@@ -1,3 +1,16 @@
+## 2026-11-28 Payout staging trusted a client-writable split source; an exact identifier query would have failed open (PAYOUT_RECIPIENT_TRUST_SOURCE)
+
+- **Bug:** `stageStripePayouts` read recipients and Stripe account ids from `users/{uid}/splits`, which the rules let the owner client write and no product code writes (ISSUE-1725).
+- **Trap avoided:** Admin ledger receipts store the release's raw ISRC spelling, while earnings store hyphen-free upper-case ISRCs. An exact-match `in` query would miss a differently spelled multi-holder receipt and treat its earnings as payable, failing open.
+- **Fix:** Fail closed on any legacy split document, and match receipts in memory after normalization. Hold earnings for multi-holder or invalid receipts, stage only artist-sole amounts, and deny client create/update on `users/{uid}/splits`.
+- **Prevention:** A money path may read only server-written, schema-validated sources. When joining on an external identifier across collections, normalize both sides; a missed join must hold funds, not release them. Receipt `collaboratorId` is a legal name, not a payee: bind payees at signing before paying from receipts.
+
+## 2026-11-28 Squash merge kept stale inline tool declarations beside the shared ones (MCP_DECLARATION_DUPLICATES)
+
+- **Bug:** `f59afdb8` introduced the shared `McpToolDeclarations.ts` constants and kept the older inline blocks, so every remote MCP tool was declared twice, and the stale copies advertised wrong arguments (ISSUE-1726).
+- **Fix:** Deleted the inline copies; the contract test now asserts each tool name appears exactly once per agent.
+- **Prevention:** A contract test that checks `toContain` cannot detect duplicates. After replacing inline definitions with shared constants, assert uniqueness and grep for the old literal (CLAUDE.md §7).
+
 ## 2026-11-28 `npm ci` failed in a GPU-less cloud container on the onnxruntime CUDA download (ONNXRUNTIME_CUDA_POSTINSTALL_404)
 
 - **Evidence:** In a fresh cloud session container (Linux x64, no `nvcc`), `npm ci` exited 1 at `onnxruntime-node`'s postinstall (`node ./script/install`): it assumed CUDA 12, downloaded `onnxruntime-linux-x64-gpu-1.21.1.tgz` from GitHub releases, got `404 Not Found`, and threw. No packages were left installed.

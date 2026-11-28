@@ -283,17 +283,6 @@ export const BrandAgent: AgentConfig = {
                     required: ['description', 'core_values']
                 }
             },
-            {
-                name: "fetch_brand_kit",
-                description: "Fetch the artist's brand kit from the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        artistId: { type: "STRING" }
-                    },
-                    required: ["artistId"]
-                }
-            }
         ]
     }]
 };

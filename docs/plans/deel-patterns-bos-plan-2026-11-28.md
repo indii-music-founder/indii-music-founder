@@ -154,10 +154,15 @@ split-lock path.
   timestamp, hashed IP; stores a per-signer receipt hash. No claim of legal sufficiency.
   The existing PandaDoc path (`legal/digitalSignature.ts`) becomes an optional adapter,
   enabled only with real credentials.
+- **Payee binding (required by P1).** Today a receipt's `collaboratorId` is the holder's
+  legal name (`evaluateAdminLock` maps `legalName`/`name`), so no receipt can name a payee.
+  Each signer authenticates to sign, and the signature records the signer's uid against
+  their share line. `LedgerShareLineSchema` gains an optional `payeeUid` (additive,
+  schema-versioned); only a line whose holder signed while authenticated carries one.
 - On `executed` for a `split_sheet`: record `agreement.signed`; the runbook re-evaluates the
   master in `SPLITS_PENDING` and, when splits resolve exactly, writes the
-  `AdminLedgerReceipt` with `signatories[].receiptHash` = the signer receipt hashes. The
-  runbook stays the only writer of ledger receipts.
+  `AdminLedgerReceipt` with `signatories[].receiptHash` = the signer receipt hashes and
+  `payeeUid` on each bound share line. The runbook stays the only writer of ledger receipts.
 - Collaborator invite (Jev p=0.54 — minimal): the signing link offers optional account
   creation. Full funnel and attribution land in P5.
 
@@ -177,21 +182,30 @@ human-approved** before money moves (Jev p(auto)=0.10). Applies the ERROR_LEDGER
 2026-07-17 escrow lesson: no Stripe mutation until every leg of the plan is proven
 executable.
 
-### 4.0 Prerequisite — close the recipient trust gap (ship first)
-- Log in `OPEN_ISSUES_V4.md`: `stageStripePayouts.readSplitRecipients` reads
-  `users/{uid}/splits`, which is client-writable (`firestore.rules`, `match /splits/{splitId}`
-  → `allow read, write: if isOwner(userId)`).
-- Fix: recipients come only from the latest `AdminLedgerReceipt.splits.recording` for the
-  release's master (`shareBasisUnits`); `users/{uid}/splits` becomes `allow write: if false`
-  (or is retired once no reader remains). No receipt → staging refuses with a named reason.
-- Review `users/{uid}/payouts` (owner-writable) — make it server-only if any server path
-  trusts it.
+### 4.0 Prerequisite — close the recipient trust gap (ISSUE-1725, delivered 2026-11-28)
+- Before: `stageStripePayouts` read recipients from `users/{uid}/splits`, which the owner
+  client could write freely.
+- Receipts cannot name payees yet (see §3.3 payee binding), so the shipped fix fails closed
+  rather than paying from receipts:
+  - Any `users/{uid}/splits` document → `UNVERIFIED_SPLIT_DOCUMENTS`, nothing staged.
+  - Earnings grouped by normalized ISRC against `users/{uid}/admin_ledger`. A multi-holder
+    or schema-invalid latest receipt holds that ISRC (`heldEarnings`). Unreceipted and
+    ISRC-less earnings are staged artist-sole with warnings. More than 2,000 receipts →
+    `LEDGER_SCAN_LIMIT`.
+  - ISRCs are matched in memory after normalization; an exact query would fail open on a
+    differently spelled multi-holder receipt.
+  - `firestore.rules`: `users/{uid}/splits` is owner read/delete only.
+- `users/{uid}/payouts` reviewed: display-only (dashboard aggregate), no writer; unchanged.
+- Remaining: deploy rules; audit production for existing `users/*/splits` documents.
 
 ### 4.1 Data
 - `users/{uid}/payout_schedules/{releaseId}` — `{ cadence: 'on_statement' | 'monthly' |
-  'quarterly', minimumPayoutMicros, ledgerReceiptId, recipients: [{ collaboratorId,
-  shareBasisUnits, stripeAccountId?, taxFormStatus }] }`. Server-only writes; creatable only
-  from an existing ledger receipt, whose share lines it copies verbatim.
+  'quarterly', minimumPayoutMicros, ledgerReceiptId, recipients: [{ payeeUid,
+  shareBasisUnits, taxFormStatus }] }`. Server-only writes; creatable only from a ledger
+  receipt whose every recording share line carries a `payeeUid` (§3.3). The payee's Stripe
+  account is read from the payee's own user record at staging time, never copied.
+- Staging replaces the §4.0 hold for ISRCs whose receipt is fully payee-bound; receipts
+  without bindings keep holding.
 - `calculateProvisionalAllocation` gains a `shareBasisUnits` input path (skip the
   percentage → units conversion when units are already authoritative).
 - v1 pays recording-side income only. Publishing income is paid by the writer's PRO /
@@ -301,7 +315,7 @@ math as the payout path (Jev p=0.88).
 
 | Phase | Depends on | Size (rough) | Highest-risk item |
 |---|---|---|---|
-| §4.0 splits lockdown | — | S | migrating the staging read without breaking existing callers |
+| §4.0 splits lockdown | — | S | delivered; rules deploy + legacy-document audit remain |
 | P4 events | landed master FSM | M | every emitter inside its state change's transaction |
 | P2 agreements | P4 | L | clause text accuracy (owner/counsel review) |
 | P1 payouts | §4.0, P2, P4 | M | idempotent execute under partial failure |
@@ -323,8 +337,12 @@ math as the payout path (Jev p=0.88).
   splits-lockdown prerequisite; in-app signing marked net-new; DDEX validation mapped to the
   `DISTRIBUTION_READY` transition (the renderer gate is `judgeDDEXPreFlight`); payout
   approval modeled on `approveSessionEditPlan.ts`; generation-cost source corrected to
-  `credit_transactions`. No code changes yet. Next: log §4.0 in `OPEN_ISSUES_V4.md`, then
-  start §2.1.
+  `credit_transactions`.
+- **2026-11-28 (`/middle`):** §4.0 delivered (ISSUE-1725, 🟡 PARTIAL pending rules deploy and
+  legacy-document audit). Verification found that receipt `collaboratorId` is a legal name,
+  so P2 §3.3 now requires payee binding and P1 §4.1 consumes it. Also fixed ISSUE-1726:
+  stale duplicate MCP tool declarations in five agent definitions (squash `f59afdb8`).
+  Next: §2.1 (P4 schema additions).
 
 ---
 

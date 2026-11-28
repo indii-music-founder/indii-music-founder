@@ -240,6 +240,39 @@ describe('Firestore Security Rules', () => {
 
     // Structural authorization-policy checks only. Editable draft persistence
     // is verified separately through the real production browser account.
+    describe('users/{userId}/splits (ISSUE-1725 legacy payout splits)', () => {
+        const path = ['users', ALICE_UID, 'splits', 'legacy-writer'] as const;
+        const legacySplit = { percentage: 60, stripeAccountId: 'acct_attacker' };
+        const seedLegacySplit = () => testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+            await setDoc(doc(ctx.firestore(), ...path), legacySplit);
+        });
+
+        it('denies the owner creating or changing a payout split', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertFails(setDoc(reference, legacySplit));
+            await seedLegacySplit();
+            await assertFails(updateDoc(reference, { stripeAccountId: 'acct_other' }));
+        });
+        it('lets the owner read and remove existing legacy documents', async () => {
+            if (requireEmulator()) return;
+            await seedLegacySplit();
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertSucceeds(getDoc(reference));
+            await assertSucceeds(deleteDoc(reference));
+        });
+        it('denies other accounts, anonymous, and unauthenticated access', async () => {
+            if (requireEmulator()) return;
+            await seedLegacySplit();
+            for (const context of [verifiedCtx(BOB_UID), anonCtx(), unauthCtx()]) {
+                const reference = doc(context.firestore(), ...path);
+                await assertFails(getDoc(reference));
+                await assertFails(setDoc(reference, legacySplit));
+                await assertFails(deleteDoc(reference));
+            }
+        });
+    });
+
     describe('users/{userId}/canvas_states', () => {
         const draft = { id: 'canvas-policy-input', json: '{"objects":[]}', updatedAt: '2026-10-14T12:00:00.000Z' };
         const path = ['users', ALICE_UID, 'canvas_states', draft.id] as const;
@@ -6074,24 +6107,25 @@ describe('Firestore Security Rules', () => {
                 await assertFails(deleteDoc(draftRef));
             });
 
-            it('users/{userId}/splits: owner can read/write their own splits, cross-tenant users are denied read and write', async () => {
+            it('users/{userId}/splits: owner can read their own splits but not write them (ISSUE-1725), cross-tenant users are denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
                 const unauthDb = unauthCtx().firestore();
                 const splitRef = doc(aliceDb, 'users', ALICE_UID, 'splits', 'split-1');
+                const legacySplit = { title: 'Co-written Track', percentages: { [ALICE_UID]: 50, [BOB_UID]: 50 } };
 
-                // Owner can create
-                await assertSucceeds(setDoc(splitRef, {
-                    title: 'Co-written Track',
-                    percentages: { [ALICE_UID]: 50, [BOB_UID]: 50 },
-                }));
+                // Payout splits are not client data: the owner cannot create one.
+                await assertFails(setDoc(splitRef, legacySplit));
 
-                // Owner can read
+                // A pre-existing legacy document stays readable to its owner...
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'splits', 'split-1'), legacySplit);
+                });
                 await assertSucceeds(getDoc(splitRef));
 
-                // Owner can update
-                await assertSucceeds(updateDoc(splitRef, {
+                // ...but cannot be changed by the owner.
+                await assertFails(updateDoc(splitRef, {
                     title: 'Co-written Track (Remix)',
                 }));
 

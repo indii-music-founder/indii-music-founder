@@ -126,24 +126,6 @@ export const DistributionAgent: AgentConfig = {
                 }
             },
             {
-                name: "draft_dsp_metadata",
-                description: "Draft an ERN XML fragment from release metadata via the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseTitle: { type: "STRING" },
-                        artists: { type: "ARRAY", items: { type: "STRING" } },
-                        genre: { type: "STRING" },
-                        isrc: { type: "STRING" },
-                        upc: { type: "STRING" },
-                        duration: { type: "STRING" },
-                        releaseDate: { type: "STRING" },
-                        mode: { type: "STRING", enum: ["draft", "delivery"] }
-                    },
-                    required: ["releaseTitle", "artists", "genre", "upc", "isrc"]
-                }
-            },
-            {
                 name: "run_audio_qc",
                 description: "Run audio quality control to detect fraud and verify Hi-Res/Atmos compliance.",
                 parameters: {

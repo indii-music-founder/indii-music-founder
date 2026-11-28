@@ -255,49 +255,6 @@ export const LegalAgent: AgentConfig = {
                     required: ["contractText"]
                 }
             },
-            {
-                name: "register_split_sheet",
-                description: "Register a split sheet with the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseId: { type: "STRING" },
-                        splits: {
-                            type: "ARRAY",
-                            items: {
-                                type: "OBJECT",
-                                properties: {
-                                    name: { type: "STRING" },
-                                    percentage: { type: "NUMBER" }
-                                }
-                            }
-                        }
-                    },
-                    required: ["releaseId", "splits"]
-                }
-            },
-            {
-                name: "draft_cwr_registration",
-                description: "Draft a CWR (Common Works Registration) using the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseId: { type: "STRING" }
-                    },
-                    required: ["releaseId"]
-                }
-            },
-            {
-                name: "audit_sample_clearance",
-                description: "Audit a track for sample clearance using the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        trackId: { type: "STRING" }
-                    },
-                    required: ["trackId"]
-                }
-            }
         ]
     }]
 };
