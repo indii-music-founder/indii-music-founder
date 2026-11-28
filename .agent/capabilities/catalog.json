@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "d14d183b97822ae297fa6e021279ca8c3a53bf01a415a9cc7830eb0b52282970",
+  "sourceDigest": "7def1a3bfbe401cef951c47584d131373e2ba4bc131366cae3d19b01e0d64ea6",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
     "certified": 38,
-    "conditional": 75,
+    "conditional": 76,
     "quarantined": 100,
     "deprecated": 1
   },
@@ -3522,6 +3522,34 @@
       "conflicts": []
     },
     {
+      "id": "skill:owned:pp",
+      "name": "pp",
+      "kind": "skill",
+      "registry": ".agent/skills",
+      "path": ".agent/skills/pp/SKILL.md",
+      "mutable": true,
+      "available": true,
+      "description": "Run Perfect Primitive for a bounded primitives audit or fix. Use for /pp, /Pp, /PP, or an explicit Perfect Primitive request.",
+      "descriptionHash": "1226cbd8e21026d0683a33d5e2b4acc61d71fd44cf517c5434a0ed0355f3da58",
+      "contentHash": "4572cd486bb59569e690ca23981cd1abf8b3d663156a0c3b452f593eaeb72fdb",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The request matches Perfect Primitive and the canonical /pp workflow is available"
+      ],
+      "outputs": [
+        "The skill-defined artifact, result, or evidence"
+      ],
+      "verification": [
+        "The adapter loads workflow:pp and follows its mode and evidence requirements"
+      ],
+      "failure": "Stop after bounded retries and return the useful error plus a safe fallback.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-read current state before repeating; never duplicate external writes.",
+      "authenticity": "Do not promote mocks, fixtures, or local structure into a live claim.",
+      "conflicts": []
+    },
+    {
       "id": "skill:owned:product-docs",
       "name": "product-docs",
       "kind": "skill",
@@ -6212,9 +6240,9 @@
       "path": ".agent/workflows/pp.md",
       "mutable": true,
       "available": true,
-      "description": "Perfect Primitive (/pp, /PP) shared workflow for Antigravity, Codex, and Claude teams. Audits, test-first hardens, sibling-sweeps, and delivers foundational primitives directly to main.",
-      "descriptionHash": "2b2b1ab1bf6ae3ef8fde476dff518c33537dfa8d70a7a242441de774e000d97a",
-      "contentHash": "00e126a9b3856be6e34d83e6b0480345d3c626bd086d4db13456cf88871241f2",
+      "description": "Canonical Perfect Primitive workflow for Gemini Antigravity, Codex, and Claude. Supports audit-only reviews and gives implementation runs a goal with verifiable completion criteria.",
+      "descriptionHash": "ca54f3c588238222e3fb1d27adce84d40a8e7374aa0d8d0ac470616c0900770f",
+      "contentHash": "c4632973f8ccb49a0fcec0944c0d4eac92ba81819ff2e19eb3d1b4d9f6a3d11a",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -6225,7 +6253,8 @@
         "The workflow-defined result and its decisive evidence"
       ],
       "verification": [
-        "Targeted regression tests, eslint --max-warnings=0, relevant typecheck, and exact-SHA CI (when pushed) exit zero"
+        "Audit reports rank findings and cite observed evidence",
+        "Implementation runs record a goal and verify its completion criteria with relevant regression checks, lint, typecheck, and exact-SHA CI when pushed"
       ],
       "failure": "Stop after bounded retries, report the exact blocker, and use a certified fallback.",
       "fallback": "workflow:skill-skill",
