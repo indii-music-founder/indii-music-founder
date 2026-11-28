@@ -32,6 +32,8 @@ Meet all thirteen: **Platinum**. Miss one: **NO-GO**.
 **Detect:** Any diff under `agents/*/prompt.md`.
 **Enforce:** Cross-reference spoke names against `ls agents/`. Case matters.
 
+Test deployed realtime endpoint defaults against the client resolver and intended upgrade path. An HTTP health response only verifies the health route.
+
 ### 4. Copy-Paste Residue
 **Rule:** Zero duplicate comment or JSDoc blocks.
 **Detect:** `grep -n "^[[:space:]]*//" <file>` for adjacent identical lines.

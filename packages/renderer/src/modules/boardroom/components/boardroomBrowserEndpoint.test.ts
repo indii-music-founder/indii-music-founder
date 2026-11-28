@@ -19,13 +19,16 @@ describe('resolveBoardroomBrowserEndpoint', () => {
         })).toBe('ws://127.0.0.1:4245/boardroom');
     });
 
-    it('accepts a configured secure endpoint in deployed environments', () => {
+    it.each([
+        'wss://boardroom-browser-148015878263.us-central1.run.app',
+        'wss://boardroom-browser-148015878263.us-central1.run.app/boardroom',
+    ])('uses the Boardroom WebSocket route for %s', configuredEndpoint => {
         expect(resolveBoardroomBrowserEndpoint({
             enabled: true,
-            configuredEndpoint: 'wss://browser.example/boardroom',
+            configuredEndpoint,
             isDev: false,
             hostname: 'app.indii.music',
-        })).toBe('wss://browser.example/boardroom');
+        })).toBe('wss://boardroom-browser-148015878263.us-central1.run.app/boardroom');
     });
 
     it.each([

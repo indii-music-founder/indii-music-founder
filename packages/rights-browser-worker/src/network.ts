@@ -1,16 +1,15 @@
 import { createServer } from 'node:http';
 import { lookup } from 'node:dns/promises';
-import { connect } from 'node:net';
+import { connect, isIPv4 } from 'node:net';
 
 export function isPublicAddress(address: string): boolean {
-  if (address.includes(':')) return false; // v1 deliberately accepts public IPv4 only.
-  const parts = address.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(n => !Number.isInteger(n) || n < 0 || n > 255)) return false;
-  const [a, b] = parts;
+  if (!isIPv4(address)) return false;
+  const [a, b, c] = address.split('.').map(Number);
   return !(a === 0 || a === 10 || a === 127 || a >= 224 || (a === 169 && b === 254)
-    || (a === 172 && b >= 16 && b <= 31) || (a === 192 && [0, 168].includes(b))
-    || (a === 100 && b >= 64 && b <= 127) || (a === 198 && [18, 19, 51].includes(b))
-    || (a === 203 && b === 0));
+    || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
+    || (a === 100 && b >= 64 && b <= 127) || (a === 198 && [18, 19].includes(b))
+    || (a === 192 && b === 0 && [0, 2].includes(c)) || (a === 192 && b === 88 && c === 99)
+    || (a === 198 && b === 51 && c === 100) || (a === 203 && b === 0 && c === 113));
 }
 
 /** HTTPS CONNECT proxy pins validated DNS to the actual socket, preventing rebinding. */

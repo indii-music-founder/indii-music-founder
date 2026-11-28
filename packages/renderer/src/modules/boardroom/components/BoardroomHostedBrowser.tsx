@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { isBoardroomSpecialistPage, isBoardroomWebSearchQuery, parseBoardroomBrowserAddress, parseBoardroomPublicPage } from '@indii/shared';
 import { auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { agentRegistry } from '@/services/agent/registry';
 import { stopBoardroomMission } from '@/services/agent/boardroomMission';
 import { secureUUIDv4 } from '@/utils/crypto-random';
+import { BoardroomBrowserBookmarks } from '@/modules/boardroom/components/BoardroomBrowserBookmarks';
 
 import {
     registerBoardroomBrowserReader,
@@ -22,10 +24,11 @@ interface BrowserState {
 
 interface FontReceipt { filename: string; size: number }
 
-export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }: {
+export default function BoardroomHostedBrowser({ endpoint, targetUrl, onClose, onSearch }: {
     endpoint: string;
-    initialUrl: string;
-    onClose: () => void;
+    targetUrl: string;
+    onClose: (pageUrl: string) => void;
+    onSearch: (query: string, pageUrl: string) => void;
 }) {
     const socketRef = useRef<WebSocket>();
     const frameRef = useRef('');
@@ -33,12 +36,13 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
     const inFlight = useRef(true);
     const [retry, setRetry] = useState(0);
     const [closed, setClosed] = useState(false);
-    const [pageUrl, setPageUrl] = useState(initialUrl);
+    const [pageUrl, setPageUrl] = useState(targetUrl);
     const [ready, setReady] = useState(false);
     const [error, setError] = useState('');
     const [frame, setFrame] = useState('');
-    const [url, setUrl] = useState(initialUrl);
-    const lastPage = useRef(initialUrl);
+    const [url, setUrl] = useState(targetUrl);
+    const lastPage = useRef(targetUrl);
+    const lastTarget = useRef(targetUrl);
     const resumeId = useRef<string>();
     const [text, setText] = useState('');
     const [reader, setReader] = useState<BoardroomBrowserPage>();
@@ -60,9 +64,11 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         message.isStreaming && message.agentId && message.metadata?.boardroomStepStatus === 'working') : undefined);
     const controlRevocation = useStore(state => state.boardroomControlRevocation ?? 0);
     const mayOperate = ready && controller === 'artist';
+    const mayShare = isBoardroomSpecialistPage(pageUrl);
     const [notice, setNotice] = useState('');
     const captureIntent = useRef<'reader' | 'pin'>('reader');
     const addReference = useStore(state => state.addReferencedAsset);
+    const setBoardroomBrowserUrl = useStore(state => state.setBoardroomBrowserUrl);
 
     useEffect(() => {
         let mounted = true;
@@ -167,9 +173,12 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         });
         const connect = async () => {
             try {
+                await auth.authStateReady();
+                if (!mounted) return;
                 const user = auth.currentUser;
                 if (!user || user.isAnonymous) {
-                    if (mounted) setError('Sign in to indii to open the live browser.');
+                    setError('Sign in to indii to open the live browser.');
+                    setClosed(true);
                     return;
                 }
                 const token = await user.getIdToken();
@@ -180,7 +189,6 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                 socket.binaryType = 'blob';
                 socket.onopen = () => {
                     socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current, resumeId: resumeId.current }));
-                    socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current }));
                 };
                 socket.onmessage = event => {
                     if (!mounted) return;
@@ -213,11 +221,17 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                             if (typeof message.resumeId === 'string') resumeId.current = message.resumeId;
                             break;
                         case 'state':
-                            if (stateRef.current?.url !== message.url) {
-                                lastPage.current = message.url;
-                                setUrl(message.url);
-                                setPageUrl(message.url);
+                            if (stateRef.current?.url !== message.url && parseBoardroomPublicPage(message.url)) {
+                                const address = message.url;
+                                lastPage.current = address;
+                                setUrl(address);
+                                setPageUrl(address);
                                 setReader(undefined);
+                                const currentTarget = parseBoardroomBrowserAddress(useStore.getState().boardroomBrowserUrl);
+                                if (currentTarget?.href === lastTarget.current) {
+                                    lastTarget.current = address;
+                                    setBoardroomBrowserUrl(address);
+                                }
                             }
                             stateRef.current = message;
                             setController(message.controller);
@@ -277,7 +291,6 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                     setReady(false);
                     setClosed(true);
                     setError(previous => previous || 'The live browser disconnected. Reconnect to resume browsing.');
-                    setError(previous => previous || 'The live browser disconnected. Reconnect to reopen the current address.');
                 };
             } catch {
                 if (mounted) {
@@ -295,16 +308,15 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
             unsubscribe();
             revoke();
             connection?.close(1000);
-            connection?.close();
             if (frameRef.current) URL.revokeObjectURL(frameRef.current);
             frameRef.current = '';
             stateRef.current = undefined;
         };
-    }, [addReference, endpoint, retry]);
+    }, [addReference, endpoint, retry, setBoardroomBrowserUrl]);
 
     useEffect(() => () => { if (fontUrl.current) URL.revokeObjectURL(fontUrl.current); }, []);
 
-    const send = (type: string, fields: Record<string, unknown> = {}) => {
+    const send = useCallback((type: string, fields: Record<string, unknown> = {}) => {
         const socket = socketRef.current;
         const version = stateRef.current;
         if (socket?.readyState !== WebSocket.OPEN || !version || inFlight.current) return;
@@ -313,13 +325,47 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         setError('');
         setNotice('');
         socket.send(JSON.stringify({ ...version, ...fields, type }));
+    }, []);
+
+    useEffect(() => {
+        if (targetUrl === lastTarget.current || !mayOperate) return;
+        lastTarget.current = targetUrl;
+        if (targetUrl !== lastPage.current) send('navigate', { url: targetUrl });
+    }, [mayOperate, send, targetUrl]);
+
+    const reconnect = () => {
+        setClosed(false);
+        setError('');
+        setFrame('');
+        setReader(undefined);
+        setRetry(value => value + 1);
+    };
+
+    const openAddress = (value: string) => {
+        if (isBoardroomWebSearchQuery(value)) {
+            onSearch(value.trim(), pageUrl);
+            return;
+        }
+        const address = parseBoardroomBrowserAddress(value);
+        if (!address) {
+            setError('Enter a public website address.');
+            return;
+        }
+        setUrl(address.href);
+        if (closed) {
+            lastPage.current = address.href;
+            setPageUrl(address.href);
+            reconnect();
+        } else {
+            send('navigate', { url: address.href });
+        }
     };
 
     const shareWithMission = () => {
         const requestId = workingStep?.metadata?.boardroomRequestId;
         const stepId = workingStep?.metadata?.boardroomStepId;
         const agentId = workingStep?.agentId;
-        if (!mayOperate || typeof requestId !== 'string' || typeof stepId !== 'string' || !agentId) return;
+        if (!mayOperate || !mayShare || typeof requestId !== 'string' || typeof stepId !== 'string' || !agentId) return;
         const assignment = { requestId, stepId, agentId };
         activeAssignment.current = assignment;
         send('grant', { assignment });
@@ -339,11 +385,11 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
     const grantRequest = useStore(state => state.boardroomBrowserGrantRequest);
     const lastGrantNonce = useRef(grantRequest?.nonce ?? 0);
     useEffect(() => {
-        setHostedBrowserActive?.(true);
+        setHostedBrowserActive?.(mayShare && !closed);
         return () => {
             setHostedBrowserActive?.(false);
         };
-    }, [setHostedBrowserActive]);
+    }, [closed, mayShare, setHostedBrowserActive]);
 
     // Stop mission anywhere in the Boardroom takes the browser back (spec W4/D2).
     const lastRevocation = useRef(controlRevocation);
@@ -356,7 +402,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
     useEffect(() => {
         if (!grantRequest || grantRequest.nonce === lastGrantNonce.current) return;
         lastGrantNonce.current = grantRequest.nonce;
-        if (!mayOperate) return;
+        if (!mayOperate || !mayShare) return;
         const requestId = typeof workingStep?.metadata?.boardroomRequestId === 'string'
             ? workingStep.metadata.boardroomRequestId
             : `rail-request-${grantRequest.nonce}`;
@@ -366,7 +412,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         const assignment = { requestId, stepId, agentId: grantRequest.agentId };
         activeAssignment.current = assignment;
         send('grant', { assignment });
-    }, [grantRequest, mayOperate, workingStep]);
+    }, [grantRequest, mayOperate, mayShare, send, workingStep]);
 
     const controllerAgentId = activeAssignment.current?.agentId ?? workingStep?.agentId;
     const controllerName = controllerAgentId ? (agentRegistry.get(controllerAgentId)?.name ?? controllerAgentId) : 'A specialist';
@@ -376,7 +422,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
             <div className="flex flex-wrap items-center gap-3 text-xs">
                 <span role="status">{closed ? 'Disconnected' : controller === 'artist' ? 'You have control' : `${controllerName} has control`}</span>
                 {controller === 'artist'
-                    ? <button type="button" disabled={!mayOperate || !workingStep} onClick={shareWithMission}>
+                    ? <button type="button" disabled={!mayOperate || !mayShare || !workingStep} onClick={shareWithMission}>
                         Share with {workingStep?.agentId ?? 'running specialist'}
                     </button>
                     : <button type="button" onClick={takeControl}>Take control</button>}
@@ -389,26 +435,21 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                 <button type="button" onClick={() => { captureIntent.current = 'reader'; send('capture'); }} disabled={!mayOperate}>Reader</button>
                 <button type="button" onClick={() => { captureIntent.current = 'pin'; send('capture'); }} disabled={!mayOperate}>Pin to Boardroom</button>
                 <a href={pageUrl} target="_blank" rel="noopener noreferrer">Open externally</a>
-                <button type="button" onClick={onClose}>Close live browser</button>
+                <button type="button" onClick={() => onClose(pageUrl)}>Close live browser</button>
             </div>
-            <form className="flex gap-2" onSubmit={event => { event.preventDefault(); send('navigate', { url }); }}>
+            <form className="flex gap-2" onSubmit={event => { event.preventDefault(); openAddress(url); }}>
                 <input aria-label="Live browser URL" value={url} onChange={event => setUrl(event.target.value)}
                     className="min-w-0 flex-1 rounded bg-white/10 px-2 py-1 text-sm" />
-                <button type="submit" disabled={!mayOperate || !url.trim()}>Go</button>
+                <button type="submit" disabled={(!mayOperate && !closed) || !url.trim()}>Go</button>
             </form>
+            <BoardroomBrowserBookmarks committedUrl={pageUrl} onNavigate={openAddress} disabled={!mayOperate && !closed} />
             {error && <p role="alert" className="text-sm text-amber-200">{error}</p>}
             {notice && <p role="status" className="text-sm">{notice}</p>}
             {font && <a href={font.url} download={font.filename} className="self-start rounded bg-indigo-600 px-3 py-2 text-sm">
                 Save {font.filename}
             </a>}
             {error && closed && (
-                <button type="button" className="self-start text-sm underline" onClick={() => {
-                    setClosed(false);
-                    setError('');
-                    setFrame('');
-                    setReader(undefined);
-                    setRetry(value => value + 1);
-                }}>Reconnect</button>
+                <button type="button" className="self-start text-sm underline" onClick={reconnect}>Reconnect</button>
             )}
             {!frame && !error && <p role="status">Starting live browser…</p>}
             {reader && (

@@ -19,9 +19,10 @@ export function resolveBoardroomBrowserEndpoint({
     try {
         const endpoint = new URL(configuredEndpoint);
         if (endpoint.protocol !== 'wss:' || endpoint.username || endpoint.password
-            || endpoint.search || endpoint.hash || endpoint.pathname !== '/boardroom') {
+            || endpoint.search || endpoint.hash || !['/', '/boardroom'].includes(endpoint.pathname)) {
             return undefined;
         }
+        endpoint.pathname = '/boardroom';
         return endpoint.href;
     } catch {
         return undefined;

@@ -5,6 +5,7 @@ import {
     Sparkles,
     Plus,
 } from 'lucide-react';
+import { isBoardroomWebSearchQuery, parseBoardroomBrowserAddress } from '@indii/shared';
 import { useStore } from '@/core/store';
 import { secureUUIDv4 } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
@@ -124,7 +125,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         entries: [initialBrowserUrl.current],
         index: 0,
     }));
-    const [hostedUrl, setHostedUrl] = useState<string>();
+    const [dismissedHostedUrl, setDismissedHostedUrl] = useState<string>();
     const [searchQuery, setSearchQuery] = useState<string>();
     const [iframeKey, setIframeKey] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -262,10 +263,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     };
 
     const handleNavigate = (targetUrl: string) => {
-        const input = targetUrl.trim();
-        if (!isNativeElectron && input && !/^[a-z][a-z0-9+.-]*:/i.test(input)
-            && (!input.includes('.') || /\s/.test(input))) {
-            setSearchQuery(input);
+        if (!isNativeElectron && isBoardroomWebSearchQuery(targetUrl)) {
+            setSearchQuery(targetUrl.trim());
             return;
         }
         const safeUrl = normalizeExternalHttpUrl(targetUrl);
@@ -280,6 +279,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         setInputUrl(safeUrl);
         setIsPinned(false);
         setExtractedText(null);
+        setDismissedHostedUrl(undefined);
 
         const api = window.electronAPI?.boardroomBrowser;
         if (api) {
@@ -299,6 +299,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         const url = webHistory.entries[index];
         if (!url) return;
         setWebHistory({ ...webHistory, index });
+        setDismissedHostedUrl(undefined);
         setBoardroomBrowserUrl(url);
     };
 
@@ -457,9 +458,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         }
     })();
     const portalTitle = matchedBookmark?.title || portalHost;
-    const isFrameBlockedPortal = !isNativeElectron && isKnownFrameBlockedUrl(committedUrl);
-    const canOpenHosted = !isNativeElectron && hostedEndpoint
-        && ['artists.spotify.com', 'fonts.google.com'].includes(new URL(committedUrl).hostname);
+    const hostedPage = !isNativeElectron && !isBlockedSelfEmbed && hostedEndpoint
+        ? parseBoardroomBrowserAddress(committedUrl)
+        : undefined;
+    const canOpenHosted = hostedPage !== undefined;
+    const isFrameBlockedPortal = !isNativeElectron && (canOpenHosted || isKnownFrameBlockedUrl(committedUrl));
+    const openHosted = () => setDismissedHostedUrl(undefined);
 
     if (searchQuery !== undefined) {
         return (
@@ -467,11 +471,11 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 <BoardroomWebSearch
                     initialQuery={searchQuery}
                     onClose={() => setSearchQuery(undefined)}
-                    openInBoardroom={hostedEndpoint ? resultUrl => {
-                        if (!['artists.spotify.com', 'fonts.google.com'].includes(new URL(resultUrl).hostname)) return undefined;
+                    openInBoardroom={hostedEndpoint && !isNativeElectron ? resultUrl => {
+                        if (!parseBoardroomBrowserAddress(resultUrl)) return undefined;
                         return () => {
                             setSearchQuery(undefined);
-                            setHostedUrl(resultUrl);
+                            handleNavigate(resultUrl);
                         };
                     } : undefined}
                 />
@@ -479,10 +483,21 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         );
     }
 
-    if (hostedUrl && hostedEndpoint) {
+    if (hostedPage && hostedEndpoint && dismissedHostedUrl !== committedUrl) {
         return (
             <Suspense fallback={<p role="status" className="p-3">Loading live browser…</p>}>
-                <BoardroomHostedBrowser endpoint={hostedEndpoint} initialUrl={hostedUrl} onClose={() => setHostedUrl(undefined)} />
+                <BoardroomHostedBrowser
+                    endpoint={hostedEndpoint}
+                    targetUrl={hostedPage.href}
+                    onSearch={(query, pageUrl) => {
+                        setBoardroomBrowserUrl(pageUrl);
+                        setSearchQuery(query);
+                    }}
+                    onClose={pageUrl => {
+                        setDismissedHostedUrl(pageUrl);
+                        setBoardroomBrowserUrl(pageUrl);
+                    }}
+                />
             </Suspense>
         );
     }
@@ -511,9 +526,9 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 onExtractReader={handleExtractReader}
                 isExtractingReader={isExtractingReader}
                 isReaderMode={isReaderMode}
-                canOpenHosted={Boolean(canOpenHosted)}
+                canOpenHosted={canOpenHosted}
                 isFrameBlockedPortal={isFrameBlockedPortal}
-                onOpenHosted={() => setHostedUrl(committedUrl)}
+                onOpenHosted={openHosted}
                 onOpenSearch={() => setSearchQuery(inputUrl.trim() === boardroomBrowserUrl ? '' : inputUrl.trim())}
                 onOpenExternal={handleOpenExternal}
             />
@@ -607,11 +622,11 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         portalTitle={portalTitle}
                         committedUrl={committedUrl}
                         matchedBookmark={matchedBookmark}
-                        canOpenHosted={Boolean(canOpenHosted)}
+                        canOpenHosted={canOpenHosted}
                         canReadPage={canReadPage}
                         isExtractingReader={isExtractingReader}
                         isPinning={isPinning}
-                        onOpenHosted={() => setHostedUrl(committedUrl)}
+                        onOpenHosted={openHosted}
                         onOpenExternal={handleOpenExternal}
                         onExtractReader={handleExtractReader}
                         onPinToContext={handlePinToContext}
