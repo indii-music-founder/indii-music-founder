@@ -39,6 +39,19 @@ export const MusicDomainEventTypeSchema = z.enum([
   'identity.conflict_detected',
   'catalog.migration.started',
   'catalog.migration.completed',
+  // Post-mastering BOS lifecycle (docs/plans/deel-patterns-bos-plan-2026-11-28.md §2.1).
+  'master.lifecycle_changed',
+  'agreement.generated',
+  'agreement.signature_requested',
+  'agreement.signed',
+  'agreement.voided',
+  'payout.batch_staged',
+  'payout.batch_approved',
+  'payout.transfer_settled',
+  'payout.transfer_failed',
+  'ad_spend.committed',
+  'royalty_ledger.updated',
+  'budget_plan.saved',
 ]);
 export type MusicDomainEventType = z.infer<typeof MusicDomainEventTypeSchema>;
 
@@ -64,6 +77,8 @@ export const MusicEventEntityTypeSchema = z.enum([
   'relationship',
   'provenance',
   'evidence',
+  'payout_batch',
+  'budget_plan',
 ]);
 export type MusicEventEntityType = z.infer<typeof MusicEventEntityTypeSchema>;
 
@@ -85,6 +100,18 @@ export const MUSIC_DOMAIN_EVENT_SUBJECT_TYPES: Partial<Record<MusicDomainEventTy
   'platform.connection_changed': ['platform'],
   'catalog.state_changed': ['release', 'sound_recording', 'video_resource', 'asset'],
   'identity.conflict_detected': ['person', 'artist', 'organization', 'musical_work', 'sound_recording', 'release', 'identifier', 'relationship'],
+  'master.lifecycle_changed': ['sound_recording'],
+  'agreement.generated': ['agreement'],
+  'agreement.signature_requested': ['agreement'],
+  'agreement.signed': ['agreement'],
+  'agreement.voided': ['agreement'],
+  'payout.batch_staged': ['payout_batch'],
+  'payout.batch_approved': ['payout_batch'],
+  'payout.transfer_settled': ['payout_batch'],
+  'payout.transfer_failed': ['payout_batch'],
+  'ad_spend.committed': ['campaign'],
+  'royalty_ledger.updated': ['usage'],
+  'budget_plan.saved': ['budget_plan'],
 };
 
 export const MusicEventEntityReferenceSchema = z.object({

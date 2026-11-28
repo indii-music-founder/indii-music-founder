@@ -25,6 +25,18 @@ const subjectTypes: Record<MusicDomainEventType, string> = {
   'identity.conflict_detected': 'artist',
   'catalog.migration.started': 'release',
   'catalog.migration.completed': 'release',
+  'master.lifecycle_changed': 'sound_recording',
+  'agreement.generated': 'agreement',
+  'agreement.signature_requested': 'agreement',
+  'agreement.signed': 'agreement',
+  'agreement.voided': 'agreement',
+  'payout.batch_staged': 'payout_batch',
+  'payout.batch_approved': 'payout_batch',
+  'payout.transfer_settled': 'payout_batch',
+  'payout.transfer_failed': 'payout_batch',
+  'ad_spend.committed': 'campaign',
+  'royalty_ledger.updated': 'usage',
+  'budget_plan.saved': 'budget_plan',
 };
 
 function eventForType(eventType: MusicDomainEventType) {

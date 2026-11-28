@@ -77,6 +77,17 @@ state machine. No new event collection. Public webhooks out of scope this phase.
   gets a `MUSIC_DOMAIN_EVENT_SUBJECT_TYPES` entry (e.g. `agreement.*` → `agreement`,
   `master.lifecycle_changed` → `sound_recording`, `ad_spend.committed` → `campaign`,
   `royalty_ledger.updated` → `usage`).
+- Cross-department review routes (`CROSS_DEPARTMENT_EVENT_ROUTES`, review pointers only):
+  `master.lifecycle_changed` → distribution, publishing, rights, finance, marketing, creative;
+  `agreement.*` → rights, publishing, finance; `payout.*` → finance;
+  `ad_spend.committed` → marketing, finance, analytics; `royalty_ledger.updated` → finance,
+  analytics, rights; `budget_plan.saved` → finance, marketing, creative, video. Jev
+  (`req_01a223a944607de8a704babb8b130607`, `req_01a223a97363736190b29d79698f678b`) accepted
+  the subject kinds (p=0.82). Its route additions at p≥0.60 were adopted: master +marketing
+  0.70, +creative 0.65; budget +creative 0.64, +video 0.60. Below-threshold suggestions were
+  not adopted.
+- **Status:** §2.1 delivered 2026-11-28 (schema + routes + tests); no emitter writes these
+  events yet.
 - Event ids follow the existing deterministic convention (`claim-received:${claimId}`):
   `${eventType}:${aggregateId}:${aggregateVersion}`, which satisfies
   `InternalReferenceIdSchema` (never an ISRC/UPC-shaped value). Re-emits collapse on the
@@ -343,6 +354,11 @@ math as the payout path (Jev p=0.88).
   so P2 §3.3 now requires payee binding and P1 §4.1 consumes it. Also fixed ISSUE-1726:
   stale duplicate MCP tool declarations in five agent definitions (squash `f59afdb8`).
   Next: §2.1 (P4 schema additions).
+- **2026-11-28 (`/middle` unit 2):** §2.1 delivered — 12 event types, `payout_batch` and
+  `budget_plan` entity kinds, one subject kind per new type, and cross-department routes
+  (§2.1). Shared 820/820, firebase 2,549 passed, typecheck and firebase build pass. No
+  emitter or relay exists yet. Next: §2.2 `recordDomainEvent` + first emitter
+  (`masterFsm.transitionMasterLifecycle`).
 
 ---
 
