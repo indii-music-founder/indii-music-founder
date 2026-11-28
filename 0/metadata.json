@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M8HKYRNSAHVSC7NNQ34QM12X",
+  "session_id": "cdb5b789-63b0-47c2-827b-ffc87c3e288e",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-28T17:41:29.194104Z",
+  "branch": "claude/wire-unconnected-w1",
+  "checkpoints_count": 6,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "444857ce4be4",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 577,
+    "cache_creation_tokens": 613907,
+    "cache_read_tokens": 67079215,
+    "output_tokens": 178936,
+    "api_call_count": 289
+  },
+  "redaction": {
+    "replacements": 102,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 12,
+      "credentialed_uri": 0,
+      "entropy": 83,
+      "key_context": 7,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 6
+  }
+}
