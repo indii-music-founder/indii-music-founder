@@ -14,7 +14,6 @@ import {
     Palette,
     ShoppingBag,
     MapPin,
-    LucideIcon,
     Sparkles,
     ShieldAlert,
     ShieldCheck,
@@ -30,6 +29,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { MODEL_PRICING } from '@/core/config/intelligence-models';
 import { WidgetEmptyState } from '@/modules/dashboard/components/WidgetEmptyState';
+import type { WidgetType, Widget } from '@/modules/dashboard/components/dashboardWidgetDefinitions';
+import RecentProjects from '@/modules/dashboard/components/RecentProjects';
+import StatsRibbon from '@/modules/dashboard/components/StatsRibbon';
+import DataStorageManager from '@/modules/dashboard/components/DataStorageManager';
+import { KnowledgeBaseList } from '@/modules/dashboard/components/KnowledgeBaseList';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { timelineOrchestrator } from '@/services/timeline/TimelineOrchestratorService';
 import type { Timeline } from '@/services/timeline/TimelineTypes';
@@ -50,46 +54,8 @@ import type {
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
-export type WidgetType =
-    | 'streams_today'
-    | 'revenue_consolidated'
-    | 'project_timeline'
-    | 'approval_gates'
-    | 'next_release'
-    | 'top_track'
-    | 'agent_activity'
-    | 'audience_growth'
-    | 'active_campaigns'
-    | 'pending_tasks'
-    | 'social_engagement'
-    | 'brand_identity'
-    | 'merch_sales'
-    | 'tour_status'
-    | 'cost_estimator';
-
-export interface Widget {
-    id: string;
-    type: WidgetType;
-    order: number;
-}
-
-export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: LucideIcon; description: string; deprecated?: boolean }> = {
-    streams_today: { label: 'Streams Today', icon: Music, description: 'Daily stream count across all DSPs' },
-    revenue_consolidated: { label: 'Revenue & Royalties', icon: DollarSign, description: 'Consolidated gross revenue, MTD earnings and income sources' },
-    project_timeline: { label: 'Project Timeline', icon: Calendar, description: 'Active rollout timeline, current phase, and milestone countdown' },
-    approval_gates: { label: 'Approval Gates', icon: ShieldCheck, description: 'Pending approval gates and one-click authorization' },
-    next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
-    top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
-    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent tasks your team finished' },
-    audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
-    active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
-    pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },
-    social_engagement: { label: 'Social Engagement', icon: ThumbsUp, description: 'Likes, comments, and shares on recent posts' },
-    brand_identity: { label: 'Brand Integrity', icon: Palette, description: 'Visual identity and brand compliance scores' },
-    merch_sales: { label: 'Merchandise', icon: ShoppingBag, description: 'Recent sales and inventory alerts' },
-    tour_status: { label: 'Tour & Shows', icon: MapPin, description: 'Ticket sales and upcoming tour dates' },
-    cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate generation costs' },
-};
+export type { WidgetType, Widget } from '@/modules/dashboard/components/dashboardWidgetDefinitions';
+export { WIDGET_DEFINITIONS } from '@/modules/dashboard/components/dashboardWidgetDefinitions';
 
 export const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w1', type: 'streams_today', order: 0 },
@@ -1537,6 +1503,10 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     merch_sales: () => <MerchSalesWidget />,
     tour_status: () => <TourStatusWidget />,
     cost_estimator: () => <CostEstimatorWidget />,
+    recent_projects: () => <RecentProjects />,
+    workspace_stats: () => <StatsRibbon />,
+    storage_usage: () => <DataStorageManager />,
+    knowledge_base: () => <KnowledgeBaseList />,
 };
 
 
