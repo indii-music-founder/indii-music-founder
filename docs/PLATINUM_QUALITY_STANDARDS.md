@@ -205,3 +205,5 @@ Bind chat history and memory to the turn's session before asynchronous preparati
 - **Source File-Size Budget Ratchet (1,000 lines):** No tracked `packages/*/src/**/*.{ts,tsx}` file may exceed 1,000 lines, and legacy files recorded in `scripts/file-size-budget.allowlist.json` may not grow (enforced by `npm run check:file-size`). Remove allowlist entries as soon as a file is split to `<= 1,000` lines.
 - **No Direct Firebase SDK in UI Components:** Renderer `.tsx` components must call `*Service.ts` or hooks rather than importing `firebase/firestore`, `firebase/storage`, `firebase/functions`, `firebase/auth`, or `firebase/database` directly (currently `warn` in `eslint.config.js`; scheduled for `error` promotion in Phase 2).
 
+
+**Verify public build settings in emitted code.** New renderer settings must be allowed by both Vite environment-prefix lists. Test their compilation with the actual resolver, including the explicit disabled case; CI env logs and a successful backend health probe alone do not verify client activation.

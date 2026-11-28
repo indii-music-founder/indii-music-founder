@@ -1,3 +1,9 @@
+## 2026-11-28 Hosted browser settings were absent from the compiled renderer (BOARDROOM_VITE_ENV_FILTER)
+
+- **Evidence:** The production build log showed the hosted-browser feature enabled and its public health probe passing, but the real UI still displayed the external-open card. Both Vite environment-prefix lists omitted `VITE_BOARDROOM_BROWSER_`. A compiler-level regression reproduced the omission: with enabled=true, the emitted module exported enabled=false.
+- **Fix:** Allow the public browser-settings prefix in both renderer build configurations. The Hosting build now runs a test that compiles the actual endpoint resolver with each configuration and checks both enabled and explicitly disabled output.
+- **Prevention:** A CI environment value and a healthy worker do not prove that Vite exposed the configuration to the browser. Verify the emitted endpoint and then test the genuine signed-in UI. Deploy matching worker sources before accepting new client capabilities.
+
 ## 2026-11-27 Healthy Boardroom worker fell back to blocked iframes
 
 - **Cause:** The Studio build supplied a WebSocket origin while the renderer required the `/boardroom` path. An HTTP 200 from `/health` hid the mismatch. The fallback embedded sites that forbid framing, and the hosted worker accepted only two portal hosts.
