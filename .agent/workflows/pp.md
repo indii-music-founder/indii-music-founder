@@ -27,7 +27,7 @@ For a broad primitives review, inventory and prioritize the findings first. Do n
 
 Before inspecting or editing code:
 
-1. Read [`branch-safety.md`](branch-safety.md) and the repository's `.entire/agent-guide.md`. Inspect `entire status` and `git status --short`; use `entire` for repository fetch/push, session, checkpoint, search, and trail operations. Keep `origin` pointed at Entire. Follow `branch-safety.md` for the current delivery lane; never infer branch authority from this workflow. If its preconditions fail or another active session owns the shared tree, stop delivery and report the exact blocker. Preserve unrelated dirty files without staging, stashing, reverting, or committing them.
+1. Read [`branch-safety.md`](branch-safety.md) and the repository's `.entire/agent-guide.md`. Inspect `entire status` and `git status --short`; use `entire` for repository fetch/push, session, checkpoint, search, and trail operations. Keep `origin` pointed at Entire. Follow `branch-safety.md` for the current delivery lane; never infer branch authority from this workflow. If its preconditions fail, stop delivery and report the exact blocker. If another session occupies the shared checkout, work in an isolated checkout based on `origin/main` (see section 5). Preserve unrelated dirty files without staging, stashing, reverting, or committing them.
 2. Read the newest entries in `.agent/skills/error_memory/ERROR_LEDGER.md` and `.agent/HANDOFF_STATE.md` to avoid repeating known regressions or duplicating work already landed by another team.
 3. Read `.agent/REAL_USER_AUTHENTICITY.md` and `docs/PLATINUM_QUALITY_STANDARDS.md`.
 
@@ -79,6 +79,6 @@ Run after the final edit (CLI-first so every team gets deterministic evidence):
 2. Strict lint with zero warnings (`npx eslint --max-warnings=0 <touched-files>`).
 3. Affected package TypeScript check (`npm run typecheck:renderer` / `npm run typecheck`) and `git diff --check`.
 4. Repo policy guards when workflows or capabilities change (`npm run validate:capabilities`, `npm run validate:mainline-workflows`).
-5. Deliver one coherent commit through [`/end`](end.md) and [`/ci-validate`](ci-validate.md). If unrelated work occupies the shared checkout, use an isolated checkout based on `origin/main`. Verify CI on the exact SHA that lands on `main`.
+5. Deliver one coherent commit through [`/end`](end.md) and [`/ci-validate`](ci-validate.md) on a fresh task branch from current `origin/main`, pushed through Entire `origin` as [`branch-safety.md`](branch-safety.md) specifies. If unrelated work occupies the shared checkout, use an isolated checkout based on `origin/main`. Report the branch, commit SHA, and local verification; the repository owner handles remote CI and merging to `main`.
 
 > **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

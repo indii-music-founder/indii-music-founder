@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "7def1a3bfbe401cef951c47584d131373e2ba4bc131366cae3d19b01e0d64ea6",
+  "sourceDigest": "33a6482ee92e7161146febced73ca18d75f1ca446045f7ce8b4d8796ed4dbbaa",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -6242,7 +6242,7 @@
       "available": true,
       "description": "Canonical Perfect Primitive workflow for Gemini Antigravity, Codex, and Claude. Supports audit-only reviews and gives implementation runs a goal with verifiable completion criteria.",
       "descriptionHash": "ca54f3c588238222e3fb1d27adce84d40a8e7374aa0d8d0ac470616c0900770f",
-      "contentHash": "c4632973f8ccb49a0fcec0944c0d4eac92ba81819ff2e19eb3d1b4d9f6a3d11a",
+      "contentHash": "fc1b5776d8fd0b51ed96892bbb9886aa1dc2578eb7ad53a786a0f111674a925a",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
