@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Video, Wand2, ArrowRight, CheckCircle2, Download, RefreshCw, FileAudio, Sparkles, LayoutGrid } from 'lucide-react';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { useStore } from '@/core/store';
+import { toCreativeBrandKit } from '@/services/agent/governance/creativeBrandKit';
 import type { ShortFormHookCandidate } from '@/services/marketing/ShortFormReelService';
 import type { AdMatrixRunReport } from '@/services/marketing/MultiShapeAdMatrixService';
 import type { AdAspectShape, AdDurationSec } from '@indii/video-compiler';
@@ -26,14 +27,16 @@ export default function MarketingAssetGeneratorUI() {
     const [isDetectingHooks, setIsDetectingHooks] = useState<boolean>(false);
     const [hookHeadline, setHookHeadline] = useState<string>('');
     const [adMatrixShapes, setAdMatrixShapes] = useState<AdAspectShape[]>(['9:16', '1:1', '4:5', '16:9']);
-    const [adMatrixDurations, setAdMatrixDurations] = useState<AdDurationSec[]>([15]);
+    const [adMatrixDurations, setAdMatrixDurations] = useState<AdDurationSec[]>([6, 15]);
     const [adMatrixCta, setAdMatrixCta] = useState<string>('Stream now');
+    const [adMatrixFootage, setAdMatrixFootage] = useState<File | null>(null);
     const [adMatrixFootageUrl, setAdMatrixFootageUrl] = useState<string>('');
     const [adMatrixSmartLinkUrl, setAdMatrixSmartLinkUrl] = useState<string>('');
     const [adMatrixReport, setAdMatrixReport] = useState<AdMatrixRunReport | null>(null);
     const [launchKit, setLaunchKit] = useState<ReleaseLaunchKit | null>(null);
     const [isBuildingLaunchKit, setIsBuildingLaunchKit] = useState<boolean>(false);
     const artistDisplayName = useStore(state => state.userProfile?.displayName) || 'Artist';
+    const artistBrandKit = useStore(state => state.userProfile?.brandKit);
     const audioInputRef = useRef<HTMLInputElement | null>(null);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const avatarGenerationEnabled = featureFlags.isEnabled(FEATURE_FLAG_NAMES.AVATAR_GENERATION);
@@ -81,7 +84,7 @@ export default function MarketingAssetGeneratorUI() {
     const handleGenerate = async () => {
         if (generatorMode === 'reel' && !prompt.trim()) return;
         if (generatorMode === 'audio-reel' && (!audioFile || !prompt.trim())) return;
-        if (generatorMode === 'ad-matrix' && (!hookHeadline.trim() || !adMatrixFootageUrl.trim() || adMatrixShapes.length === 0 || adMatrixDurations.length === 0)) return;
+        if (generatorMode === 'ad-matrix' && (!hookHeadline.trim() || (!adMatrixFootage && !adMatrixFootageUrl.trim()) || adMatrixShapes.length === 0 || adMatrixDurations.length === 0)) return;
         if (generatorMode === 'avatar' && (!audioFile || !avatarImage)) return;
         if (generatorMode === 'avatar' && !avatarGenerationEnabled) {
             setError('Avatar generation is unavailable until the backend worker is deployed.');
@@ -124,15 +127,22 @@ export default function MarketingAssetGeneratorUI() {
                 setResultJobId(result.project.id);
             } else if (generatorMode === 'ad-matrix') {
                 const { MultiShapeAdMatrixService } = await import('@/services/marketing/MultiShapeAdMatrixService');
+                const { renderAdMatrixVariant, uploadAdMatrixFootage } = await import('@/services/marketing/AdMatrixRenderService');
+                const footageUrl = adMatrixFootage
+                    ? await uploadAdMatrixFootage(adMatrixFootage)
+                    : adMatrixFootageUrl.trim();
                 const report = await MultiShapeAdMatrixService.generateAndScoreMatrix({
                     campaignId: `camp_ui_${Date.now()}`,
                     title: prompt.trim() || hookHeadline.trim(),
                     brandOrArtistName: artistDisplayName,
                     hookHeadline: hookHeadline.trim(),
                     ctaText: adMatrixCta.trim() || 'Stream now',
-                    verticalFootageUrl: adMatrixFootageUrl.trim(),
+                    verticalFootageUrl: footageUrl,
                     shapes: adMatrixShapes,
                     durations: adMatrixDurations,
+                }, {
+                    renderVariant: renderAdMatrixVariant,
+                    brandKit: artistBrandKit ? toCreativeBrandKit(artistBrandKit) : undefined,
                 });
                 setAdMatrixReport(report);
                 setVideoUrl(null);
@@ -173,6 +183,8 @@ export default function MarketingAssetGeneratorUI() {
     const reset = () => {
         setStep(1);
         setAudioFile(null);
+        setAdMatrixFootage(null);
+        setAdMatrixFootageUrl('');
         setAvatarImage(null);
         setPrompt('');
         setStyle('cinematic');
@@ -198,12 +210,13 @@ export default function MarketingAssetGeneratorUI() {
                 shape: item.variant.shape,
                 durationSeconds: item.variant.durationSeconds,
                 channelLabel: item.variant.channelLabel,
+                ...(item.renderUrl ? { renderUrl: item.renderUrl } : {}),
                 overallScore: item.evaluation.bestScore?.overallScore ?? 0,
-                brandQcApproved: item.evaluation.brandQc ? item.evaluation.brandQc.approved : item.evaluation.approved,
+                brandQcApproved: item.evaluation.brandQc?.approved === true,
                 approved: item.evaluation.approved,
                 discardedForRegression: item.evaluation.discardedForRegression,
                 attemptsUsed: item.evaluation.attemptsUsed,
-                gapsFound: item.evaluation.bestScore?.gapsFound ?? item.evaluation.brandQc?.reason ?? 'None',
+                gapsFound: (item.evaluation.bestScore?.gapsFound ?? item.evaluation.brandQc?.reason ?? item.evaluation.history.at(-1)?.gapsFound ?? 'None').slice(0, 500),
             }));
 
             const builtKit = await CampaignIntelligence.generateReleaseLaunchKit({
@@ -553,14 +566,27 @@ export default function MarketingAssetGeneratorUI() {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Source Hero Footage URL</label>
+                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Source footage</label>
                                                     <input
                                                         type="text"
                                                         value={adMatrixFootageUrl}
-                                                        onChange={(e) => setAdMatrixFootageUrl(e.target.value)}
+                                                        onChange={(e) => { setAdMatrixFootage(null); setAdMatrixFootageUrl(e.target.value); }}
+                                                        aria-label="Source footage in project storage"
                                                         placeholder="https://... or gs://..."
                                                         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-marketing/50 transition-colors"
                                                     />
+                                                    <p className="mt-1 text-xs text-gray-400">Use a video URL from your project storage or upload a file.</p>
+                                                    <input
+                                                        type="file"
+                                                        accept="video/*"
+                                                        aria-label="Upload source footage"
+                                                        onChange={event => {
+                                                            setAdMatrixFootage(event.target.files?.[0] ?? null);
+                                                            if (event.target.files?.[0]) setAdMatrixFootageUrl('');
+                                                        }}
+                                                        className="mt-2 text-xs text-gray-300"
+                                                    />
+                                                    {adMatrixFootage && <p className="mt-1 text-xs text-gray-300">{adMatrixFootage.name}</p>}
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -645,7 +671,7 @@ export default function MarketingAssetGeneratorUI() {
                                     </button>
                                     <button
                                         disabled={
-                                            (generatorMode === 'ad-matrix' && (!hookHeadline.trim() || !adMatrixFootageUrl.trim())) ||
+                                            (generatorMode === 'ad-matrix' && (!hookHeadline.trim() || (!adMatrixFootage && !adMatrixFootageUrl.trim()))) ||
                                             ((generatorMode === 'reel' || generatorMode === 'audio-reel') && !prompt.trim())
                                         }
                                         onClick={handleGenerate}
@@ -677,7 +703,9 @@ export default function MarketingAssetGeneratorUI() {
                                 <p className="text-gray-400 text-center max-w-sm">
                                     {generatorMode === 'avatar'
                                         ? 'Rendering the avatar lip-sync from your audio and portrait. This normally takes a few minutes via background job...'
-                                        : 'Rendering highly-detailed frames from your prompt. This normally takes a few minutes via background job...'}
+                                        : generatorMode === 'ad-matrix'
+                                            ? 'Rendering and scoring the selected cuts. Each cut can take several minutes.'
+                                            : 'Rendering highly-detailed frames from your prompt. This normally takes a few minutes via background job...'}
                                 </p>
                             </motion.div>
                         )}
@@ -773,7 +801,7 @@ export default function MarketingAssetGeneratorUI() {
                                                                 )}
                                                             </div>
                                                             <p className="text-[10px] text-gray-400 mt-1">
-                                                                {item.evaluation.bestScore?.gapsFound ?? item.evaluation.brandQc?.reason ?? 'Pending keyframe inspection'}
+                                                                {item.evaluation.bestScore?.gapsFound ?? item.evaluation.brandQc?.reason ?? item.evaluation.history.at(-1)?.gapsFound ?? 'Pending keyframe inspection'}
                                                             </p>
                                                         </div>
                                                     );

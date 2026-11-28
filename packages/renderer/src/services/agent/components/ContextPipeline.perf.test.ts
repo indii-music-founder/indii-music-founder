@@ -129,6 +129,7 @@ describe('ContextPipeline parallelism and timeout hygiene', () => {
             'creative',
             expect.stringContaining('Plan our album rollout'),
             'proj-1',
+            undefined,
         );
 
         resolveHistory({ view: 'User: Plan our album rollout for Friday', historicalSummary: '' });

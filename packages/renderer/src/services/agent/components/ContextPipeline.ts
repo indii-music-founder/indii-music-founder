@@ -43,7 +43,7 @@ export class ContextPipeline {
         this.historyManager = new HistoryManager();
     }
 
-    async buildContext(signal?: AbortSignal): Promise<PipelineContext> {
+    async buildContext(signal?: AbortSignal, meetingRoomId?: string | null): Promise<PipelineContext> {
         const preparation = new ContextPreparation(signal);
         const { useStore } = await preparation.wait('context store', () => importWithRetry(() => import('@/core/store')));
         const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
@@ -57,16 +57,16 @@ export class ContextPipeline {
         directiveRead?.then(value => { directiveReady = { value }; }, () => undefined); // a failure is reported by the wait below
 
         // 1. Fetch State (The "Working Context")
-        const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext());
+        const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext(meetingRoomId));
 
         // Derive recent user/model context synchronously from in-memory store history
         // so memory recall, active plans, product skill, and history compilation all
         // run in parallel instead of adding their timeouts sequentially.
-        const storeAgentHistory = useStore.getState().agentHistory;
+        const storeAgentHistory = stateContext.meetingRoomSessionId ? stateContext.chatHistory ?? [] : useStore.getState().agentHistory;
         const earlyRecentContext = this.extractRecentContextFromMessages(storeAgentHistory);
 
         // 2. Start History, Plans, Product Skill, and Memory Recall in parallel
-        const historyPending = preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal));
+        const historyPending = preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal, stateContext.meetingRoomSessionId ? { id: stateContext.meetingRoomSessionId, messages: storeAgentHistory } : undefined));
 
         const plansReadPending = stateContext.projectId
             ? readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 2_500, signal)

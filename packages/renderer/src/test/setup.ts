@@ -1,28 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
-import { vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
+import '@/test/setupRuntimeMocks';
+import { createMeetingRoomStoreMock } from '@/test/meetingRoomStoreMock';
 vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
 vi.stubEnv('VITE_FIREBASE_E2E_MOCK', 'false');
 vi.stubEnv('VITE_E2E', 'false');
-
-// Mock keytar globally to prevent libsecret-1.so.0 ERR_DLOPEN_FAILED on headless Linux CI
-vi.mock('keytar', () => ({
-    default: {
-        setPassword: vi.fn().mockResolvedValue(undefined),
-        getPassword: vi.fn().mockResolvedValue(null),
-        deletePassword: vi.fn().mockResolvedValue(true),
-        findPassword: vi.fn().mockResolvedValue(null),
-        findCredentials: vi.fn().mockResolvedValue([]),
-    },
-    setPassword: vi.fn().mockResolvedValue(undefined),
-    getPassword: vi.fn().mockResolvedValue(null),
-    deletePassword: vi.fn().mockResolvedValue(true),
-    findPassword: vi.fn().mockResolvedValue(null),
-    findCredentials: vi.fn().mockResolvedValue([]),
-}));
-
-beforeEach(() => {
-    vi.useRealTimers();
-});
 
 // jsdom ships no PointerEvent, so @testing-library's fireEvent.pointer* falls
 // back to coordinate-less generic Events — clientX/clientY/pointerId arrive
@@ -438,27 +420,7 @@ vi.mock('@/core/store', () => {
         resetProjectCanvas: vi.fn(),
 
         // Meeting Room slice
-        activeMeetingRoomId: null,
-        meetingRoomWorkspaceLayout: 'closed',
-        meetingRoomWorkspaceTab: 'memory',
-        meetingRoomAssetScope: 'room',
-        meetingRoomWorkbenchTarget: null,
-        meetingRoomRoundtableStatus: null,
-        createMeetingRoom: vi.fn(),
-        selectMeetingRoom: vi.fn(),
-        leaveMeetingRoomContext: vi.fn(),
-        assignMeetingRoomToProject: vi.fn(),
-        updateMeetingRoomConfig: vi.fn().mockResolvedValue(undefined),
-        pinAssetToMeetingRoom: vi.fn().mockResolvedValue(undefined),
-        unpinAssetFromMeetingRoom: vi.fn().mockResolvedValue(undefined),
-        archiveMeetingRoom: vi.fn(),
-        deleteMeetingRoom: vi.fn(),
-        setMeetingRoomWorkspaceLayout: vi.fn(),
-        setMeetingRoomWorkspaceTab: vi.fn(),
-        setMeetingRoomAssetScope: vi.fn(),
-        setMeetingRoomWorkbenchTarget: vi.fn(),
-        openMeetingRoomWorkbench: vi.fn(),
-        setMeetingRoomRoundtableStatus: vi.fn(),
+        ...createMeetingRoomStoreMock(),
 
         // Notes slice
         notes: [],

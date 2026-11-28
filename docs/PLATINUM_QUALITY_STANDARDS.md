@@ -193,6 +193,10 @@ Use a public health path such as `/health`, avoiding reserved paths ending in `z
 
 **Optional conversation enrichment must have its own budget.** Saved-memory and older-history reads must settle before the required-context deadline, propagate Stop, and disclose missing context to the artist and model. Never cache a partial/late summary as complete or allow timed-out serial work to schedule more model calls. Required artist directives remain mandatory.
 
+## Async workflow inputs
+
+Bind chat history and memory to the turn's session before asynchronous preparation. Keep review evidence tied to the exact rendered cut delivered downstream. For scheduled publishing, verify the persisted delivery time and reuse a stable post key when retrying.
+
 ## Refactor Phase 1 Guardrails (Enforced in `npm run lint`)
 
 - **Renderer Path Aliases (`@/` and `@shared/`):** All imports in `packages/renderer/src/**/*.{ts,tsx}` must use `@/` or `@shared/` instead of relative `./` or `../` paths (enforced by ESLint `no-restricted-imports`; run `node scripts/codemods/relative-to-alias.mjs --write` for bulk rewrites). `new URL(..., import.meta.url)`, `import.meta.glob`, and `packages/firebase` are exempt.

@@ -1,3 +1,8 @@
+## 2026-11-27 Meeting Room context drift and Launch Kit delivery timing
+
+- **Cause:** Meeting Room messages were pinned to a room while history preparation read the current selection. The Ad Matrix UI never supplied rendered frames. Launch Kit video dispatch lost its requested schedule at the callable boundary.
+- **Prevention:** Use the turn's pinned room for history, project and memory reads. Carry the completed render URL alongside the exact frames reviewed by the scorer. Validate the destination's delivery policy before queueing and persist the requested timestamp with an idempotency key.
+
 ## 2026-11-22 Cloud Run reserved health path hid a reachable worker (CLOUD_RUN_RESERVED_HEALTH_PATH)
 
 - **Cause:** Boardroom served `/healthz`, a path intercepted by Cloud Run's frontend. Public probes returned Google's HTML 404 without container request logs even though the internal startup probe passed. Treating that probe as proof that every route failed led to unnecessary routing and organization-policy investigation.

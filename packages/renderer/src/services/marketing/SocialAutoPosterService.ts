@@ -17,11 +17,11 @@ export type SocialPlatform = 'tiktok' | 'youtube_shorts' | 'meta_reels';
 
 export interface PostContent {
     id: string;
-    mediaUrl: string; // From Firebase Storage or GCS
+    mediaUrl?: string; // Required for video posts
     caption: string;
     hashtags: string[];
     scheduledTime?: number;
-    platform: SocialPlatform;
+    platform: SocialPlatform | 'twitter';
     instagramPayload?: InstagramPublishingPayload;
 }
 
@@ -40,9 +40,10 @@ export class SocialAutoPosterService {
      */
     async queuePost(content: PostContent): Promise<string> {
         const store = useStore.getState();
-        const jobId = `post_${Date.now()}`;
+        const jobId = `post_${crypto.randomUUID()}`;
 
         logger.info(`[SocialPost] Queuing ${content.platform} post: ${content.id}`);
+        if (content.platform !== 'twitter' && !content.mediaUrl) throw new Error('Video publishing requires a media URL.');
         if (content.platform === 'meta_reels') {
             if (!content.instagramPayload) throw new Error('Instagram publishing requires validated media metadata.');
             const policy = validateInstagramPublishingPayload(content.instagramPayload);
@@ -65,10 +66,12 @@ export class SocialAutoPosterService {
             const { httpsCallable } = await import('firebase/functions');
 
             interface DispatchPayload {
-                mediaUrl: string;
+                mediaUrl?: string;
                 platform: string;
                 caption: string;
                 instagramPayload?: InstagramPublishingPayload;
+                scheduledTime?: number;
+                scheduleKey?: string;
             }
 
             const dispatchFunction = httpsCallable<DispatchPayload, { success: boolean; externalId: string; timestamp: string }>(
@@ -79,10 +82,11 @@ export class SocialAutoPosterService {
             store.updateJobProgress(jobId, 25);
 
             const result = await dispatchFunction({
-                mediaUrl: content.mediaUrl,
+                ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
                 platform: content.platform,
                 caption: content.caption,
-                instagramPayload: content.instagramPayload,
+                ...(content.instagramPayload ? { instagramPayload: content.instagramPayload } : {}),
+                ...(content.scheduledTime === undefined ? {} : { scheduledTime: content.scheduledTime, scheduleKey: content.id }),
             });
 
             if (result.data.success) {
@@ -93,7 +97,7 @@ export class SocialAutoPosterService {
                 throw new Error("Cloud Function returned failure status");
             }
 
-            return jobId;
+            return result.data.externalId;
 
         } catch (error: unknown) {
             logger.error(`[SocialPost] Failed to queue ${content.platform} post:`, error);

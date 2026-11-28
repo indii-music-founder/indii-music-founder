@@ -134,7 +134,7 @@ export class MeetingRoomOrchestrator {
         const state = store.getState();
         const room = state.sessions[roomId];
 
-        if (!room || room.namespace !== 'meeting-room') {
+        if (!room || room.namespace !== 'meeting-room' || room.isArchived) {
             state.updateAgentMessage(responseId, {
                 agentId: 'system',
                 text: 'Meeting Room session could not be found. Select or create a Meeting Room and try again.',

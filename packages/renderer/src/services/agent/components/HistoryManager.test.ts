@@ -61,6 +61,18 @@ describe('HistoryManager compaction', () => {
         expect(view).not.toContain('Semantic Recall');
     });
 
+    it('compiles the pinned room history when a different room is active', async () => {
+        vi.mocked(useStore.getState).mockReturnValue({
+            agentHistory: [{ id: 'other', role: 'user', text: 'Other room discussion', timestamp: 1 }],
+            activeSessionId: 'other-room',
+        } as ReturnType<typeof useStore.getState>);
+
+        const result = await new HistoryManager().getCompiledHistory(undefined, { id: 'pinned', messages: messages(2) });
+
+        expect(result.view).toContain('Oldest standing instruction');
+        expect(result.view).not.toContain('Other room discussion');
+    });
+
     it('exposes only the older-turn summary for direct provider chat', async () => {
         vi.mocked(useStore.getState).mockReturnValue({ agentHistory: messages(40), activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
 

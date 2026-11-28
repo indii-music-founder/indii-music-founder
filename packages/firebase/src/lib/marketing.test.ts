@@ -5,7 +5,8 @@ const adminMocks = vi.hoisted(() => {
     let campaignData: Record<string, unknown> = {};
 
     const serverTimestamp = vi.fn(() => ({ kind: 'server-timestamp' }));
-    const fromDate = vi.fn((date: Date) => ({ toDate: () => date }));
+    const fromDate = vi.fn((date: Date) => ({ toDate: () => date, toMillis: () => date.getTime() }));
+    const fromMillis = (milliseconds: number) => fromDate(new Date(milliseconds));
 
     const snapshotFor = (ref: { collectionName: string; id: string }) => {
         const data = ref.collectionName === 'campaigns'
@@ -22,6 +23,10 @@ const adminMocks = vi.hoisted(() => {
             collectionName,
             id,
             get: vi.fn(async () => snapshotFor(ref)),
+            create: async (data: Record<string, unknown>) => {
+                if (queueData.has(id)) throw Object.assign(new Error('Already exists'), { code: 6 });
+                queueData.set(id, data);
+            },
         };
         return ref;
     };
@@ -74,7 +79,7 @@ const adminMocks = vi.hoisted(() => {
 
     const firestore = Object.assign(vi.fn(() => ({ collection, runTransaction })), {
         FieldValue: { serverTimestamp },
-        Timestamp: { fromDate },
+        Timestamp: { fromDate, fromMillis },
     });
 
     return {
@@ -419,6 +424,40 @@ describe('normalizeDispatchPlatform (ISSUE-820)', () => {
 
 describe('dispatchSocialPost production capability boundary', () => {
     beforeEach(() => vi.clearAllMocks());
+
+    it('preserves the requested Instagram delivery time and deduplicates a repeated request', async () => {
+        adminMocks.queueData.clear();
+        const scheduledTime = Date.now() + 86_400_000;
+        const request = {
+            auth: { uid: 'artist-uid' },
+            data: {
+                platform: 'meta_reels',
+                mediaUrl: 'https://cdn.example.com/cut.mp4',
+                caption: 'Release announcement',
+                scheduledTime,
+                scheduleKey: 'kit-1/post-1',
+                instagramPayload: {
+                    surface: 'reel', width: 1080, height: 1920, durationSeconds: 6,
+                    caption: 'Release announcement', reelAudienceIntent: 'discovery',
+                    hashtags: ['#detroitsynth', '#synthpop', '#newindie', '#electricrelease', '#originalsong'],
+                },
+            },
+        };
+        const first = await dispatchSocialPostCallable(request);
+        const retry = await dispatchSocialPostCallable(request);
+
+        expect(retry.externalId).toBe(first.externalId);
+        expect(adminMocks.queueData.size).toBe(1);
+        const queueRecord = adminMocks.queueData.get(String(first.externalId));
+        expect(queueRecord?.scheduledAt).toEqual(expect.objectContaining({ toMillis: expect.any(Function) }));
+        expect((queueRecord?.scheduledAt as { toMillis: () => number }).toMillis()).toBe(scheduledTime);
+
+        await expect(dispatchSocialPostCallable({
+            ...request,
+            data: { ...request.data, scheduledTime: scheduledTime + 60_000 },
+        })).rejects.toMatchObject({ code: 'already-exists' });
+        expect(adminMocks.queueData.size).toBe(1);
+    });
 
     it.each([
         ['tiktok', /TikTok posting is not production-enabled/i],

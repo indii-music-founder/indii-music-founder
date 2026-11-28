@@ -408,7 +408,7 @@ export const dispatchSocialPost = onCall(
             }
         }
 
-        const { mediaUrl, platform, caption, instagramPayload } = (request.data ?? {}) as Record<string, unknown>;
+        const { mediaUrl, platform, caption, instagramPayload, scheduledTime, scheduleKey } = (request.data ?? {}) as Record<string, unknown>;
         const normalizedPlatform = normalizeDispatchPlatform(platform);
         if (normalizedPlatform === 'tiktok') {
             throw new HttpsError(
@@ -431,9 +431,24 @@ export const dispatchSocialPost = onCall(
             const policy = validateInstagramPublishingPayload(validatedInstagramPayload);
             if (!policy.valid) throw new HttpsError('invalid-argument', policy.errors.join(' '));
         }
-        console.info(`[SocialPost] Queueing ${normalizedPlatform}: ${mediaUrl}`);
+        if (scheduledTime !== undefined && (
+            typeof scheduledTime !== 'number' || !Number.isSafeInteger(scheduledTime)
+            || scheduledTime <= Date.now() || scheduledTime > Date.UTC(9999, 11, 31)
+        )) {
+            throw new HttpsError('invalid-argument', 'Scheduled delivery requires a valid future timestamp.');
+        }
+        if (scheduleKey !== undefined && (
+            scheduledTime === undefined || typeof scheduleKey !== 'string' || !scheduleKey.trim() || scheduleKey.length > 512
+        )) {
+            throw new HttpsError('invalid-argument', 'Invalid scheduled delivery key.');
+        }
 
-        const docRef = await admin.firestore().collection('scheduledPosts').add({
+        const contentHash = typeof scheduleKey === 'string'
+            ? crypto.createHash('sha256').update(JSON.stringify([normalizedPlatform, caption, mediaUrl,
+                validatedInstagramPayload && Object.entries(validatedInstagramPayload).sort()])).digest('hex')
+            : undefined;
+        const queue = admin.firestore().collection('scheduledPosts');
+        const post = {
             userId: request.auth.uid,
             platform: normalizedPlatform,
             text: String(caption || ''),
@@ -446,13 +461,31 @@ export const dispatchSocialPost = onCall(
                 instagramPayload: validatedInstagramPayload,
                 ...(validatedInstagramPayload.surface === 'story' ? { storyTtlHours: validatedInstagramPayload.storyExtend ? 48 : 24 } : {}),
             } : {}),
-            scheduledAt: admin.firestore.Timestamp.now(),
+            scheduledAt: typeof scheduledTime === 'number'
+                ? admin.firestore.Timestamp.fromMillis(scheduledTime)
+                : admin.firestore.Timestamp.now(),
             status: 'pending',
             source: 'social_auto_poster',
+            ...(contentHash ? { contentHash } : {}),
             retryCount: 0,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        };
+        const docRef = typeof scheduleKey === 'string'
+            ? queue.doc(campaignQueueDocumentId(request.auth.uid, 'social_auto_poster', scheduleKey))
+            : await queue.add(post);
+        if (typeof scheduleKey === 'string') {
+            try {
+                await docRef.create(post);
+            } catch (error) {
+                if ((error as { code?: number })?.code !== 6) throw error;
+                const existing = (await docRef.get()).data();
+                if (!existing || existing.scheduledAt?.toMillis() !== scheduledTime
+                    || existing.contentHash !== contentHash) {
+                    throw new HttpsError('already-exists', 'This launch post is already queued. Check its existing schedule before resubmitting.');
+                }
+            }
+        }
 
         return {
             success: true,

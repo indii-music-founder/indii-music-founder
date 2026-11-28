@@ -124,6 +124,39 @@ describe('MultiShapeAdMatrixService', () => {
         expect(report.heldBackVariants[0]?.variant.shape).toBe('16:9');
     });
 
+    it('attaches the scored refinement render, and holds back only the cut whose render fails', async () => {
+        mockEvaluateWithAutoRedo.mockImplementation(async (input, refine) => {
+            const revisedFrames = await refine({ headlineOverride: 'Refined hook' });
+            expect(input.keyframeBase64List).toEqual(['initial-frame']);
+            expect(revisedFrames).toEqual(['refined-frame']);
+            return { approved: true };
+        });
+
+        const report = await MultiShapeAdMatrixService.generateAndScoreMatrix({
+            campaignId: 'cut-matrix',
+            title: 'Release',
+            brandOrArtistName: 'Artist',
+            hookHeadline: 'Original hook',
+            ctaText: 'Listen',
+            verticalFootageUrl: 'gs://example.invalid/videos/source.mp4',
+            shapes: ['9:16', '1:1'],
+            durations: [6],
+        }, {
+            renderVariant: async variant => {
+                if (variant.shape === '1:1') throw new Error('Render unavailable');
+                const refined = variant.project.clips.some(clip => clip.text === 'Refined hook');
+                return {
+                    keyframes: [refined ? 'refined-frame' : 'initial-frame'],
+                    renderUrl: refined ? 'https://example.invalid/refined.mp4' : 'https://example.invalid/initial.mp4',
+                };
+            },
+        });
+
+        expect(report.approvedVariants.map(cut => cut.renderUrl)).toEqual(['https://example.invalid/refined.mp4']);
+        expect(report.heldBackVariants[0]?.evaluation.history[0]?.gapsFound).toContain('Render unavailable');
+        expect(mockEvaluateWithAutoRedo).toHaveBeenCalledTimes(1);
+    });
+
     it('fails closed (holds back all cuts) when no rendered keyframes are supplied for inspection', async () => {
         const report = await MultiShapeAdMatrixService.generateAndScoreMatrix({
             campaignId: 'camp_uninspected',

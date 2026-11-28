@@ -50,10 +50,20 @@ const mediaFetcherFor = (jobPath: string): MediaFetcher => {
 
 const uploadArtifact: ArtifactUploader = async (localPath, jobPath, outputName) => {
     const objectPath = `${ARTIFACT_PREFIX}/${jobPath.split('/').filter(Boolean).join('-')}-${randomUUID()}-${outputName}`;
-    await bucket().upload(localPath, { destination: objectPath });
+    // Launch kits can schedule posts weeks after rendering. Give these
+    // explicitly shareable assets the same tokenized links as desktop renders.
+    const downloadToken = /^ad-matrix-[a-f0-9-]{36}\.mp4$/.test(outputName) ? randomUUID() : undefined;
+    await bucket().upload(localPath, {
+        destination: objectPath,
+        ...(downloadToken ? { metadata: { contentType: 'video/mp4', metadata: { firebaseStorageDownloadTokens: downloadToken } } } : {}),
+    });
     const file = bucket().file(objectPath);
     const [metadata] = await file.getMetadata();
     const generation = String(metadata.generation ?? '');
+    if (downloadToken) {
+        const url = `https://firebasestorage.googleapis.com/v0/b/${bucket().name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${downloadToken}`;
+        return { url, generation };
+    }
     const [url] = await file.getSignedUrl({
         action: 'read',
         expires: Date.now() + 24 * 60 * 60 * 1000,

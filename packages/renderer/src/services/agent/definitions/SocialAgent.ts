@@ -252,7 +252,7 @@ export const SocialAgent: AgentConfig = {
             },
             {
                 name: "schedule_launch_kit_rollout",
-                description: "Validate a ReleaseLaunchKit, verify every attached ad variant passed approval and BrandVisionQC, and schedule/queue coordinated posts across Instagram, TikTok, YouTube Shorts, and X.",
+                description: "Schedule approved Instagram Reels and Stories and text posts on X for a ReleaseLaunchKit. TikTok, YouTube Shorts, and X profile headers remain manual.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

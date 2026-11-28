@@ -104,7 +104,7 @@ describe('CampaignIntelligence.generateReleaseLaunchKit', () => {
         {
             variantId: 'cut_9x16_winner',
             shape: '9:16',
-            durationSeconds: 15,
+            durationSeconds: 6,
             channelLabel: 'IG Reels / TikTok',
             renderUrl: 'https://cdn.example.com/winner-9x16.mp4',
             overallScore: 9.3,
