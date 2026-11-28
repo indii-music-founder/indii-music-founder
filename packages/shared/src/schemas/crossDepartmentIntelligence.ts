@@ -87,6 +87,18 @@ export const CROSS_DEPARTMENT_EVENT_ROUTES: Record<MusicDomainEventType, readonl
   'identity.conflict_detected': ['publishing', 'rights', 'finance', 'distribution', 'creative'],
   'catalog.migration.started': ['creative', 'distribution', 'publishing', 'rights', 'finance', 'marketing', 'analytics', 'video'],
   'catalog.migration.completed': ['creative', 'distribution', 'publishing', 'rights', 'finance', 'marketing', 'analytics', 'video'],
+  'master.lifecycle_changed': ['distribution', 'publishing', 'rights', 'finance', 'marketing', 'creative'],
+  'agreement.generated': ['rights', 'publishing', 'finance'],
+  'agreement.signature_requested': ['rights', 'publishing', 'finance'],
+  'agreement.signed': ['rights', 'publishing', 'finance'],
+  'agreement.voided': ['rights', 'publishing', 'finance'],
+  'payout.batch_staged': ['finance'],
+  'payout.batch_approved': ['finance'],
+  'payout.transfer_settled': ['finance'],
+  'payout.transfer_failed': ['finance'],
+  'ad_spend.committed': ['marketing', 'finance', 'analytics'],
+  'royalty_ledger.updated': ['finance', 'analytics', 'rights'],
+  'budget_plan.saved': ['finance', 'marketing', 'creative', 'video'],
 };
 
 export function createCrossDepartmentReviewPlan(event: MusicDomainEvent): CrossDepartmentReviewPlan {
