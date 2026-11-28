@@ -63,5 +63,8 @@ describe('MCP tool declarations match the server schemas (ISSUE-1709)', () => {
         const declared = (agent.tools ?? []).flatMap(tool => tool.functionDeclarations ?? []).map(d => d.name);
         expect(declared).toContain(declaration.name);
         expect(agent.functions?.[declaration.name]).toBeTypeOf('function');
+        // A stale inline copy with the same name would reach the model beside the
+        // shared declaration and advertise the wrong arguments.
+        expect(declared.filter(name => name === declaration.name)).toHaveLength(1);
     });
 });

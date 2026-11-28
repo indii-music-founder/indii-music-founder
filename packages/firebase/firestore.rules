@@ -1345,8 +1345,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // ISSUE-1725: split percentages and payee accounts are not client data.
+      // Locked splits live in create-only admin_ledger receipts; this legacy
+      // collection stays owner-readable so existing documents can be reviewed
+      // and removed, but no client may add or change a payout split here.
       match /splits/{splitId} {
-        allow read, write: if isOwner(userId);
+        allow read, delete: if isOwner(userId);
+        allow create, update: if false;
       }
     }
 

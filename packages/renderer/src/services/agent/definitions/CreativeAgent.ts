@@ -350,33 +350,6 @@ export const CreativeAgent: AgentConfig = {
                 }
             },
             {
-                name: "queue_release_canvas_render",
-                description: "Render the specialized 3-8 second release canvas made from owned cover art and canonical audio. Use queue_video_render for the active editor timeline.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseId: { type: "STRING" },
-                        canvasType: { type: "STRING", enum: ["Spotify", "TikTok", "Instagram"] },
-                        animationSpec: { type: "OBJECT" }
-                    },
-                    required: ["releaseId", "canvasType"]
-                }
-            },
-            {
-                name: "audit_asset_resolutions",
-                description: "Audit visual asset resolutions against DSP constraints using the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        assetUrls: {
-                            type: "ARRAY",
-                            items: { type: "STRING" }
-                        }
-                    },
-                    required: ["assetUrls"]
-                }
-            },
-            {
                 name: 'video_list_renderable_assets',
                 description: "List the user's finished video assets with duration, aspect ratio, and download URLs. Use before planning sequences.",
                 parameters: {
