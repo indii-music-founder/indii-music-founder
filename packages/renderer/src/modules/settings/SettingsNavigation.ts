@@ -11,6 +11,7 @@ export const SETTINGS_SECTION_IDS = [
     'appearance',
     'automation',
     'desktop',
+    'privacy',
     'security',
 ] as const;
 

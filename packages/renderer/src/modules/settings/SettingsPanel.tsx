@@ -24,6 +24,7 @@ import {
     Link2,
     Palette,
     Shield,
+    EyeOff,
     Monitor,
     Smartphone,
     Bot,
@@ -40,6 +41,7 @@ import ConnectionsSection from '@/modules/settings/settings-panel/ConnectionsSec
 import NotificationsSection from '@/modules/settings/settings-panel/NotificationsSection';
 import AppearanceSection from '@/modules/settings/settings-panel/AppearanceSection';
 import SecuritySection from '@/modules/settings/settings-panel/SecuritySection';
+import PrivacySection from '@/modules/settings/settings-panel/PrivacySection';
 import DesktopSection from '@/modules/settings/settings-panel/DesktopSection';
 import RemoteSection from '@/modules/settings/settings-panel/RemoteSection';
 import AutomationSection from '@/modules/settings/settings-panel/AutomationSection';
@@ -101,8 +103,9 @@ const SETTING_CATEGORIES: SettingsCategoryConfig[] = [
         id: 'system',
         label: 'System & Security',
         sections: [
-            { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
+            { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Language, layout, and animations' },
             { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
+            { id: 'privacy', label: 'Privacy', icon: EyeOff, description: 'Error reports and Do Not Sell or Share' },
             { id: 'security', label: 'Account & Security', icon: Shield, description: 'Sign out, data export, delete' },
         ],
     },
@@ -145,6 +148,7 @@ const SettingsPanel: React.FC = () => {
             case 'appearance': return <AppearanceSection />;
             case 'automation': return <AutomationSection />;
             case 'desktop': return <DesktopSection />;
+            case 'privacy': return <PrivacySection />;
             case 'security': return <SecuritySection />;
             default:
                 logger.warn(`[SettingsPanel] Unrecognized section: ${activeSection}, falling back to ProfileSection`);

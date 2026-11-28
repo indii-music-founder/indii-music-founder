@@ -22,7 +22,7 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.79 | 152 | `modules/dashboard/components/OrganizationSelector.tsx` | ✔ verified: product call — org switching is dev-gated |
 | 0.76 | 69 | `core/components/ApiKeyErrorModal.tsx` | ✔ verified: obsolete — client API keys removed |
 | 0.74 | 192 | `modules/observability/components/CircuitBreakerPanel.tsx` | ✅ wired (W1–W2) |
-| 0.71 | 152 | `components/shared/DoNotSellToggle.tsx` | ✔ verified: blocked — nothing honours the flag yet |
+| 0.71 | 152 | `components/shared/DoNotSellToggle.tsx` | ✅ wired (W4) — Settings → Privacy, enforced on consent + Sentry |
 | 0.69 | 142 | `modules/creative/components/veo/VeoSettingsPanel.tsx` | ✔ verified: superseded — DirectGenerationTab |
 | 0.68 | 92 | `modules/settings/components/DownloadHub.tsx` | ✅ wired (W1–W2) |
 | 0.64 | 60 | `modules/publishing/hooks/useDistributorConnections.ts` | ✔ verified: superseded — distribution (ISSUE-1441) |

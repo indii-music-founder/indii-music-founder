@@ -3,6 +3,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Cookie, Settings, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import {
+    DEFAULT_CONSENT_PREFERENCES,
+    getConsentPreferences,
+    saveConsentPreferences,
+    type ConsentPreferences,
+} from '@/services/privacy/consent';
 
 /**
  * Item 303: GDPR Cookie Consent Banner
@@ -17,67 +23,11 @@ import { logger } from '@/utils/logger';
  *   - marketing: Third-party marketing pixels (future)
  */
 
-const CONSENT_STORAGE_KEY = 'indii_cookie_consent';
-
-export interface ConsentPreferences {
-    essential: boolean; // Always true, cannot be toggled
-    analytics: boolean;
-    errorTracking: boolean;
-    marketing: boolean;
-    timestamp: string;
-    version: number;
-}
-
-const DEFAULT_PREFERENCES: ConsentPreferences = {
-    essential: true,
-    analytics: false,
-    errorTracking: false,
-    marketing: false,
-    timestamp: '',
-    version: 1,
-};
-
-/**
- * Read consent preferences from localStorage.
- * Returns null if no consent has been given yet.
- */
+// Consent storage lives in the privacy service; re-exported for existing importers.
 // eslint-disable-next-line react-refresh/only-export-components
-export function getConsentPreferences(): ConsentPreferences | null {
-    try {
-        const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
-        if (!stored) return null;
-        const parsed = JSON.parse(stored) as ConsentPreferences;
-        // Validate version
-        if (!parsed.version || parsed.version < 1) return null;
-        return parsed;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Check if a specific consent category has been granted.
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function hasConsent(category: keyof Omit<ConsentPreferences, 'timestamp' | 'version'>): boolean {
-    const prefs = getConsentPreferences();
-    if (!prefs) return false;
-    return prefs[category] === true;
-}
-
-/**
- * Save consent preferences to localStorage.
- */
-function saveConsentPreferences(prefs: ConsentPreferences): void {
-    try {
-        localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
-            ...prefs,
-            timestamp: new Date().toISOString(),
-        }));
-    } catch (error: unknown) {
-        logger.error('[CookieConsent] Failed to save preferences', error);
-    }
-}
+export { getConsentPreferences, hasConsent } from '@/services/privacy/consent';
+export type { ConsentPreferences } from '@/services/privacy/consent';
+const DEFAULT_PREFERENCES = DEFAULT_CONSENT_PREFERENCES;
 
 interface ConsentToggleProps {
     label: string;
