@@ -2073,6 +2073,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // White-glove import results (ISSUE-1727). Written only by the
+    // onWhiteGloveAssetUploaded storage trigger; the uploading artist may read
+    // their own results. No client writes.
+    match /artists/{artistId}/assets/{assetId} {
+      allow read: if isAuthenticated() && request.auth.uid == artistId;
+      allow write: if false;
+    }
+
     // Owner-scoped user subcollections previously missing rules entirely
     // (ISSUE-842 for integrations; LivingFileService/StyleMemoryStore had none).
     match /users/{userId}/living_files/{fileName} {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WhiteGloveIngestionService } from '@/services/ingestion/WhiteGloveIngestionService';
+import { WHITE_GLOVE_MAX_BYTES, WhiteGloveIngestionService, detectWhiteGloveAssetType } from '@/services/ingestion/WhiteGloveIngestionService';
 
 // We need to mock firebase storage
 vi.mock('firebase/storage', () => ({
@@ -121,5 +121,28 @@ describe('WhiteGloveIngestionService', () => {
         const uploadId = await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', 'artist_123');
         WhiteGloveIngestionService.cancelUpload(uploadId);
         expect(mockCancel).toHaveBeenCalled();
+    });
+});
+
+describe('WhiteGloveIngestionService file rules', () => {
+    const file = (name: string, type: string, size = 10) => {
+        const f = new File(['x'], name, { type });
+        Object.defineProperty(f, 'size', { value: size });
+        return f;
+    };
+
+    it('classifies files the way the backend trigger analyzes them', () => {
+        expect(detectWhiteGloveAssetType(file('a.wav', 'audio/wav'))).toBe('music');
+        expect(detectWhiteGloveAssetType(file('a.mov', 'video/quicktime'))).toBe('video');
+        expect(detectWhiteGloveAssetType(file('a.png', 'image/png'))).toBe('image');
+        expect(detectWhiteGloveAssetType(file('stems.zip', ''))).toBe('archive');
+        // Storage rules accept ZIP only, so tarballs are not treated as archives.
+        expect(detectWhiteGloveAssetType(file('stems.tar', 'application/x-tar'))).toBe('document');
+    });
+
+    it('refuses files at or over the 500 MB storage limit before uploading', async () => {
+        await expect(
+            WhiteGloveIngestionService.enqueueAsset(file('huge.wav', 'audio/wav', WHITE_GLOVE_MAX_BYTES), 'music', 'artist-1'),
+        ).rejects.toThrow('larger than 500 MB');
     });
 });

@@ -64,7 +64,7 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.90 | 264 | `services/distribution/YouTubeDataService.ts` |  |
 | 0.89 | 97 | `hooks/useSonicBridge.ts` |  |
 | 0.89 | 89 | `services/legal/NotarizeService.ts` |  |
-| 0.87 | 147 | `modules/onboarding/components/WhiteGloveIngestionHub.tsx` | ✔ verified: needs rules + results view |
+| 0.87 | 147 | `modules/onboarding/components/WhiteGloveIngestionHub.tsx` | ✅ wired (W5) — Files → Guided Import with results |
 | 0.85 | 104 | `services/social/SocialPostingService.ts` |  |
 | 0.82 | 128 | `services/distribution/proprietary-ingestion/EarningsProcessor.ts` |  |
 | 0.80 | 316 | `modules/observability/components/SchedulerStatusPanel.tsx` | ✅ wired (W1–W2) |
