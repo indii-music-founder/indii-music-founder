@@ -11,6 +11,14 @@
 
 107 nonterminal V3 sections migrated; 63 new Boardroom audit entries. Reproduce counts with `node scripts/issue-ledger-inventory.mjs`. Plan: `docs/plans/boardroom-modernization-plan-2026-11-19.md`.
 
+## V3 migration reconciliation — 2026-11-28
+
+- The sealed V3 archive matches the pre-migration V3 file byte for byte. It contains 378 numbered sections across 374 IDs. V4 contains all 106 unresolved V3 IDs and the one recorded decision. Historical duplicate sections remain available in the archive under their original IDs.
+- V4 at base commit `ca4f78ebb` contains 208 unique numbered issues. The ledger inventory classifies 205 as unresolved, two as terminal, and one as a recorded decision. These counts describe ledger status at the reviewed commit.
+- The archived v1.81.0 release and optional upload glob proposals (`P-20261013-RELEASE-VERIFICATION` and `P-20261013-RELEASE-GLOB`) carry forward through ISSUE-1163, ISSUE-1716, and ISSUE-1718. Verify current release CI, the expected manifest and installer files, and a real install or update before closing the remaining release acceptance. The associated rights portal acceptance remains with the rights verification work below.
+- Carry the archived October 6 print export evidence into ISSUE-1458 by reference. A local export result and a signed-in save, download, or social clip result establish different acceptance criteria. Keep the latter pending until observed.
+- Commit `8e8112781` records the November 26 source repairs for ISSUE-1424, ISSUE-1430, ISSUE-1510, ISSUE-1602, ISSUE-1686, ISSUE-1688, ISSUE-1708, ISSUE-1711, and ISSUE-1712. Use the evidence and remaining acceptance in each entry when deciding closure.
+
 ## Active Unresolved Issues (Migrated from V3)
 
 ### ISSUE-1158: Generated-audio library service writes to an unruled path while rules authorize a different collection
