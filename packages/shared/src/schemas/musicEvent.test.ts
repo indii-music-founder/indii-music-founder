@@ -27,6 +27,18 @@ const eventTypes: MusicDomainEventType[] = [
   'identity.conflict_detected',
   'catalog.migration.started',
   'catalog.migration.completed',
+  'master.lifecycle_changed',
+  'agreement.generated',
+  'agreement.signature_requested',
+  'agreement.signed',
+  'agreement.voided',
+  'payout.batch_staged',
+  'payout.batch_approved',
+  'payout.transfer_settled',
+  'payout.transfer_failed',
+  'ad_spend.committed',
+  'royalty_ledger.updated',
+  'budget_plan.saved',
 ];
 
 const now = '2026-09-24T12:00:00.000Z';
@@ -64,7 +76,7 @@ describe('music domain event contract', () => {
     expect(MusicEventEntityTypeSchema.options).toEqual([
       'person', 'artist', 'organization', 'musical_work', 'sound_recording', 'video_resource', 'release', 'asset',
       'identifier', 'rights_claim', 'rights_grant', 'registration', 'agreement', 'usage', 'platform', 'campaign',
-      'delivery', 'relationship', 'provenance', 'evidence',
+      'delivery', 'relationship', 'provenance', 'evidence', 'payout_batch', 'budget_plan',
     ]);
     for (const entityType of MusicEventEntityTypeSchema.options) {
       expect(MusicEventEntityReferenceSchema.parse({ entityId: `${entityType}:internal-1`, entityType }).entityType).toBe(entityType);
@@ -156,6 +168,41 @@ describe('music domain event contract', () => {
     expect(() => MusicDomainEventSchema.parse(event({
       relatedEntities: [subject],
     }))).toThrow(/same entity more than once/i);
+  });
+
+  it('gives every post-mastering BOS event a single deterministic subject kind', () => {
+    const bosEvents: MusicDomainEventType[] = [
+      'master.lifecycle_changed',
+      'agreement.generated',
+      'agreement.signature_requested',
+      'agreement.signed',
+      'agreement.voided',
+      'payout.batch_staged',
+      'payout.batch_approved',
+      'payout.transfer_settled',
+      'payout.transfer_failed',
+      'ad_spend.committed',
+      'royalty_ledger.updated',
+      'budget_plan.saved',
+    ];
+    for (const eventType of bosEvents) {
+      expect(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES[eventType]).toHaveLength(1);
+    }
+    expect(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES['payout.transfer_failed']).toEqual(['payout_batch']);
+    expect(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES['budget_plan.saved']).toEqual(['budget_plan']);
+  });
+
+  it('accepts aggregate-versioned event ids but never an ISRC-shaped subject id', () => {
+    const parsed = MusicDomainEventSchema.parse(event({
+      eventId: 'payout.batch_staged:payout_batch:batch-1:1',
+      eventType: 'payout.batch_staged',
+      subject: { entityId: 'payout_batch:batch-1', entityType: 'payout_batch' },
+    }));
+    expect(parsed.eventId).toBe('payout.batch_staged:payout_batch:batch-1:1');
+    expect(() => MusicDomainEventSchema.parse(event({
+      eventType: 'royalty_ledger.updated',
+      subject: { entityId: 'USABC2600001', entityType: 'usage' },
+    }))).toThrow(/External identifier values/);
   });
 
   it('bounds event detail keys and nested list sizes', () => {

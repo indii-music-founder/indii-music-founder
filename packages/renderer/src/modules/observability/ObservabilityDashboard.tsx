@@ -12,6 +12,8 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Search, MessageSquareWarning, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { AdminLockScreen } from '@/modules/observability/AdminLockScreen';
 import { toMillisSafe } from '@/utils/timestamps';
+import { CircuitBreakerPanel } from '@/modules/observability/components/CircuitBreakerPanel';
+import { SchedulerStatusPanel } from '@/modules/observability/components/SchedulerStatusPanel';
 
 interface MetricPoint {
   timestamp: string;
@@ -222,6 +224,13 @@ export const ObservabilityDashboard: React.FC = () => {
               <div className="text-2xl font-bold text-white">{requestMetrics.avgDuration.toFixed(0)}ms</div>
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <CircuitBreakerPanel />
+          </div>
+          <SchedulerStatusPanel />
         </div>
 
         {bundleMetrics && (

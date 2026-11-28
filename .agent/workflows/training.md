@@ -25,4 +25,4 @@ Executes the dataset generation and/or the cloud AI fine-tuning jobs for the mul
 - Datasets are formatted strictly according to the gold JSONL requirements.
 - Cost constraints are respected (user approval required for paid API execution).
 - Walkthrough report generated containing the updated dataset row counts and the status of the cloud training job.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

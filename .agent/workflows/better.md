@@ -88,4 +88,4 @@ VERDICT: IMPROVED | NO MATERIAL CHANGE | PARTIAL | BLOCKED (REVERTED)
 
 Return changed files to parent workflow's delivery. `/better` never creates its own commit.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

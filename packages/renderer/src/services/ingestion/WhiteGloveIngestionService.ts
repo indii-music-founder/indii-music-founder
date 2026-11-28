@@ -1,7 +1,54 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import { collection, limit, onSnapshot, orderBy, query, type Unsubscribe } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { UploadStatus } from '@/core/store/slices/uploadQueueSlice';
+
+/** Matches the `/ingest/white-glove` storage rule (`isUnderSizeLimit(500)`). */
+export const WHITE_GLOVE_MAX_BYTES = 500 * 1024 * 1024;
+
+export type WhiteGloveAssetType = 'music' | 'video' | 'image' | 'archive' | 'document';
+
+/** Analysis result written by the `onWhiteGloveAssetUploaded` storage trigger. */
+export interface WhiteGloveImportResult {
+    id: string;
+    fileName: string;
+    assetType: string;
+    size?: number;
+    status: 'processing' | 'processed' | 'error';
+    metadata?: {
+        bpm?: number;
+        key?: string;
+        genre?: string;
+        mood?: string;
+        files?: string[];
+    };
+    createdAtMs?: number;
+}
+
+/** Classify a file the same way the backend trigger expects. Only ZIP archives are accepted. */
+export function detectWhiteGloveAssetType(file: File): WhiteGloveAssetType {
+    if (file.type.startsWith('audio/')) return 'music';
+    if (file.type.startsWith('video/')) return 'video';
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.includes('zip') || file.name.toLowerCase().endsWith('.zip')) return 'archive';
+    return 'document';
+}
+
+function toResult(id: string, data: Record<string, unknown>): WhiteGloveImportResult {
+    const status = data.status === 'processed' || data.status === 'error' ? data.status : 'processing';
+    const created = data.createdAt as { toMillis?: () => number } | undefined;
+    return {
+        id,
+        fileName: typeof data.fileName === 'string' ? data.fileName : id,
+        assetType: typeof data.assetType === 'string' ? data.assetType : 'document',
+        size: typeof data.size === 'number' ? data.size : Number(data.size) || undefined,
+        status,
+        metadata: (data.metadata as WhiteGloveImportResult['metadata']) ?? undefined,
+        createdAtMs: created?.toMillis?.(),
+    };
+}
 
 export class WhiteGloveIngestionService {
     /**
@@ -12,6 +59,9 @@ export class WhiteGloveIngestionService {
      * @returns The unique ID generated for this upload task.
      */
     static async enqueueAsset(file: File, assetType: string, artistId: string): Promise<string> {
+        if (file.size >= WHITE_GLOVE_MAX_BYTES) {
+            throw new Error(`${file.name} is larger than 500 MB.`);
+        }
         const uploadId = uuidv4();
         const { getStorage, ref, uploadBytesResumable } = await import('firebase/storage');
         
@@ -65,6 +115,23 @@ export class WhiteGloveIngestionService {
         );
         
         return uploadId;
+    }
+
+    /**
+     * Live list of the artist's most recent import results (newest first).
+     * Firestore rules allow only the uploading artist to read them.
+     */
+    static subscribeToResults(
+        artistId: string,
+        onChange: (results: WhiteGloveImportResult[]) => void,
+        onError: (error: Error) => void,
+    ): Unsubscribe {
+        const q = query(collection(db, 'artists', artistId, 'assets'), orderBy('createdAt', 'desc'), limit(50));
+        return onSnapshot(
+            q,
+            (snapshot) => onChange(snapshot.docs.map((d) => toResult(d.id, d.data()))),
+            (error) => onError(error),
+        );
     }
 
     /**

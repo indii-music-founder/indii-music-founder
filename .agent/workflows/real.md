@@ -516,4 +516,4 @@ Output files:
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Coverage ledger
   artifacts/<persona>_<date>_results.md      ← Session report
 ```
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

@@ -14,4 +14,4 @@
 ## 3. Seal Main (If Green)
 - Confirm the successful run belongs to the latest pushed SHA on `main`.
 - Report the green SHA and run URL. Do not create a PR, merge another branch, or add opportunistic follow-up changes.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

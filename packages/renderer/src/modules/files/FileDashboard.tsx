@@ -26,7 +26,9 @@ import {
     Square,
     LayoutGrid,
     FolderTree,
+    UploadCloud,
 } from 'lucide-react';
+import WhiteGloveIngestionHub from '@/modules/onboarding/components/WhiteGloveIngestionHub';
 import { FileNode } from '@/services/FileSystemService';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
 import { navigateToModule } from '@/services/agent/tools/navigationOutcome';
@@ -64,7 +66,7 @@ export default function FileDashboard() {
         }))
     );
 
-    const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
+    const [activeTab, setActiveTab] = useState<'active' | 'trash' | 'import'>('active');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<NonNullable<FileNode['fileType']> | 'all'>('all');
@@ -402,6 +404,12 @@ export default function FileDashboard() {
                         }}
                         active={activeTab === 'trash'}
                     />
+                    <NavItem
+                        icon={UploadCloud}
+                        label="Guided Import"
+                        onClick={() => setActiveTab('import')}
+                        active={activeTab === 'import'}
+                    />
 
                     {activeTab === 'active' && (
                         <div className="mt-4 px-2">
@@ -505,7 +513,9 @@ export default function FileDashboard() {
 
                 {/* Content View */}
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                    {activeTab === 'active' ? (
+                    {activeTab === 'import' ? (
+                        <WhiteGloveIngestionHub />
+                    ) : activeTab === 'active' ? (
                         !currentProjectId ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
                                 <Folder size={28} className="mb-4 opacity-20" />

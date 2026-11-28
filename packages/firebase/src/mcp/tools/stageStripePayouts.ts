@@ -1,5 +1,7 @@
 import * as admin from 'firebase-admin';
 
+import { AdminLedgerReceiptSchema, type AdminLedgerReceipt } from '@indii/shared';
+
 import { failedOperationResult, operationResult, requireString, toolResponse } from '../helpers.js';
 import { IndiiMcpTool } from '../types.js';
 import { stripe } from '../../stripe/config.js';
@@ -8,6 +10,9 @@ const TOOL_NAME = 'stage_stripe_payouts';
 const RESOURCE_TYPE = 'payout_job';
 const MAX_EARNINGS_DOC_IDS = 100;
 const PAYOUT_PERIOD_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+/** Owner ledgers hold one receipt per master lock; past this the scan fails closed instead of paging. */
+const MAX_LEDGER_RECEIPTS_SCANNED = 2000;
+const MAX_HELD_EARNINGS_RECORDED = 100;
 const NO_MONEY_MOVED_WARNING =
     'Figures were staged and Stripe Connect accounts were verified as payout-capable. NO Stripe transfer, payout, or money movement was created or scheduled — a separate, explicitly human-approved action is required before any funds move.';
 
@@ -23,32 +28,135 @@ interface ResolvedRecipient extends PayoutRecipient {
     blockReason?: string;
 }
 
+interface HeldEarnings {
+    isrc: string;
+    netMicros: number;
+    reason: 'multi_party_locked_split' | 'invalid_ledger_receipt';
+    ledgerReceiptId: string;
+}
+
+interface SplitReceiptClassification {
+    payableNetMicros: number;
+    held: HeldEarnings[];
+    soleLineReceiptIds: string[];
+    isrcsWithoutReceipt: string[];
+    earningsWithoutIsrcCount: number;
+}
+
 /**
- * Reads split recipients for an artist from users/{artistId}/splits. If no
- * split documents exist, the artist is the sole 100% recipient (their own
- * users/{artistId}.stripeAccountId is used as the payout target).
+ * ISSUE-1725: `users/{artistId}/splits` is not a payout source. It was
+ * client-writable and no product code writes it, so its percentages and
+ * Stripe account ids are unverified. Its presence blocks staging (fail
+ * closed) instead of being honored or silently dropped.
  */
-async function readSplitRecipients(
+async function hasLegacySplitDocuments(firestore: FirebaseFirestore.Firestore, artistId: string): Promise<boolean> {
+    const snapshot = await firestore.collection('users').doc(artistId).collection('splits').limit(1).get();
+    return !snapshot.empty;
+}
+
+/** The artist is the only payee this tool can stage until signed share lines carry payee account bindings. */
+async function readArtistRecipient(firestore: FirebaseFirestore.Firestore, artistId: string): Promise<PayoutRecipient> {
+    const userSnap = await firestore.collection('users').doc(artistId).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    const stripeAccountId = typeof userData.stripeAccountId === 'string' && userData.stripeAccountId.trim()
+        ? userData.stripeAccountId.trim()
+        : undefined;
+    return { uid: artistId, percentage: 100, stripeAccountId };
+}
+
+/** Earnings ISRCs are stored hyphen-free and upper-case; receipt ISRCs keep release metadata's spelling. */
+function normalizeIsrc(value: string): string {
+    return value.replace(/-/g, '').trim().toUpperCase();
+}
+
+class LedgerScanLimitError extends Error {
+    constructor() {
+        super(`The admin ledger has more than ${MAX_LEDGER_RECEIPTS_SCANNED} receipts; split receipts could not be fully checked.`);
+        this.name = 'LedgerScanLimitError';
+    }
+}
+
+/**
+ * Latest receipt per normalized ISRC by `lockedAt`. Matching happens in memory
+ * because an exact-match query would miss a receipt whose ISRC is spelled
+ * differently, letting a multi-party split slip through as "no receipt".
+ * A receipt that fails the schema always wins so its earnings are held.
+ */
+async function readLatestLedgerReceiptsByIsrc(
     firestore: FirebaseFirestore.Firestore,
     artistId: string,
-): Promise<PayoutRecipient[]> {
-    const splitsSnap = await firestore.collection('users').doc(artistId).collection('splits').get();
-    if (splitsSnap.empty) {
-        const userSnap = await firestore.collection('users').doc(artistId).get();
-        const userData = userSnap.exists ? userSnap.data() || {} : {};
-        const stripeAccountId = typeof userData.stripeAccountId === 'string' && userData.stripeAccountId.trim()
-            ? userData.stripeAccountId.trim()
-            : undefined;
-        return [{ uid: artistId, percentage: 100, stripeAccountId }];
-    }
-    return splitsSnap.docs.map((doc) => {
+    isrcs: Set<string>,
+): Promise<Map<string, { id: string; receipt: AdminLedgerReceipt | null; lockedAt: string }>> {
+    const latest = new Map<string, { id: string; receipt: AdminLedgerReceipt | null; lockedAt: string }>();
+    if (isrcs.size === 0) return latest;
+    const snapshot = await firestore.collection('users').doc(artistId).collection('admin_ledger')
+        .limit(MAX_LEDGER_RECEIPTS_SCANNED + 1)
+        .get();
+    if (snapshot.docs.length > MAX_LEDGER_RECEIPTS_SCANNED) throw new LedgerScanLimitError();
+    snapshot.docs.forEach(doc => {
         const data = doc.data() || {};
-        const percentage = typeof data.percentage === 'number' && Number.isFinite(data.percentage) ? data.percentage : 0;
-        const stripeAccountId = typeof data.stripeAccountId === 'string' && data.stripeAccountId.trim()
-            ? data.stripeAccountId.trim()
-            : undefined;
-        return { uid: doc.id, percentage, stripeAccountId };
+        const rawIsrc = typeof data.identifiers?.isrc === 'string' ? data.identifiers.isrc : '';
+        const isrc = normalizeIsrc(rawIsrc);
+        if (!isrc || !isrcs.has(isrc)) return;
+        const parsed = AdminLedgerReceiptSchema.safeParse(data);
+        const lockedAt = typeof data.lockedAt === 'string' ? data.lockedAt : '';
+        const current = latest.get(isrc);
+        if (!parsed.success) {
+            latest.set(isrc, { id: doc.id, receipt: null, lockedAt });
+            return;
+        }
+        if (current && (current.receipt === null || current.lockedAt >= lockedAt)) return;
+        latest.set(isrc, { id: doc.id, receipt: parsed.data, lockedAt });
     });
+    return latest;
+}
+
+/**
+ * Holds earnings whose locked split names more than one recording rights
+ * holder: receipt share lines identify holders by legal name, not by payee
+ * account, so paying them is impossible to do correctly yet. Earnings with no
+ * receipt (or a sole-holder receipt) stay payable to the artist.
+ */
+async function classifyEarningsBySplitReceipt(
+    firestore: FirebaseFirestore.Firestore,
+    artistId: string,
+    earnings: { isrc?: string; netMicros: number }[],
+): Promise<SplitReceiptClassification> {
+    const netByIsrc = new Map<string, number>();
+    let payableNetMicros = 0;
+    let earningsWithoutIsrcCount = 0;
+    earnings.forEach(entry => {
+        if (!entry.isrc) {
+            earningsWithoutIsrcCount += 1;
+            payableNetMicros += entry.netMicros;
+            return;
+        }
+        netByIsrc.set(entry.isrc, (netByIsrc.get(entry.isrc) ?? 0) + entry.netMicros);
+    });
+
+    const receipts = await readLatestLedgerReceiptsByIsrc(firestore, artistId, new Set(netByIsrc.keys()));
+    const held: HeldEarnings[] = [];
+    const soleLineReceiptIds: string[] = [];
+    const isrcsWithoutReceipt: string[] = [];
+    [...netByIsrc.entries()].sort(([a], [b]) => a.localeCompare(b)).forEach(([isrc, netMicros]) => {
+        const match = receipts.get(isrc);
+        if (!match) {
+            isrcsWithoutReceipt.push(isrc);
+            payableNetMicros += netMicros;
+            return;
+        }
+        if (match.receipt === null) {
+            held.push({ isrc, netMicros, reason: 'invalid_ledger_receipt', ledgerReceiptId: match.id });
+            return;
+        }
+        if (match.receipt.splits.recording.length > 1) {
+            held.push({ isrc, netMicros, reason: 'multi_party_locked_split', ledgerReceiptId: match.id });
+            return;
+        }
+        soleLineReceiptIds.push(match.id);
+        payableNetMicros += netMicros;
+    });
+    return { payableNetMicros, held, soleLineReceiptIds, isrcsWithoutReceipt, earningsWithoutIsrcCount };
 }
 
 /** Confirms a Stripe Connect account is actually payout-capable. Never assumes — always calls Stripe. */
@@ -67,20 +175,17 @@ async function verifyStripeAccount(accountId: string): Promise<{ verified: boole
     }
 }
 
-/** Resolves and verifies every split recipient's Stripe account, distributing stagedNetMicros by percentage. */
-async function resolveRecipients(recipients: PayoutRecipient[], stagedNetMicros: number): Promise<ResolvedRecipient[]> {
-    const resolved = await Promise.all(recipients.map(async (recipient): Promise<ResolvedRecipient> => {
-        const amountMicros = Math.round(stagedNetMicros * (recipient.percentage / 100));
-        if (!recipient.stripeAccountId) {
-            return { ...recipient, amountMicros, accountStatus: 'missing', blockReason: `No stripeAccountId on file for ${recipient.uid}.` };
-        }
-        const verification = await verifyStripeAccount(recipient.stripeAccountId);
-        if (!verification.verified) {
-            return { ...recipient, amountMicros, accountStatus: 'blocked', blockReason: verification.reason };
-        }
-        return { ...recipient, amountMicros, accountStatus: 'verified' };
-    }));
-    return resolved;
+/** Verifies the artist's Stripe account; the artist is the sole 100% recipient of the staged amount. */
+async function resolveRecipient(recipient: PayoutRecipient, stagedNetMicros: number): Promise<ResolvedRecipient> {
+    const amountMicros = stagedNetMicros;
+    if (!recipient.stripeAccountId) {
+        return { ...recipient, amountMicros, accountStatus: 'missing', blockReason: `No stripeAccountId on file for ${recipient.uid}.` };
+    }
+    const verification = await verifyStripeAccount(recipient.stripeAccountId);
+    if (!verification.verified) {
+        return { ...recipient, amountMicros, accountStatus: 'blocked', blockReason: verification.reason };
+    }
+    return { ...recipient, amountMicros, accountStatus: 'verified' };
 }
 
 /** Micros-first ledger read, mirroring calculateRecoupment conventions. */
@@ -193,13 +298,44 @@ export const stageStripePayouts: IndiiMcpTool = {
                 warnings.push(`${excludedNoPeriodCount} earnings document(s) lacked period metadata and were EXCLUDED from this staging; reconcile them manually.`);
             }
 
+            if (await hasLegacySplitDocuments(firestore, artistId)) {
+                return toolResponse(failedOperationResult({
+                    tool: TOOL_NAME,
+                    actorUid,
+                    resourceType: RESOURCE_TYPE,
+                    resourceId: 'none',
+                    code: 'UNVERIFIED_SPLIT_DOCUMENTS',
+                    message: `users/${artistId}/splits contains split documents that were not written by indii and cannot be verified. They are not a payout source. Record the split on a signed split sheet, then remove those documents; nothing was staged.`,
+                    retryable: false,
+                    warnings: [NO_MONEY_MOVED_WARNING],
+                }));
+            }
+
             let earningsNetMicros = 0;
             const earningsDocIds: string[] = [];
+            const earningsByIsrc: { isrc?: string; netMicros: number }[] = [];
             matchedDocs.forEach(doc => {
                 const data = doc.data() || {};
-                earningsNetMicros += ledgerMicros(data.netRevenueMicros, data.netRevenue);
+                const netMicros = ledgerMicros(data.netRevenueMicros, data.netRevenue);
+                earningsNetMicros += netMicros;
                 earningsDocIds.push(doc.id);
+                const isrc = typeof data.isrc === 'string' && normalizeIsrc(data.isrc) ? normalizeIsrc(data.isrc) : undefined;
+                earningsByIsrc.push({ isrc, netMicros });
             });
+
+            const classification = await classifyEarningsBySplitReceipt(firestore, artistId, earningsByIsrc);
+            const heldNetMicros = classification.held.reduce((total, entry) => total + entry.netMicros, 0);
+            classification.held.forEach(entry => {
+                warnings.push(entry.reason === 'multi_party_locked_split'
+                    ? `HELD: ${entry.netMicros} micros for ISRC ${entry.isrc} — its locked split (${entry.ledgerReceiptId}) has more than one recording rights holder, and share lines are not yet bound to payee accounts. These earnings were not staged.`
+                    : `HELD: ${entry.netMicros} micros for ISRC ${entry.isrc} — its admin ledger receipt ${entry.ledgerReceiptId} failed validation. These earnings were not staged.`);
+            });
+            if (classification.isrcsWithoutReceipt.length > 0) {
+                warnings.push(`No locked split receipt exists for ${classification.isrcsWithoutReceipt.length} ISRC(s) (${classification.isrcsWithoutReceipt.slice(0, 10).join(', ')}${classification.isrcsWithoutReceipt.length > 10 ? ', …' : ''}); their earnings were staged to the artist as sole recipient. Confirm no collaborator is owed a share before approving.`);
+            }
+            if (classification.earningsWithoutIsrcCount > 0) {
+                warnings.push(`${classification.earningsWithoutIsrcCount} earnings document(s) carry no ISRC, so no split receipt could be checked; they were staged to the artist as sole recipient. Confirm before approving.`);
+            }
 
             let outstandingRecoupmentMicros = 0;
             balancesSnap.docs.forEach(doc => {
@@ -207,13 +343,15 @@ export const stageStripePayouts: IndiiMcpTool = {
                 outstandingRecoupmentMicros += Math.max(0, ledgerMicros(data.balanceMicros, data.balance));
             });
 
-            const stagedNetMicros = Math.max(0, earningsNetMicros - outstandingRecoupmentMicros);
+            const stagedNetMicros = Math.max(0, classification.payableNetMicros - outstandingRecoupmentMicros);
 
             if (matchedDocs.length === 0 || stagedNetMicros <= 0) {
                 warnings.push(
                     matchedDocs.length === 0
                         ? `No earnings documents matched artist ${artistId} for period ${payoutPeriod}; there is nothing to stage and no payout job was written.`
-                        : `Net earnings (${earningsNetMicros} micros) do not exceed outstanding recoupment (${outstandingRecoupmentMicros} micros); nothing to stage and no payout job was written.`,
+                        : classification.payableNetMicros <= 0
+                            ? `All ${earningsNetMicros} micros of net earnings are held pending payee-bound splits; nothing to stage and no payout job was written.`
+                            : `Payable net earnings (${classification.payableNetMicros} micros) do not exceed outstanding recoupment (${outstandingRecoupmentMicros} micros); nothing to stage and no payout job was written.`,
                 );
                 return toolResponse(operationResult({
                     tool: TOOL_NAME,
@@ -228,6 +366,7 @@ export const stageStripePayouts: IndiiMcpTool = {
                         stagedNetMicros: 0,
                         earningsCount: matchedDocs.length,
                         earningsNetMicros,
+                        heldNetMicros,
                         outstandingRecoupmentMicros,
                     },
                 }));
@@ -239,16 +378,20 @@ export const stageStripePayouts: IndiiMcpTool = {
                 warnings.push(`earningsDocIds truncated to ${MAX_EARNINGS_DOC_IDS} of ${earningsDocIds.length} contributing earnings documents on the payout job record.`);
             }
 
-            // Resolve split recipients (or the artist alone, 100%) and verify
-            // each Stripe Connect account is actually payout-capable. A missing
-            // or blocked account is a BLOCKING warning, never a silent skip.
-            const recipients = await readSplitRecipients(firestore, artistId);
-            const resolvedRecipients = await resolveRecipients(recipients, stagedNetMicros);
+            // The artist is the sole recipient of every staged micro (held
+            // multi-party earnings were excluded above). Verify the Stripe
+            // Connect account is actually payout-capable. A missing or blocked
+            // account is a BLOCKING warning, never a silent skip.
+            const resolvedRecipients = [await resolveRecipient(await readArtistRecipient(firestore, artistId), stagedNetMicros)];
             const blockedRecipients = resolvedRecipients.filter((r) => r.accountStatus !== 'verified');
             blockedRecipients.forEach((r) => {
                 warnings.push(`BLOCKING: recipient ${r.uid} (${r.percentage}%) cannot receive funds — ${r.blockReason}`);
             });
             const allBlocked = blockedRecipients.length === resolvedRecipients.length;
+            const recordedHeld = classification.held.slice(0, MAX_HELD_EARNINGS_RECORDED);
+            if (classification.held.length > MAX_HELD_EARNINGS_RECORDED) {
+                warnings.push(`heldEarnings truncated to ${MAX_HELD_EARNINGS_RECORDED} of ${classification.held.length} held ISRCs on the payout batch record.`);
+            }
 
             // Whitelisted fields only — never persist raw args.
             const docRef = await firestore.collection('payoutJobs').add({
@@ -277,6 +420,10 @@ export const stageStripePayouts: IndiiMcpTool = {
                 payoutJobId: docRef.id,
                 transferGroupId,
                 stagedNetMicros,
+                heldNetMicros,
+                heldEarnings: recordedHeld,
+                recipientSource: 'artist_sole',
+                ledgerReceiptIds: classification.soleLineReceiptIds,
                 recipients: batchRecipients,
                 status: allBlocked ? 'blocked_no_verified_recipients' : 'staged_pending_approval',
                 initiatorUid: actorUid,
@@ -309,12 +456,26 @@ export const stageStripePayouts: IndiiMcpTool = {
                     stagedNetMicros,
                     earningsCount: matchedDocs.length,
                     earningsNetMicros,
+                    heldNetMicros,
+                    heldEarnings: recordedHeld,
                     outstandingRecoupmentMicros,
                     recipients: batchRecipients,
                     status: allBlocked ? 'blocked_no_verified_recipients' : 'staged_pending_approval',
                 },
             }));
         } catch (error) {
+            if (error instanceof LedgerScanLimitError) {
+                return toolResponse(failedOperationResult({
+                    tool: TOOL_NAME,
+                    actorUid,
+                    resourceType: RESOURCE_TYPE,
+                    resourceId: 'none',
+                    code: 'LEDGER_SCAN_LIMIT',
+                    message: `${error.message} Nothing was staged.`,
+                    retryable: false,
+                    warnings: [NO_MONEY_MOVED_WARNING],
+                }));
+            }
             return toolResponse(failedOperationResult({
                 tool: TOOL_NAME,
                 actorUid,

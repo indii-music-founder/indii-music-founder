@@ -12,4 +12,4 @@ Do not depend on `AGENT_BRIDGE.md`, a fixed localhost port, one browser provider
 
 Output a bounded report with environment, evidence level, path, decisive DOM/screenshot/console evidence, actions intentionally not taken, and PASS/PARTIAL/FAIL verdict.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

@@ -1,6 +1,6 @@
 # GAUNTLET LOOP — EVOLAS BUILD PASS
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.
 
 Same Builder/Critic discipline as the standard gauntlet loop, retargeted from
 bug-fixing against `OPEN_ISSUES.md` to build-out against

@@ -1,4 +1,4 @@
-import { getConsentPreferences } from '@/components/shared/CookieConsentBanner';
+import { CONSENT_CHANGED_EVENT, getConsentPreferences, isDoNotSellEnabled } from '@/services/privacy/consent';
 import { Logger } from '@/core/logger/Logger';
 
 const TAG = 'SentryService';
@@ -68,6 +68,11 @@ function ensureSentry(): Promise<SentryModule | null> {
                     ],
                     // Filter out known non-actionable errors and scrub sensitive data
                     beforeSend(event) {
+                        // 0. Honour "Do Not Sell or Share": no contact details or IP in reports.
+                        if (isDoNotSellEnabled() && event.user) {
+                            event.user = { id: event.user.id };
+                        }
+
                         // 1. Scrub sensitive headers from breadcrumbs (Authorization, etc.)
                         if (event.breadcrumbs) {
                             event.breadcrumbs.forEach((breadcrumb) => {
@@ -164,10 +169,28 @@ export async function withSentryProfiler(Component: React.ComponentType): Promis
     return Sentry ? Sentry.withProfiler(Component) : Component;
 }
 
-/** Set Sentry user context after authentication. */
+/** Set Sentry user context after authentication. Email is omitted when the user opted out of sharing. */
 export function setSentryUser(uid: string, email?: string): void {
     void ensureSentry().then((Sentry) => {
-        if (Sentry) Sentry.setUser({ id: uid, email });
+        if (Sentry) Sentry.setUser(isDoNotSellEnabled() ? { id: uid } : { id: uid, email });
+    });
+}
+
+/**
+ * Stop Sentry (error capture and session replay) after the user withdraws
+ * error-tracking consent. A later opt-in starts it again via initSentry().
+ */
+export async function shutdownSentry(): Promise<void> {
+    const pending = initPromise;
+    initPromise = null;
+    const Sentry = pending ? await pending : null;
+    if (Sentry) await Sentry.close(2000);
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener(CONSENT_CHANGED_EVENT, () => {
+        if (getConsentPreferences()?.errorTracking) initSentry();
+        else void shutdownSentry();
     });
 }
 

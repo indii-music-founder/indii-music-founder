@@ -93,4 +93,4 @@ Create an artifact at `docs/DEVELOPER_EXPERIENCE_REVIEW.md` with:
 ## 9. Update task.md
 
 If issues are found, create `task.md` entries and invoke `/go`.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

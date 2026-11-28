@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Download, Monitor, Apple, Command, ArrowDown } from 'lucide-react';
+import { Download, Monitor, Apple, Command } from 'lucide-react';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function DownloadHub() {
@@ -20,7 +19,7 @@ export default function DownloadHub() {
                     </div>
                     <div>
                         <h3 className="text-white text-sm font-bold tracking-wide">indii Studio Desktop</h3>
-                        <p className={`${moduleColor.text}/70 text-xs mt-0.5`}>Founder Exclusive Offline Access</p>
+                        <p className={`${moduleColor.text}/70 text-xs mt-0.5`}>Offline access and local compute</p>
                     </div>
                 </div>
             </div>

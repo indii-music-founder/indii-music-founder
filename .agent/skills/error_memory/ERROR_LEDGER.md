@@ -1,3 +1,22 @@
+## 2026-11-28 Payout staging trusted a client-writable split source; an exact identifier query would have failed open (PAYOUT_RECIPIENT_TRUST_SOURCE)
+
+- **Bug:** `stageStripePayouts` read recipients and Stripe account ids from `users/{uid}/splits`, which the rules let the owner client write and no product code writes (ISSUE-1725).
+- **Trap avoided:** Admin ledger receipts store the release's raw ISRC spelling, while earnings store hyphen-free upper-case ISRCs. An exact-match `in` query would miss a differently spelled multi-holder receipt and treat its earnings as payable, failing open.
+- **Fix:** Fail closed on any legacy split document, and match receipts in memory after normalization. Hold earnings for multi-holder or invalid receipts, stage only artist-sole amounts, and deny client create/update on `users/{uid}/splits`.
+- **Prevention:** A money path may read only server-written, schema-validated sources. When joining on an external identifier across collections, normalize both sides; a missed join must hold funds, not release them. Receipt `collaboratorId` is a legal name, not a payee: bind payees at signing before paying from receipts.
+
+## 2026-11-28 Squash merge kept stale inline tool declarations beside the shared ones (MCP_DECLARATION_DUPLICATES)
+
+- **Bug:** `f59afdb8` introduced the shared `McpToolDeclarations.ts` constants and kept the older inline blocks, so every remote MCP tool was declared twice, and the stale copies advertised wrong arguments (ISSUE-1726).
+- **Fix:** Deleted the inline copies; the contract test now asserts each tool name appears exactly once per agent.
+- **Prevention:** A contract test that checks `toContain` cannot detect duplicates. After replacing inline definitions with shared constants, assert uniqueness and grep for the old literal (CLAUDE.md §7).
+
+## 2026-11-28 `npm ci` failed in a GPU-less cloud container on the onnxruntime CUDA download (ONNXRUNTIME_CUDA_POSTINSTALL_404)
+
+- **Evidence:** In a fresh cloud session container (Linux x64, no `nvcc`), `npm ci` exited 1 at `onnxruntime-node`'s postinstall (`node ./script/install`): it assumed CUDA 12, downloaded `onnxruntime-linux-x64-gpu-1.21.1.tgz` from GitHub releases, got `404 Not Found`, and threw. No packages were left installed.
+- **Fix:** `ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm ci --cache ./.npm-cache-isolated-$$ --onnxruntime-node-install-cuda=skip`. The CPU execution provider still installs and works; only the CUDA execution provider is skipped. The second run exited 0.
+- **Prevention:** On machines without a GPU (cloud agents, CI runners), always pass the CUDA skip. Delete the failed run's isolated cache directory before retrying.
+
 ## 2026-11-28 Hosted browser settings were absent from the compiled renderer (BOARDROOM_VITE_ENV_FILTER)
 
 - **Evidence:** The production build log showed the hosted-browser feature enabled and its public health probe passing, but the real UI still displayed the external-open card. Both Vite environment-prefix lists omitted `VITE_BOARDROOM_BROWSER_`. A compiler-level regression reproduced the omission: with enabled=true, the emitted module exported enabled=false.
@@ -2854,3 +2873,10 @@ committing.
 - FIX: Rerun the failed job (`gh run rerun <id> --failed`) once the other rollout has finished; earlier revisions keep serving.
 - DIAGNOSIS THAT WORKED: `gcloud run revisions list --service <svc> --limit 4 --format='value(name,status.conditions[0].status,status.conditions[0].message)'` gives the real reason when the deploy log only says the container failed to start.
 - PREVENTION: Before calling a Cloud Run deploy failure a code problem, read the revision's condition message. If quota keeps recurring, deploy `print-prep` and `engine-dsp` one after the other in the workflow, or request more regional CPU quota.
+
+## 2026-11-28 — Persistent `mockRejectedValue` fails a test even though the component catches the rejection (VITEST_PERSISTENT_REJECTED_MOCK)
+
+**SEVERITY:** Low (false test failure; no product bug)
+- BUG: In `CircuitBreakerPanel.test.tsx`, `checkBudget.mockRejectedValue(new Error('offline'))` failed the test with `Error: offline` pointing at the mock line, although the component awaits the call inside `try/catch` and the UI rendered the expected fallback. A sync throw from `mockImplementation` and `mockRejectedValue('string')` failed the same way; other suites using `mockRejectedValueOnce` pass.
+- FIX: Use `mockRejectedValueOnce(...)` for single-call failure paths.
+- PREVENTION: Prefer the `...Once` variants for rejection paths in renderer tests; if a rejection-path test fails at the mock line while the UI assertion passes, switch to `mockRejectedValueOnce` before debugging the component.

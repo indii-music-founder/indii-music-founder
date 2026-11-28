@@ -335,4 +335,4 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 3. **DO NOT LOG to Error Ledger / mem0.** The fixing agent owns the record-keeping after they fix.
 4. **Every finding gets characterized.** Severity, evidence, files, fix direction, verified-or-recon.
 5. **Every confirmed finding goes in `OPEN_ISSUES.md`.** The audit doc is supporting evidence only, not the source of truth.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

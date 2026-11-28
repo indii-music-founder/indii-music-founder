@@ -2,6 +2,8 @@ import { SocialPost } from '@/services/social/types';
 
 export interface FeedItemProps {
     post: SocialPost;
+    /** Opens the author's profile. Must be a stable callback (compared by reference). */
+    onOpenAuthor?: (authorId: string) => void;
     key?: React.Key;
 }
 
@@ -12,6 +14,8 @@ export function areFeedItemPropsEqual(prev: FeedItemProps, next: FeedItemProps):
 
     const p = prev.post;
     const n = next.post;
+
+    if (prev.onOpenAuthor !== next.onOpenAuthor) return false;
 
     // Fast path: referential equality
     if (p === n) return true;

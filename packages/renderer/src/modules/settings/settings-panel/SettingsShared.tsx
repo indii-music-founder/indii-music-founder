@@ -62,12 +62,17 @@ export const SettingRow: React.FC<{
 // Toggle
 // ---------------------------------------------------------------------------
 
-export const Toggle: React.FC<{ enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }> = ({
+export const Toggle: React.FC<{ enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean; label?: string }> = ({
     enabled,
     onChange,
     disabled,
+    label,
 }) => (
     <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label={label}
         onClick={() => !disabled && onChange(!enabled)}
         disabled={disabled}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:${getColorForModule('settings').ring} ${

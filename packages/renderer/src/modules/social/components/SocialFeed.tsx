@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useEffect, useState, useCallback } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SocialPost } from '@/services/social/types';
@@ -18,6 +17,7 @@ import {
   ShoppingBag, 
   Ghost,
   X,
+  ArrowLeft,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Rocket,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -30,6 +30,7 @@ import { logger } from '@/utils/logger';
 import ProductPickerModal from '@/modules/social/components/ProductPickerModal';
 import BrandAssetsDrawer from '@/modules/creative/components/BrandAssetsDrawer';
 import { motion, AnimatePresence } from 'motion/react';
+import UserProfileHeader from '@/modules/social/components/UserProfileHeader';
 
 interface SocialFeedProps {
     userId?: string;
@@ -43,13 +44,17 @@ const SHORTCUTS = [
 
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     const { t } = useTranslation();
+    // Clicking a post's author opens their profile; null returns to the base feed.
+    const [openedAuthorId, setOpenedAuthorId] = useState<string | null>(null);
+    const viewedUserId = openedAuthorId ?? userId;
+    const openAuthor = useCallback((authorId: string) => setOpenedAuthorId(authorId), []);
     const {
         posts,
         isFeedLoading: loading,
         filter,
         setFilter,
         actions: { createPost }
-    } = useSocial(userId);
+    } = useSocial(viewedUserId);
 
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
@@ -108,7 +113,22 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     return (
         <div className="flex flex-col h-full bg-[#0d1117] text-white">
             {/* Post Input */}
-            {(!userId || userId === userProfile?.id) && (
+            {viewedUserId && (
+                <div className="border-b border-gray-800">
+                    {openedAuthorId && (
+                        <button
+                            onClick={() => setOpenedAuthorId(null)}
+                            className="flex items-center gap-2 px-6 pt-4 text-sm text-gray-400 hover:text-white transition-colors"
+                        >
+                            <ArrowLeft size={16} />
+                            Back to feed
+                        </button>
+                    )}
+                    <UserProfileHeader userId={viewedUserId} />
+                </div>
+            )}
+
+            {(!viewedUserId || viewedUserId === userProfile?.id) && (
                 <div className="p-6 border-b border-gray-800 bg-[#161b22]/50">
                     <div className="flex gap-4">
                         <div className="w-12 h-12 rounded-full bg-dept-creative flex-shrink-0 relative overflow-hidden text-black flex items-center justify-center font-bold shadow-lg shadow-dept-creative/20">
@@ -312,7 +332,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                 ) : (
                     <div className="divide-y divide-gray-800">
                         {posts.map((post) => (
-                            <FeedItem key={post.id} post={post} />
+                            <FeedItem key={post.id} post={post} onOpenAuthor={openAuthor} />
                         ))}
                     </div>
                 )}
@@ -327,7 +347,7 @@ export default SocialFeed;
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
 // We use custom deep comparison here because Firestore onSnapshot often returns new object references
 // even for unchanged items, which defeats shallow comparison.
-const FeedItem = React.memo(({ post }: FeedItemProps) => {
+const FeedItem = React.memo(({ post, onOpenAuthor }: FeedItemProps) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -352,9 +372,18 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div>
-                            <span className="font-bold text-white">
-                                {post.authorName}
-                            </span>
+                            {onOpenAuthor && post.authorId ? (
+                                <button
+                                    onClick={() => onOpenAuthor(post.authorId)}
+                                    className="font-bold text-white hover:underline"
+                                >
+                                    {post.authorName}
+                                </button>
+                            ) : (
+                                <span className="font-bold text-white">
+                                    {post.authorName}
+                                </span>
+                            )}
                             <span className="text-gray-500 text-sm ml-2">
                                 {formatDate(post.timestamp, true)}
                             </span>

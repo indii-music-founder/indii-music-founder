@@ -43,4 +43,4 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
 
 5. **Report**
    Summarize the fixed issues and provide the user with a brief report.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

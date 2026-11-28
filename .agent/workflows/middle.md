@@ -54,4 +54,4 @@ Update a flowchart only when state, sequence, or ownership is genuinely difficul
 
 Continue until all acceptance criteria have decisive evidence, then run `/end`. Keep the task's related changes together for one coherent delivery; no checkpoint or micro-fix commits.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useStore } from '@/core/store';
 import type { BugReportType } from '@/modules/debug/BugReportDialog';
+import { clearRecentUncaughtError, getRecentUncaughtError } from '@/modules/debug/useErrorReporting';
 
 /**
  * Hook to open the bug report dialog from any component
@@ -33,7 +34,11 @@ export const useBugReport = () => {
     }, [setBugReportDialog]);
 
     const reportBug = useCallback((errorMessage?: string, module?: string) => {
-        open('bug', errorMessage, module);
+        // With no explicit error, pre-fill the most recent uncaught error (if any)
+        // so the user does not have to retype what just went wrong.
+        const recent = errorMessage ? null : getRecentUncaughtError();
+        if (recent) clearRecentUncaughtError();
+        open('bug', errorMessage ?? recent?.message, module ?? (recent?.module || undefined));
     }, [open]);
 
     const requestFeature = useCallback((title?: string) => {

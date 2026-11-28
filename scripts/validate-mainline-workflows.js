@@ -5,7 +5,7 @@ import process from 'process';
 const repoRoot = process.cwd();
 const workflowsDir = path.join(repoRoot, '.agent', 'workflows');
 const gateLine =
-  '> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.';
+  '> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.';
 
 const workflowFiles = fs
   .readdirSync(workflowsDir)

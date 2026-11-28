@@ -44,4 +44,4 @@ When the user types `/factory`, you (the orchestrating agent) must:
 3. Monitor their status. You do not need to actively poll; simply wait for the subagents to report back via messages.
 4. Once both loops complete, run the **QA & Publisher** on `main`; branches are forbidden unless the user explicitly requested one.
 5. Provide a master summary of everything that was broken, fixed, and pushed.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

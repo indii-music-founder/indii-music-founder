@@ -370,28 +370,6 @@ export const FinanceAgent: AgentConfig = {
                 }
             },
             {
-                name: "calculate_recoupment",
-                description: "Calculate the recoupment status of a specific release using the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseId: { type: "STRING" }
-                    },
-                    required: ["releaseId"]
-                }
-            },
-            {
-                name: "stage_stripe_payouts",
-                description: "Stage Stripe Connect payouts for splits via the remote MCP backend.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        releaseId: { type: "STRING" }
-                    },
-                    required: ["releaseId"]
-                }
-            },
-            {
                 name: "foundry_inspect_format",
                 description: "Inspect unknown royalty accounting reports, distributor CSVs, or payout statements using Format Forensics Engine.",
                 parameters: {
