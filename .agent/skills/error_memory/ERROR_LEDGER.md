@@ -1,3 +1,8 @@
+## 2026-11-27 Healthy Boardroom worker fell back to blocked iframes
+
+- **Cause:** The Studio build supplied a WebSocket origin while the renderer required the `/boardroom` path. An HTTP 200 from `/health` hid the mismatch. The fallback embedded sites that forbid framing, and the hosted worker accepted only two portal hosts.
+- **Prevention:** Test the deployed endpoint value against the renderer resolver. Verify browser navigation with a public address outside the specialist portal list. Roll out the Boardroom worker before the matching Studio Hosting build.
+
 ## 2026-11-27 Meeting Room context drift and Launch Kit delivery timing
 
 - **Cause:** Meeting Room messages were pinned to a room while history preparation read the current selection. The Ad Matrix UI never supplied rendered frames. Launch Kit video dispatch lost its requested schedule at the callable boundary.

@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from 'playwright';
+import { isBoardroomBrowserHostname, isBoardroomSpecialistPage, parseBoardroomPublicPage } from '@indii/shared';
 import { BoardroomControl, type BoardroomAssignment, type BoardroomPageVersion } from './boardroomControl.js';
 import { createPortalProxy } from './network.js';
 import { BoardroomFontDownload } from './boardroomFontDownload.js';
@@ -7,23 +8,6 @@ const navigationTimeout = 15_000;
 const viewport = { width: 1200, height: 900 };
 const artistKeys = new Set(['Tab', 'Shift+Tab', 'Enter', 'Escape', 'Backspace', 'Delete', 'ArrowDown',
   'ArrowUp', 'ArrowLeft', 'ArrowRight', 'PageDown', 'PageUp', 'Home', 'End', 'Space']);
-const pageHosts = new Set(['artists.spotify.com', 'fonts.google.com']);
-const resourceHosts = new Set([
-  ...pageHosts, 'artists.spotifycdn.com', 'i.scdn.co', 'www.scdn.co',
-  'fonts.googleapis.com', 'fonts.gstatic.com', 'www.gstatic.com',
-]);
-
-function publicPageUrl(value: string): URL | undefined {
-  try {
-    const url = new URL(value);
-    if (url.protocol === 'https:' && !url.port && !url.username && !url.password && pageHosts.has(url.hostname)) {
-      return url;
-    }
-  } catch {
-    return undefined;
-  }
-}
-
 /** Browser-side implementation. The broker owns account authentication and session lifetime. */
 export class BoardroomSession {
   readonly control = new BoardroomControl();
@@ -42,7 +26,7 @@ export class BoardroomSession {
   }
 
   static async open(chromePath?: string) {
-    const proxy = await createPortalProxy(host => resourceHosts.has(host));
+    const proxy = await createPortalProxy(isBoardroomBrowserHostname);
     let browser: Browser | undefined;
     try {
       browser = await chromium.launch({
@@ -52,6 +36,7 @@ export class BoardroomSession {
         args: [
           '--disable-quic',
           '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
+          '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
           // Use the Chromium namespace sandbox on Linux runtimes that prohibit setuid.
           ...(process.platform === 'linux' ? ['--disable-setuid-sandbox'] : []),
         ],
@@ -59,9 +44,8 @@ export class BoardroomSession {
       const context = await browser.newContext({ viewport, serviceWorkers: 'block', acceptDownloads: true });
       await context.route('**/*', route => {
         const request = route.request();
-        const url = new URL(request.url());
-        const safeResource = url.protocol === 'https:' && !url.port && resourceHosts.has(url.hostname);
-        const safePage = !request.isNavigationRequest() || Boolean(publicPageUrl(request.url()));
+        const url = parseBoardroomPublicPage(request.url());
+        if (!url) return route.abort('blockedbyclient');
         // The public font catalog loads specimen metadata through a POST RPC.
         // Keep that exception on the catalog origin and on background requests.
         const catalogRequest = request.method() === 'POST'
@@ -69,7 +53,7 @@ export class BoardroomSession {
           && ['/_/GoogleFontsCatalogUi/data/batchexecute', '/metadata/page'].includes(url.pathname)
           && ['fetch', 'xhr'].includes(request.resourceType())
           && request.frame().url().startsWith('https://fonts.google.com/');
-        return safeResource && safePage && (['GET', 'HEAD'].includes(request.method()) || catalogRequest)
+        return (['GET', 'HEAD'].includes(request.method()) || catalogRequest)
           ? route.continue()
           : route.abort('blockedbyclient');
       });
@@ -90,7 +74,7 @@ export class BoardroomSession {
 
   historyAsArtist(action: 'back' | 'forward' | 'reload', expected: BoardroomPageVersion) {
     return this.enqueue(() => this.control.allowsArtist(expected), async () => {
-      if (!publicPageUrl(this.page.url())) throw new Error('Open a supported public page first.');
+      if (!parseBoardroomPublicPage(this.page.url())) throw new Error('Open a supported public page first.');
       this.control.didNavigate();
       const options = { waitUntil: 'domcontentloaded', timeout: navigationTimeout } as const;
       switch (action) {
@@ -131,10 +115,13 @@ export class BoardroomSession {
     // cannot submit forms, dispatch input, or navigate to model-invented URLs.
     const authorized = () => this.control.allowsSpecialist(assignment, expected);
     return this.enqueue(authorized, async () => {
-      const target = publicPageUrl(url)?.href;
+      const target = parseBoardroomPublicPage(url)?.href;
+      if (!target || !isBoardroomSpecialistPage(target) || !isBoardroomSpecialistPage(this.page.url())) {
+        throw new Error('Choose a supported research link on the current page.');
+      }
       const links = await this.page.getByRole('link').evaluateAll(elements => elements.flatMap(element =>
         element instanceof HTMLAnchorElement && element.getClientRects().length ? [element.href] : []));
-      if (!target || !links.includes(target)) throw new Error('Choose a supported link visible on the current page.');
+      if (!links.includes(target)) throw new Error('Choose a supported link visible on the current page.');
       if (!authorized()) throw new Error('Browser control or the current page changed.');
       await this.navigate(target);
     });
@@ -143,9 +130,11 @@ export class BoardroomSession {
   readAsSpecialist(assignment: BoardroomAssignment, expected: BoardroomPageVersion) {
     const authorized = () => this.control.allowsSpecialist(assignment, expected);
     return this.enqueue(authorized, async () => {
+      if (!isBoardroomSpecialistPage(this.page.url())) throw new Error('Open a supported research page first.');
       const result = await this.readPage();
       if (!authorized()) throw new Error('Browser control or the current page changed.');
-      return result;
+      if (!isBoardroomSpecialistPage(result.url)) throw new Error('Open a supported research page first.');
+      return { ...result, links: result.links.filter(link => isBoardroomSpecialistPage(link.url)) };
     });
   }
 
@@ -161,6 +150,7 @@ export class BoardroomSession {
       navigationGeneration: this.control.state.navigationGeneration,
     });
     return this.enqueue(authorized, async () => {
+      if (!isBoardroomSpecialistPage(this.page.url())) throw new Error('Open a supported research page first.');
       if (!/^[A-Za-z0-9][A-Za-z0-9 -]{0,69}$/.test(family)) throw new Error('Choose a Google Fonts family.');
       if (this.page.url() !== 'https://fonts.google.com/selection') {
         await this.navigate(`https://fonts.google.com/specimen/${encodeURIComponent(family)}`);
@@ -214,19 +204,22 @@ export class BoardroomSession {
         .filter(link => link.getClientRects().length > 0)
         .map(link => ({ url: link.href, label: link.textContent?.trim().slice(0, 160) ?? '' })),
     }), undefined, { timeout: navigationTimeout });
-    if (!publicPageUrl(captured.url)) throw new Error('Open a supported public page first.');
+    if (!parseBoardroomPublicPage(captured.url)) throw new Error('Open a supported public page first.');
     return {
       ...captured,
-      links: captured.links.filter(link => link.label && publicPageUrl(link.url)).slice(0, 60),
+      links: captured.links.filter(link => link.label && parseBoardroomPublicPage(link.url)).slice(0, 60),
     };
   }
 
   private async navigate(url: string) {
-    const target = publicPageUrl(url);
-    if (!target) throw new Error('Open this address in your browser.');
+    const target = parseBoardroomPublicPage(url);
+    if (!target) throw new BoardroomNavigationError('Enter a public HTTPS address.');
     this.control.didNavigate();
-    const response = await this.page.goto(target.href, { waitUntil: 'domcontentloaded', timeout: navigationTimeout });
-    if (response && !response.ok()) throw new Error(`The site returned HTTP ${response.status()}.`);
+    try {
+      await this.page.goto(target.href, { waitUntil: 'domcontentloaded', timeout: navigationTimeout });
+    } catch {
+      throw new BoardroomNavigationError(`Could not load ${target.hostname}. Check the address or try opening it externally.`);
+    }
   }
 
   private enqueue<T>(authorized: () => boolean, operation: () => Promise<T>): Promise<T> {
@@ -238,3 +231,5 @@ export class BoardroomSession {
     return result;
   }
 }
+
+export class BoardroomNavigationError extends Error {}

@@ -3,8 +3,9 @@ import { createServer } from 'node:http';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { WebSocket, WebSocketServer } from 'ws';
+import { isBoardroomSpecialistPage, parseBoardroomPublicPage } from '@indii/shared';
 import type { BoardroomAssignment } from './boardroomControl.js';
-import { BoardroomSession } from './boardroomSession.js';
+import { BoardroomNavigationError, BoardroomSession } from './boardroomSession.js';
 
 const projectId = process.env.BOARDROOM_FIREBASE_PROJECT_ID;
 if (!projectId || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
@@ -19,7 +20,7 @@ interface SessionEntry {
   browser?: BoardroomSession;
   expiresAt: number;
   detachTimer?: ReturnType<typeof setTimeout>;
-  closing?: boolean;
+  closing?: Promise<void>;
 }
 
 const sessions = new Map<string, SessionEntry>();
@@ -28,16 +29,16 @@ const sessionLifetime = 15 * 60_000;
 const reconnectWindow = 45_000;
 
 function releaseSession(owner: string, entry: SessionEntry) {
-  if (entry.closing) return;
-  entry.closing = true;
+  if (entry.closing) return entry.closing;
   clearTimeout(entry.detachTimer);
-  void (async () => {
+  entry.closing = (async () => {
     try {
       await entry.browser?.close();
     } finally {
       if (sessions.get(owner) === entry) sessions.delete(owner);
     }
   })().catch(() => {});
+  return entry.closing;
 }
 
 function assignmentFrom(input: unknown): BoardroomAssignment {
@@ -103,11 +104,20 @@ sockets.on('connection', socket => {
       if (message?.type !== 'open' || typeof message.token !== 'string' || typeof message.url !== 'string') {
         throw new Error('Open request required');
       }
+      const requestedPage = parseBoardroomPublicPage(message.url);
+      if (!requestedPage) throw new BoardroomNavigationError('Enter a public HTTPS address.');
       const identity = await auth.verifyIdToken(message.token, true);
       if (identity.firebase.sign_in_provider === 'anonymous' || socket.readyState !== WebSocket.OPEN) {
         throw new Error('Signed-in account required');
       }
 
+      const existing = sessions.get(identity.uid);
+      if (existing?.closing) {
+        await existing.closing;
+      } else if (existing && !existing.socket && existing.expiresAt <= Date.now()) {
+        await releaseSession(identity.uid, existing);
+      }
+      if (socket.readyState !== WebSocket.OPEN) return;
       const previous = sessions.get(identity.uid);
       const resumed = Boolean(previous
         && typeof message.resumeId === 'string'
@@ -118,13 +128,9 @@ sockets.on('connection', socket => {
         && previous.expiresAt > Date.now());
 
       if (previous && !resumed) {
-        if (!previous.socket && previous.expiresAt <= Date.now()) {
-          releaseSession(identity.uid, previous);
-        } else {
-          send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
-          socket.close(1008);
-          return;
-        }
+        send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
+        socket.close(1008);
+        return;
       }
       if (!resumed && sessions.size >= maxSessions) {
         send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
@@ -162,7 +168,9 @@ sockets.on('connection', socket => {
       };
 
       if (resumed) active.control.reconnect();
-      else await active.navigateAsArtist(message.url, active.control.state);
+      if (!resumed || active.url !== requestedPage.href) {
+        await active.navigateAsArtist(requestedPage.href, active.control.state);
+      }
       send({ type: 'session', resumeId: entry.id });
       await sendFrame();
 
@@ -196,7 +204,8 @@ sockets.on('connection', socket => {
           const version = { controlGeneration, navigationGeneration };
           switch (input.type) {
             case 'grant':
-              if (!active.control.giveControl(assignmentFrom(input.assignment), version)) {
+              if (!isBoardroomSpecialistPage(active.url)
+                  || !active.control.giveControl(assignmentFrom(input.assignment), version)) {
                 throw new Error('The page or browser owner changed.');
               }
               break;
@@ -247,8 +256,11 @@ sockets.on('connection', socket => {
             default: throw new Error('Unsupported browser operation');
           }
           await sendFrame();
-        })().catch(async () => {
-          reply({ type: 'error', message: 'The browser could not complete that action. Check the displayed page and who has control.' });
+        })().catch(async error => {
+          const message = error instanceof BoardroomNavigationError
+            ? error.message
+            : 'The browser could not complete that action. Check the displayed page and who has control.';
+          reply({ type: 'error', message });
           await sendFrame().catch(() => {});
         }).finally(() => {
           busy = false;
@@ -256,8 +268,11 @@ sockets.on('connection', socket => {
         });
       });
       send({ type: 'ready' });
-    })().catch(() => {
-      send({ type: 'error', message: 'Could not start the live browser. Check sign-in and the address.' });
+    })().catch(error => {
+      const message = error instanceof BoardroomNavigationError
+        ? error.message
+        : 'Could not start the live browser. Check sign-in and the address.';
+      send({ type: 'error', message });
       socket.close(1008);
     });
   });

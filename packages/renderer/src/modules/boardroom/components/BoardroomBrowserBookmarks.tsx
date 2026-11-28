@@ -42,9 +42,10 @@ export function matchesBookmark(activeUrl: string, bookmarkUrl: string): boolean
 interface BoardroomBrowserBookmarksProps {
     committedUrl: string;
     onNavigate: (url: string) => void;
+    disabled?: boolean;
 }
 
-export function BoardroomBrowserBookmarks({ committedUrl, onNavigate }: BoardroomBrowserBookmarksProps) {
+export function BoardroomBrowserBookmarks({ committedUrl, onNavigate, disabled }: BoardroomBrowserBookmarksProps) {
     return (
         <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-white/5 shrink-0">
             <Bookmark size={11} className="text-indigo-400/70 shrink-0 ml-0.5 mr-1" />
@@ -53,8 +54,9 @@ export function BoardroomBrowserBookmarks({ committedUrl, onNavigate }: Boardroo
                     key={bookmark.id}
                     type="button"
                     onClick={() => onNavigate(bookmark.url)}
+                    disabled={disabled}
                     className={cn(
-                        "flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
+                        "flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 disabled:opacity-50",
                         matchesBookmark(committedUrl, bookmark.url)
                             ? "bg-indigo-500/25 text-indigo-200 border border-indigo-400/40 font-bold"
                             : "bg-white/5 hover:bg-white/10 text-white/70 border border-white/5",

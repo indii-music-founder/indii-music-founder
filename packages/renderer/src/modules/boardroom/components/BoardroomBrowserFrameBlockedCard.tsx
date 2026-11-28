@@ -50,9 +50,6 @@ export function BoardroomBrowserFrameBlockedCard({
                         )}
                     </div>
                     <p className="text-[11px] font-mono text-white/40 truncate">{committedUrl}</p>
-                    <p className="text-xs text-white/65 leading-relaxed pt-1">
-                        {portalTitle} can’t be shown inside indii. Open it in a new tab.
-                    </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                     {canOpenHosted && (

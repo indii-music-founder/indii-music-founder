@@ -116,3 +116,4 @@ export * from './rights/cwrReconciliation.js';
 export * from './rights/societyDelivery.js';
 export * from './schemas/toolApprovalTransitions.js';
 export * from './schemas/releaseLaunchKit.js';
+export * from './types/boardroomBrowserPages.js';

@@ -47,7 +47,7 @@ On desktop, Boardroom opens with the table on the left, Live Browser in the cent
 
 The live browser gives you embedded web access without losing context with your executive agents.
 
-- **Navigation Controls:** Back, Forward, Reload, and an address bar. On the web, Back and Forward revisit addresses opened through Boardroom. Links followed inside a third-party page stay in that page’s history.
+- **Navigation Controls:** Back, Forward, Reload, and an address bar. On the web, sign in to indii to open public HTTPS websites in Live Browser. Back and Forward include links you follow inside the page.
 - **Quick Bookmarks Bar:** One-click shortcuts to key music industry portals:
   - **Spotify for Artists** (`https://artists.spotify.com`) — DSP verification & analytics.
   - **Apple Music for Artists** (`https://artists.apple.com`) — DSP verification.
@@ -97,14 +97,11 @@ Real-time visibility into the autonomous background processes executed by the ag
 
 | Feature | Desktop App (Electron Studio) | Web Browser (Next.js / PWA) |
 | :--- | :--- | :--- |
-| **Technology** | Native `WebContentsView` attached to main window | Sandboxed HTML `<iframe>` |
-| **CSP / `X-Frame-Options`** | **Bypassed natively.** Can load any portal (Spotify, ASCAP, BMI, Google). | **Enforced by target sites.** Some portals block embedding. |
-| **Session Isolation** | Isolated partition: `persist:boardroom-browser` (cookies and sessions persist safely). | Standard browser sandbox restrictions. |
-| **SSRF Protection** | Verified by main-process `validateSafeUrlAsync` (blocks localhost/private networks). | Browser origin policy. |
-| **Fallback Modes** | Native web rendering. | Sites that block embedding offer **Open in New Tab**. The new tab runs outside Boardroom. |
-
-> [!NOTE]
-> For the best experience with portals that forbid embedding (such as Spotify for Artists or ASCAP), use the **indii Desktop App** (`Port 4242`), which natively bypasses `X-Frame-Options` restrictions using Electron's secure `WebContentsView` architecture.
+| **Technology** | Native `WebContentsView` attached to the main window | An isolated Chromium session that displays pages in Boardroom |
+| **Sites that block embedding** | Pages open directly in the native view. | Pages open directly in the hosted session. |
+| **Session Isolation** | Cookies persist in the `persist:boardroom-browser` partition. | The hosted session starts separately from your regular browser and its cookies. |
+| **Network access** | The main process validates public destinations. | The worker validates public HTTPS destinations before connecting. |
+| **Portal sign-in and forms** | Use the portal in the native view. | Use **Open externally** to sign in or submit forms that the hosted session cannot handle. |
 
 ---
 
