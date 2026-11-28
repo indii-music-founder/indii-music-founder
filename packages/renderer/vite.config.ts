@@ -118,6 +118,7 @@ export default defineConfig({
         'VITE_SKIP_',
         'VITE_A0_',
         'VITE_APP_TARGET',
+        'VITE_BOARDROOM_BROWSER_',
         'VITE_APP_VERSION',
         'VITE_RAG_',
         'VITE_ADMIN_PIN',

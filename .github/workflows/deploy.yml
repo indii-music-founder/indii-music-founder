@@ -302,6 +302,7 @@ jobs:
             echo "::error::Spotify, TikTok and Instagram public OAuth identifiers must be configured before deploying Studio."
             exit 1
           fi
+          node --test scripts/boardroom-browser-build.test.mjs
           if [ "$VITE_BOARDROOM_BROWSER_ENABLED" = "true" ]; then
             node --input-type=module <<'NODE'
           const endpoint = new URL(process.env.VITE_BOARDROOM_BROWSER_URL);
