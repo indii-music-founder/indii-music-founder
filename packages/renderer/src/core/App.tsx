@@ -22,6 +22,7 @@ import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { useAutoSleep } from '@/hooks/useAutoSleep';
 import { useWorkspaceSync } from '@/hooks/useWorkspaceSync';
 import { useBugReportShortcut } from '@/modules/debug/useBugReportShortcut';
+import { useErrorReporting } from '@/modules/debug/useErrorReporting';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { flushFounderFunnelQueue } from '@/services/founders/founderFunnel';
@@ -128,6 +129,8 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
 
     // Bug reporting keyboard shortcuts (Ctrl+Shift+B for bugs, Ctrl+Shift+F for features)
     useBugReportShortcut();
+    // Remember the last uncaught error so a bug report can pre-fill it
+    useErrorReporting();
 
     // Monitor actual connectivity in Electron — fixes stuck offline state
     useConnectivityMonitor();

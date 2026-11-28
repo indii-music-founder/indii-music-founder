@@ -10,33 +10,33 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 
 | Conf. | Lines | File (under `packages/renderer/src/`) | Status |
 | ---: | ---: | --- | --- |
-| 0.94 | 166 | `modules/dashboard/components/RecentProjects.tsx` | ✅ wired (W1/W2) |
+| 0.94 | 166 | `modules/dashboard/components/RecentProjects.tsx` | ✅ wired (W1–W2) |
 | 0.92 | 49 | `core/components/ui/ThemeToggle.tsx` | ✔ verified: blocked — no light-theme CSS |
-| 0.92 | 42 | `modules/debug/useErrorReporting.ts` |  |
-| 0.92 | 114 | `services/marketing/CommunityWebhookService.ts` |  |
-| 0.90 | 101 | `core/components/SidecarStatus.tsx` |  |
-| 0.86 | 69 | `modules/dashboard/components/ChatMessages.tsx` |  |
+| 0.92 | 42 | `modules/debug/useErrorReporting.ts` | ✅ wired (W3) |
+| 0.92 | 114 | `services/marketing/CommunityWebhookService.ts` | ✔ verified: needs backend — CSP blocks webhook hosts |
+| 0.90 | 101 | `core/components/SidecarStatus.tsx` | ✔ verified: blocked — nothing reports sidecar health |
+| 0.86 | 69 | `modules/dashboard/components/ChatMessages.tsx` | ✔ verified: superseded — live chat components |
 | 0.85 | 113 | `components/layout/ModuleDashboard.tsx` | ✔ verified: superseded — AdaptiveWorkspace |
 | 0.85 | 101 | `components/shared/SessionTimeoutOverlay.tsx` | ✔ verified: blocked — click-to-dismiss, needs re-auth design |
 | 0.85 | 75 | `modules/merchandise/hooks/usePerformanceMonitor.ts` |  |
-| 0.79 | 152 | `modules/dashboard/components/OrganizationSelector.tsx` |  |
-| 0.76 | 69 | `core/components/ApiKeyErrorModal.tsx` |  |
-| 0.74 | 192 | `modules/observability/components/CircuitBreakerPanel.tsx` | ✅ wired (W1/W2) |
+| 0.79 | 152 | `modules/dashboard/components/OrganizationSelector.tsx` | ✔ verified: product call — org switching is dev-gated |
+| 0.76 | 69 | `core/components/ApiKeyErrorModal.tsx` | ✔ verified: obsolete — client API keys removed |
+| 0.74 | 192 | `modules/observability/components/CircuitBreakerPanel.tsx` | ✅ wired (W1–W2) |
 | 0.71 | 152 | `components/shared/DoNotSellToggle.tsx` | ✔ verified: blocked — nothing honours the flag yet |
-| 0.69 | 142 | `modules/creative/components/veo/VeoSettingsPanel.tsx` |  |
-| 0.68 | 92 | `modules/settings/components/DownloadHub.tsx` | ✅ wired (W1/W2) |
+| 0.69 | 142 | `modules/creative/components/veo/VeoSettingsPanel.tsx` | ✔ verified: superseded — DirectGenerationTab |
+| 0.68 | 92 | `modules/settings/components/DownloadHub.tsx` | ✅ wired (W1–W2) |
 | 0.64 | 60 | `modules/publishing/hooks/useDistributorConnections.ts` | ✔ verified: superseded — distribution (ISSUE-1441) |
 | 0.62 | 222 | `modules/creative/components/ImageSubMenu.tsx` |  |
-| 0.61 | 199 | `modules/social/components/UserProfileHeader.tsx` |  |
-| 0.59 | 31 | `hooks/useLanguage.ts` | ✅ wired (W1/W2) |
+| 0.61 | 199 | `modules/social/components/UserProfileHeader.tsx` | ✅ wired (W3) |
+| 0.59 | 31 | `hooks/useLanguage.ts` | ✅ wired (W1–W2) |
 | 0.57 | 81 | `modules/merchandise/components/RecentDesignItem.tsx` |  |
-| 0.47 | 376 | `modules/marketing/components/IntelligenceEnhancePostModal.tsx` |  |
+| 0.47 | 376 | `modules/marketing/components/IntelligenceEnhancePostModal.tsx` | ✅ wired (W3) |
 | 0.46 | 97 | `services/legal/ContractSnippetStore.ts` |  |
 | 0.41 | 228 | `components/agent/ReflectionPanel.tsx` |  |
 | 0.41 | 21 | `modules/core/components/CinematicTransition.tsx` |  |
-| 0.41 | 102 | `modules/dashboard/components/DataStorageManager.tsx` | ✅ wired (W1/W2) |
+| 0.41 | 102 | `modules/dashboard/components/DataStorageManager.tsx` | ✅ wired (W1–W2) |
 | 0.41 | 74 | `services/creative/EPKGeneratorService.ts` |  |
-| 0.39 | 99 | `modules/dashboard/components/StatsRibbon.tsx` | ✅ wired (W1/W2) |
+| 0.39 | 99 | `modules/dashboard/components/StatsRibbon.tsx` | ✅ wired (W1–W2) |
 | 0.37 | 182 | `modules/publishing/components/MultiDistributorProgress.tsx` |  |
 | 0.35 | 110 | `modules/merchandise/components/ScenarioBuilder.tsx` |  |
 | 0.34 | 43 | `services/intelligence/OCRService.ts` |  |
@@ -44,7 +44,7 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.31 | 194 | `service-worker.ts` |  |
 | 0.30 | 54 | `modules/marketing/hooks/useTrackIngestion.ts` |  |
 | 0.30 | 121 | `services/agent/orchestration/NegotiationOrchestrator.ts` |  |
-| 0.29 | 71 | `modules/dashboard/components/KnowledgeBaseList.tsx` | ✅ wired (W1/W2) |
+| 0.29 | 71 | `modules/dashboard/components/KnowledgeBaseList.tsx` | ✅ wired (W1–W2) |
 | 0.25 | 187 | `services/security/PrivateVaultService.ts` |  |
 | 0.25 | 66 | `services/video/VideoRenderOrchestrator.ts` |  |
 | 0.24 | 83 | `modules/creative/video/components/BriefingStep.tsx` |  |
@@ -64,10 +64,10 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.90 | 264 | `services/distribution/YouTubeDataService.ts` |  |
 | 0.89 | 97 | `hooks/useSonicBridge.ts` |  |
 | 0.89 | 89 | `services/legal/NotarizeService.ts` |  |
-| 0.87 | 147 | `modules/onboarding/components/WhiteGloveIngestionHub.tsx` |  |
+| 0.87 | 147 | `modules/onboarding/components/WhiteGloveIngestionHub.tsx` | ✔ verified: needs rules + results view |
 | 0.85 | 104 | `services/social/SocialPostingService.ts` |  |
 | 0.82 | 128 | `services/distribution/proprietary-ingestion/EarningsProcessor.ts` |  |
-| 0.80 | 316 | `modules/observability/components/SchedulerStatusPanel.tsx` | ✅ wired (W1/W2) |
+| 0.80 | 316 | `modules/observability/components/SchedulerStatusPanel.tsx` | ✅ wired (W1–W2) |
 | 0.80 | 147 | `services/distribution/proprietary-ingestion/IngestionIdentity.ts` |  |
 | 0.79 | 103 | `services/distribution/BatchDeliveryService.ts` |  |
 | 0.79 | 61 | `services/finance/MultiCurrencyService.ts` |  |
@@ -82,7 +82,7 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.66 | 184 | `types/UserMemory.ts` |  |
 | 0.64 | 107 | `services/distribution/cdbaby/CDBabyPackageBuilder.ts` |  |
 | 0.57 | 251 | `services/security/CEOSyncService.ts` |  |
-| 0.56 | 43 | `components/shared/LanguageSelector.tsx` | ✅ wired (W1/W2) |
+| 0.56 | 43 | `components/shared/LanguageSelector.tsx` | ✅ wired (W1–W2) |
 | 0.55 | 132 | `modules/merchandise/components/ShowroomStage.tsx` |  |
 | 0.55 | 84 | `services/audio/ClientPitchTracker.ts` |  |
 | 0.55 | 105 | `services/distribution/VinylPressingService.ts` |  |
@@ -139,3 +139,19 @@ Jev: 10 calls, 147,861 input / 6,381 output tokens.
 | 0.35 | 50 | `hooks/useNetworkQuality.ts` |  |
 | 0.30 | 268 | `modules/distribution/components/TerritoryRightsPanel.tsx` | ✔ verified: blocked — DDEX builder ignores territory splits |
 | 0.21 | 238 | `services/design/templates.ts` |  |
+## Restored helpers from the deleted prune branch (20)
+
+These were removed on `claude/prune-unreachable-renderer` (deleted 2026-11-28 unmerged; the files are still on `main`). They stay on `main` and are triaged here so the map covers everything.
+
+| Lines | File (under `packages/renderer/src/`) | Status |
+| ---: | --- | --- |
+| 102 | `utils/test-harness.ts` | ✔ verified: do not wire. It is a store backdoor that skips the agent to force views; dev-only. |
+| — | `services/distribution/proprietary-ingestion/DDEXStressTest.ts` | ✔ verified: stub that only returns `SKIPPED` |
+| — | `modules/distribution/verify-ui.ts` | ✔ verified: dry-run dev script, not app code |
+| — | `services/security/verify-credentials.ts` | ✔ verified: dev script with fake credentials, not app code |
+| — | `lib/promptSanitizer.ts` | Possible twin of `services/intelligence/utils/InputSanitizer`; compare before wiring |
+| — | `services/intelligence/observability/TraceService.ts` | Twin of live `services/agent/observability/TraceService.ts` |
+| — | `components/shared/GlobalKeyboardShortcuts2.tsx` | Twin of live `components/shared/GlobalKeyboardShortcuts.tsx` |
+| — | `hooks/useReducedMotion.ts`, `hooks/useVirtualList.ts`, `hooks/useLazyLoad.tsx`, `hooks/useKeyboardNav.ts`, `hooks/useSessionTimeout.ts` | Generic hooks; wire where a screen needs them |
+| — | `lib/formatters.ts`, `utils/geocode.ts`, `utils/classNameUtils.ts`, `core/config/branding.ts` | Generic helpers; wire where a screen needs them |
+| — | `services/analytics/analytics-queries.ts`, `services/agent/tools/shared/ToolValidator.ts`, `services/agent/specialists/debug-tools.ts`, `modules/registration/adapters/automationResult.ts` | Unverified; check for a live caller before wiring |

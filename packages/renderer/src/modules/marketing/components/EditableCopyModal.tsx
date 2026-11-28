@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { ScheduledPost } from '@/modules/marketing/types';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import IntelligenceEnhancePostModal from '@/modules/marketing/components/IntelligenceEnhancePostModal';
 interface EditableCopyModalProps {
     post: ScheduledPost;
     onClose: () => void;
@@ -9,7 +10,9 @@ interface EditableCopyModalProps {
 }
 
 const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, onSave }) => {
-    const dialogRef = useModalAccessibility(true, onClose);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    // Hand Escape and focus to the enhance dialog while it is open.
+    const dialogRef = useModalAccessibility(!isEnhancing, onClose);
     const [content, setContent] = useState(post.copy);
 
     useEffect(() => {
@@ -48,6 +51,14 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
 
                 <div className="p-6 border-t border-gray-800 flex justify-end gap-3">
                     <button
+                        onClick={() => setIsEnhancing(true)}
+                        disabled={!content.trim()}
+                        className="mr-auto flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Sparkles size={16} />
+                        Improve with AI
+                    </button>
+                    <button
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors font-medium"
                     >
@@ -61,6 +72,13 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
                     </button>
                 </div>
             </div>
+            {isEnhancing && (
+                <IntelligenceEnhancePostModal
+                    post={{ ...post, copy: content }}
+                    onClose={() => setIsEnhancing(false)}
+                    onApply={(_postId, newCopy) => setContent(newCopy)}
+                />
+            )}
         </div>
     );
 };
