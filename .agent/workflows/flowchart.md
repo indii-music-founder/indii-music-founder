@@ -45,4 +45,4 @@ If the task requires a repository artifact, update the relevant existing map whe
 
 If a conversational diagram is sufficient, return it without writing the repository.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

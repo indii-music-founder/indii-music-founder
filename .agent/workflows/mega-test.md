@@ -432,4 +432,4 @@ Longitudinal chains need historical data that can't be produced live. Before Sta
 
 ### Continuity issue tagging
 File continuity findings with `Dimension: Continuity`, name the **broken stage** (Capture / Persist / Apply / Supersede), the **source fact**, and the **consuming module(s)** where it failed to surface. Example summary: *"Aesthetic chain breaks at APPLY: favorite color 'puke green' persists in Memory Agent but Creative cover-art generation ignores it (output is default blue)."*
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

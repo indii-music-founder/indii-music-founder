@@ -81,4 +81,4 @@ Run after the final edit (CLI-first so every team gets deterministic evidence):
 4. Repo policy guards when workflows or capabilities change (`npm run validate:capabilities`, `npm run validate:mainline-workflows`).
 5. Deliver one coherent commit through [`/end`](end.md) and [`/ci-validate`](ci-validate.md) on a fresh task branch from current `origin/main`, pushed through Entire `origin` as [`branch-safety.md`](branch-safety.md) specifies. If unrelated work occupies the shared checkout, use an isolated checkout based on `origin/main`. Report the branch, commit SHA, and local verification; the repository owner handles remote CI and merging to `main`.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

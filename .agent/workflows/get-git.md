@@ -13,4 +13,4 @@ Run `node scripts/git_monitor_sync.js` to fetch Entire's `origin/main`, report l
 
 Publish task work using the shared branch policy. The team handles GitHub review, CI, and merging.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

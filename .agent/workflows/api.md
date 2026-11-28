@@ -42,4 +42,4 @@ When assisting the user with the API, strictly adhere to the following rules:
 
 ## Step 4: Execute
 Assist the user with their API needs based on the registry and these principles.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

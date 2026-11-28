@@ -87,4 +87,4 @@ Ask which Verified Stale items to archive or remove and how to resolve each Conf
 - Do not bloat `CLAUDE.md` or its mirrors while resolving conflicts.
 - Never use `/sweep` findings to justify removing a skill or workflow absent from `WIIL-skill.md`; absence from a manifest is not grounds for deletion.
 
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

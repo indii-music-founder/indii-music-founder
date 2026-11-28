@@ -59,4 +59,4 @@ The `/abcd` loop is healthy when:
 - D samples B/C claims and either confirms them or re-opens them with evidence.
 
 The workflow is not complete just because one engine says "done"; D's verification and C's CI evidence close the loop.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.

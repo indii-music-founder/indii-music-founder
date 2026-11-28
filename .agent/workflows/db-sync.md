@@ -39,4 +39,4 @@ Output the results of the database sync gate:
 [✓] Public Wildcards Scan: Passed (0 leaks detected)
 ```
 If the sync changed collections or rules that instructions, specs, or ledger notes describe, run [`/sweep`](sweep.md) scoped to those names (report-only) and report any stale or conflicting descriptions.
-> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire task branches; use an Entire Trail only when the user asks for one.
