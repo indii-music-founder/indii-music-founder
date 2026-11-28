@@ -1,3 +1,9 @@
+## 2026-11-28 `npm ci` failed in a GPU-less cloud container on the onnxruntime CUDA download (ONNXRUNTIME_CUDA_POSTINSTALL_404)
+
+- **Evidence:** In a fresh cloud session container (Linux x64, no `nvcc`), `npm ci` exited 1 at `onnxruntime-node`'s postinstall (`node ./script/install`): it assumed CUDA 12, downloaded `onnxruntime-linux-x64-gpu-1.21.1.tgz` from GitHub releases, got `404 Not Found`, and threw. No packages were left installed.
+- **Fix:** `ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm ci --cache ./.npm-cache-isolated-$$ --onnxruntime-node-install-cuda=skip`. The CPU execution provider still installs and works; only the CUDA execution provider is skipped. The second run exited 0.
+- **Prevention:** On machines without a GPU (cloud agents, CI runners), always pass the CUDA skip. Delete the failed run's isolated cache directory before retrying.
+
 ## 2026-11-28 Hosted browser settings were absent from the compiled renderer (BOARDROOM_VITE_ENV_FILTER)
 
 - **Evidence:** The production build log showed the hosted-browser feature enabled and its public health probe passing, but the real UI still displayed the external-open card. Both Vite environment-prefix lists omitted `VITE_BOARDROOM_BROWSER_`. A compiler-level regression reproduced the omission: with enabled=true, the emitted module exported enabled=false.

@@ -4395,3 +4395,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Severity:** 🟢 LOW
 - **Module:** `packages/renderer/src/modules/boardroom`, `packages/renderer/src/core/store/slices/boardroomSlice.ts`
 - **Acceptance:** Confirm green CI and full renderer build after merge.
+
+
+### ISSUE-1725: Payout staging trusts client-writable split recipients (`users/{uid}/splits`)
+
+- **Status:** 🔴 OPEN (2026-11-28 — found during source verification of `docs/plans/deel-patterns-bos-plan-2026-11-28.md` §4.0; no code changed yet.)
+- **Severity:** 🟠 HIGH (money-path trust boundary; no money moves today because staging creates no transfer, but any future execute step would pay recipients the client chose)
+- **Module:** `packages/firebase/src/mcp/tools/stageStripePayouts.ts` (`readSplitRecipients`), `packages/firebase/firestore.rules` (`match /splits/{splitId}` → `allow read, write: if isOwner(userId)`; also owner-writable `users/{uid}/payouts`)
+- **Evidence:** `stageStripePayouts.readSplitRecipients` reads `users/{artistId}/splits` (`percentage`, `stripeAccountId`). The rules let the owner client write that collection freely, and no product code writes it. The authoritative locked splits are the create-only `AdminLedgerReceipt.splits` (`shareBasisUnits`) written by `masterIngestionRunbook.ts`.
+- **Fix plan:** Source recipients only from the latest ledger receipt for the release's master. Refuse staging with a named reason when no receipt exists. Make `users/{uid}/splits` server-only or retire it. Review whether any server path trusts `users/{uid}/payouts`.
+- **Acceptance:** Rules-emulator test that a client cannot write `users/{uid}/splits`. Staging test that recipients equal the ledger receipt's share lines and that a missing receipt is refused. `cd packages/firebase && npm run build` passes.
